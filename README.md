@@ -18,12 +18,17 @@ alone. The replay browser's AI-vision overlay lets you verify it.
 ## Quick start
 
 ```powershell
-.\tools\screenshot.ps1      # boots the scene, writes .temp/screens/phase1.png
-.\tools\run-tests.ps1       # EditMode + PlayMode suites
-.\tools\build.ps1           # Windows player -> Builds/Windows
+.\tools\screenshot.ps1                  # boots the scene, writes .temp/screens/phase2.png
+.\tools\screenshot.ps1 -SelectAll       # same, with every unit selected
+.\tools\run-tests.ps1                   # EditMode + PlayMode suites
+.\tools\build.ps1                       # Windows player -> Builds/Windows
 ```
 
 Open the project in Unity Hub and play `Assets/Scenes/Main.unity` to run it normally.
+
+**Controls:** WASD/arrows or middle-drag to pan · wheel to zoom · Q/E to rotate ·
+edge scroll at the screen border · left-click to select · drag a box to multi-select ·
+Shift to add · Esc to clear. See `docs/phase2.md` for details.
 
 ## Layout
 
@@ -51,5 +56,6 @@ tools/               headless scripts
 |---|---|
 | 0 — toolchain | ✅ verified headless |
 | 1 — scaffold | ✅ scene, camera, tests, screenshot loop |
+| 2 — terrain, camera, selection | ✅ heightmap, RTS camera rig, click + box select, highlight |
 
 See `docs/spec.md` for the full roadmap and frozen scope.

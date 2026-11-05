@@ -1,5 +1,8 @@
 using System;
 using System.IO;
+using CQRa.Sim.Units;
+using Unity.Collections;
+using Unity.Entities;
 using UnityEngine;
 
 namespace CQRa.Core
@@ -18,6 +21,7 @@ namespace CQRa.Core
         private Camera _camera;
         private RenderTexture _target;
         private string _path;
+        private bool _selectAll;
         private int _frames;
 
         private void Start()
@@ -47,6 +51,8 @@ namespace CQRa.Core
             _camera.targetTexture = _target;
             _camera.aspect = (float)Width / Height;
 
+            _selectAll = HasArg("-selectall");
+
             Debug.Log($"[Capture] armed -> {_path}");
         }
 
@@ -58,6 +64,13 @@ namespace CQRa.Core
             }
 
             _frames++;
+
+            // Units are spawned in Start, so wait a frame before selecting them.
+            if (_selectAll && _frames == 2)
+            {
+                SelectAllUnits();
+            }
+
             if (_frames < WarmupFrames)
             {
                 return;
@@ -110,6 +123,44 @@ namespace CQRa.Core
 #else
             Application.Quit(code);
 #endif
+        }
+
+        private static bool HasArg(string flag)
+        {
+            var args = Environment.GetCommandLineArgs();
+            foreach (var arg in args)
+            {
+                if (string.Equals(arg, flag, StringComparison.OrdinalIgnoreCase))
+                {
+                    return true;
+                }
+            }
+
+            return false;
+        }
+
+        /// <summary>Development helper: enables selection on every unit for visual capture.</summary>
+        private static void SelectAllUnits()
+        {
+            var world = World.DefaultGameObjectInjectionWorld;
+            if (world == null || !world.IsCreated)
+            {
+                return;
+            }
+
+            var entityManager = world.EntityManager;
+            using var query = entityManager.CreateEntityQuery(ComponentType.ReadOnly<UnitTag>());
+            using var entities = query.ToEntityArray(Allocator.Temp);
+
+            foreach (var entity in entities)
+            {
+                if (entityManager.HasComponent<Selected>(entity))
+                {
+                    entityManager.SetComponentEnabled<Selected>(entity, true);
+                }
+            }
+
+            Debug.Log($"[Capture] selected {entities.Length} units");
         }
 
         private static string ReadArg(string flag)

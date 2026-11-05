@@ -1,5 +1,6 @@
 param(
-    [string]$Out = ".temp/screens/phase1.png"
+    [string]$Out = ".temp/screens/phase2.png",
+    [switch]$SelectAll
 )
 
 $ErrorActionPreference = "Stop"
@@ -14,13 +15,17 @@ $log = Join-Path $env:LOCALAPPDATA "Temp\opencode\screenshot.log"
 if (Test-Path $png) { Remove-Item $png -Force }
 
 Write-Host "Rendering $png"
-$p = Start-Process -FilePath $unity -PassThru -Wait -NoNewWindow -ArgumentList @(
+$arguments = @(
     "-batchmode",
     "-projectPath", $root,
     "-executeMethod", "CQRa.EditorTools.PlayModeCapture.Run",
     "-screenshot", $png,
     "-logFile", $log
 )
+
+if ($SelectAll) { $arguments += "-selectall" }
+
+$p = Start-Process -FilePath $unity -PassThru -Wait -NoNewWindow -ArgumentList $arguments
 
 if (-not (Test-Path $png)) {
     Write-Error "Screenshot was not produced. See $log"

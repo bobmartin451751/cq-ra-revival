@@ -3,6 +3,11 @@
     "rootNamespace": "CQRa.Tests",
     "references": [
         "CQRa.Runtime",
+        "Unity.Entities",
+        "Unity.Entities.Graphics",
+        "Unity.Transforms",
+        "Unity.Mathematics",
+        "Unity.Collections",
         "UnityEngine.TestRunner",
         "UnityEditor.TestRunner"
     ],
