@@ -1,7 +1,9 @@
 using System.Collections.Generic;
+using CQRa.Sim.Navigation;
 using CQRa.Sim.Units;
 using Unity.Collections;
 using Unity.Entities;
+using Unity.Mathematics;
 using Unity.Transforms;
 using UnityEngine;
 using UnityEngine.InputSystem;
@@ -20,6 +22,7 @@ namespace CQRa.View
     {
         [SerializeField] private Camera _camera;
         [SerializeField] private HeightmapTerrain _terrain;
+        [SerializeField] private MoveOrderMarker _moveMarker;
         [SerializeField] private float _pickRadiusPixels = 34f;
         [SerializeField] private float _dragThresholdPixels = 6f;
 
@@ -29,6 +32,7 @@ namespace CQRa.View
         private Vector2 _dragCurrent;
         private bool _dragging;
         private bool _boxSelecting;
+        private int _movingCount;
 
         private GUIStyle _hintStyle;
 
@@ -38,6 +42,13 @@ namespace CQRa.View
         {
             _camera = camera;
             _terrain = terrain;
+        }
+
+        public void Configure(Camera camera, HeightmapTerrain terrain, MoveOrderMarker moveMarker)
+        {
+            _camera = camera;
+            _terrain = terrain;
+            _moveMarker = moveMarker;
         }
 
         private void Awake()
@@ -102,6 +113,62 @@ namespace CQRa.View
             if (keyboard != null && keyboard.escapeKey.wasPressedThisFrame)
             {
                 ClearSelection();
+            }
+
+            if (mouse.rightButton.wasPressedThisFrame && _selected.Count > 0)
+            {
+                IssueMoveOrder(mouse.position.ReadValue());
+            }
+
+            _movingCount = CountMovingUnits();
+        }
+
+        /// <summary>
+        /// Right-click order: pick the terrain under the cursor, snap it to the nearest
+        /// walkable nav cell, then write one MoveTarget per selected unit. The flow
+        /// field is built lazily by <see cref="FlowFieldSystem"/> on the next fixed tick.
+        /// </summary>
+        private void IssueMoveOrder(Vector2 screenPosition)
+        {
+            if (!TerrainPicker.TryPick(_camera, screenPosition, _terrain, out var point))
+            {
+                return;
+            }
+
+            var world = World.DefaultGameObjectInjectionWorld;
+            if (world == null || !world.IsCreated)
+            {
+                return;
+            }
+
+            var entityManager = world.EntityManager;
+            var destination = new float3(point.x, point.y, point.z);
+
+            if (NavGridQuery.TryClampToWalkable(entityManager, destination, out var clamped))
+            {
+                destination = clamped;
+            }
+
+            PruneSelection();
+
+            for (var i = 0; i < _selected.Count; i++)
+            {
+                var entity = _selected[i];
+                if (!entityManager.Exists(entity) || !entityManager.HasComponent<MoveTarget>(entity))
+                {
+                    continue;
+                }
+
+                var target = entityManager.GetComponentData<MoveTarget>(entity);
+                target.Destination = destination;
+                target.Field = Entity.Null;
+                target.HasOrder = 1;
+                entityManager.SetComponentData(entity, target);
+            }
+
+            if (_moveMarker != null)
+            {
+                _moveMarker.Show(point);
             }
         }
 
@@ -298,14 +365,41 @@ namespace CQRa.View
                 DrawMarquee(_dragStart, _dragCurrent);
             }
 
-            var hint = $"Selected: {_selected.Count}    LMB select · drag box · Shift add · Esc clear";
+            var moving = _movingCount;
+            var hint = $"Selected: {_selected.Count}   Moving: {moving}    LMB select · drag box · Shift add · RMB move · Esc clear";
             var previous = GUI.color;
 
             GUI.color = new Color(0.05f, 0.04f, 0.03f, 0.72f);
-            GUI.DrawTexture(new Rect(12f, Screen.height - 46f, 480f, 32f), Texture2D.whiteTexture);
+            GUI.DrawTexture(new Rect(12f, Screen.height - 46f, 640f, 32f), Texture2D.whiteTexture);
 
             GUI.color = previous;
-            GUI.Label(new Rect(22f, Screen.height - 42f, 470f, 26f), hint, _hintStyle);
+            GUI.Label(new Rect(22f, Screen.height - 42f, 630f, 26f), hint, _hintStyle);
+        }
+
+        private int CountMovingUnits()
+        {
+            var world = World.DefaultGameObjectInjectionWorld;
+            if (world == null || !world.IsCreated)
+            {
+                return 0;
+            }
+
+            var entityManager = world.EntityManager;
+            using var query = entityManager.CreateEntityQuery(
+                ComponentType.ReadOnly<MoveTarget>(),
+                ComponentType.ReadOnly<UnitTag>());
+            using var entities = query.ToEntityArray(Allocator.Temp);
+
+            var moving = 0;
+            for (var i = 0; i < entities.Length; i++)
+            {
+                if (entityManager.GetComponentData<MoveTarget>(entities[i]).HasOrder != 0)
+                {
+                    moving++;
+                }
+            }
+
+            return moving;
         }
 
         private static void DrawMarquee(Vector2 start, Vector2 end)

@@ -1,6 +1,9 @@
 param(
     [string]$Out = ".temp/screens/phase2.png",
-    [switch]$SelectAll
+    [switch]$SelectAll,
+    [string]$MoveTo = "",
+    [int]$MoveTeam = 0,
+    [int]$WaitFrames = 0
 )
 
 $ErrorActionPreference = "Stop"
@@ -24,6 +27,8 @@ $arguments = @(
 )
 
 if ($SelectAll) { $arguments += "-selectall" }
+if ($MoveTo) { $arguments += @("-moveto", $MoveTo, "-moveteam", $MoveTeam, "-waitframes", $WaitFrames)
+}
 
 $p = Start-Process -FilePath $unity -PassThru -Wait -NoNewWindow -ArgumentList $arguments
 

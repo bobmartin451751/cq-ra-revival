@@ -226,6 +226,94 @@ namespace CQRa.View
             return mesh;
         }
 
+        /// <summary>Flat ground ring (annulus) on the XZ plane, useful for order markers.</summary>
+        public static Mesh Ring(float outerRadius, float innerRadius, int segments = 40)
+        {
+            segments = Mathf.Max(3, segments);
+            innerRadius = Mathf.Clamp(innerRadius, 0f, outerRadius - 0.01f);
+
+            var vertices = new List<Vector3>();
+            var normals = new List<Vector3>();
+            var uvs = new List<Vector2>();
+            var triangles = new List<int>();
+
+            for (var i = 0; i <= segments; i++)
+            {
+                var angle = (float)i / segments * Mathf.PI * 2f;
+                var dir = new Vector3(Mathf.Cos(angle), 0f, Mathf.Sin(angle));
+
+                vertices.Add(dir * innerRadius);
+                vertices.Add(dir * outerRadius);
+                normals.Add(Vector3.up);
+                normals.Add(Vector3.up);
+                uvs.Add(new Vector2(dir.x * 0.5f + 0.5f, dir.z * 0.5f + 0.5f));
+                uvs.Add(uvs[uvs.Count - 1]);
+            }
+
+            for (var i = 0; i < segments; i++)
+            {
+                var a = i * 2;
+                triangles.Add(a);
+                triangles.Add(a + 1);
+                triangles.Add(a + 2);
+                triangles.Add(a + 1);
+                triangles.Add(a + 3);
+                triangles.Add(a + 2);
+            }
+
+            var mesh = new Mesh { name = "Ring" };
+            mesh.SetVertices(vertices);
+            mesh.SetNormals(normals);
+            mesh.SetUVs(0, uvs);
+            mesh.SetTriangles(triangles, 0);
+            mesh.RecalculateBounds();
+            return mesh;
+        }
+
+        /// <summary>
+        /// Shattered concrete / rock outcrop. Deterministic for a given seed so the
+        /// scenery and the navigation blockers always agree.
+        /// </summary>
+        public static Mesh RockCluster(float radius, float height, int seed)
+        {
+            var random = new System.Random(seed * 7919 + 17);
+            var parts = new List<MeshPart>();
+
+            var chunks = 5 + random.Next(4);
+            for (var i = 0; i < chunks; i++)
+            {
+                var angle = (float)random.NextDouble() * Mathf.PI * 2f;
+                var distance = radius * (0.10f + 0.55f * (float)random.NextDouble());
+                var chunkHeight = height * (0.28f + 0.52f * (float)random.NextDouble());
+                var chunkWidth = radius * (0.32f + 0.45f * (float)random.NextDouble());
+                var chunkDepth = chunkWidth * (0.55f + 0.5f * (float)random.NextDouble());
+
+                var position = new Vector3(
+                    Mathf.Cos(angle) * distance,
+                    chunkHeight * 0.5f - 0.25f,
+                    Mathf.Sin(angle) * distance);
+
+                var rotation = Quaternion.Euler(
+                    ((float)random.NextDouble() - 0.5f) * 14f,
+                    (float)random.NextDouble() * 360f,
+                    ((float)random.NextDouble() - 0.5f) * 14f);
+
+                parts.Add(new MeshPart(
+                    Box(new Vector3(chunkWidth, chunkHeight, chunkDepth)),
+                    position,
+                    rotation));
+            }
+
+            // Central broken spire keeps a strong silhouette at RTS zoom.
+            var spireHeight = height * (0.85f + 0.3f * (float)random.NextDouble());
+            parts.Add(new MeshPart(
+                Box(new Vector3(radius * 0.42f, spireHeight, radius * 0.34f)),
+                new Vector3(0f, spireHeight * 0.5f, 0f),
+                Quaternion.Euler(0f, (float)random.NextDouble() * 360f, 3f)));
+
+            return Merge(parts.ToArray());
+        }
+
         // ---- Unit silhouettes (metres) ------------------------------------------------
 
         public static Mesh Infantry()

@@ -1,5 +1,6 @@
 using System;
 using System.IO;
+using CQRa.Sim.Navigation;
 using CQRa.Sim.Units;
 using CQRa.View;
 using UnityEditor;
@@ -34,8 +35,12 @@ namespace CQRa.EditorTools
                 var camera = CreateCamera(terrain);
                 CreateSun();
                 CreateFillLight();
+
+                var scenery = CreateScenery(terrain);
+                CreateNavigation(terrain, scenery);
                 CreateUnits(terrain);
-                CreateSelection(camera, terrain);
+                var marker = CreateMoveMarker(terrain);
+                CreateSelection(camera, terrain, marker);
                 CreateBootstrap();
 
                 EditorSceneManager.MarkSceneDirty(scene);
@@ -72,6 +77,12 @@ namespace CQRa.EditorTools
 
                 var selection = UnityEngine.Object.FindFirstObjectByType<SelectionController>();
                 Debug.Log($"[Diag] selection present={selection != null}");
+
+                var nav = UnityEngine.Object.FindFirstObjectByType<NavGridAuthoring>();
+                Debug.Log($"[Diag] nav authoring present={nav != null}");
+
+                var scenery = UnityEngine.Object.FindFirstObjectByType<Scenery>();
+                Debug.Log($"[Diag] scenery present={scenery != null} obstacles={(scenery != null ? scenery.Obstacles.Length : 0)}");
 
                 var rig = UnityEngine.Object.FindFirstObjectByType<RtsCameraRig>();
                 Debug.Log($"[Diag] rig present={rig != null}");
@@ -181,11 +192,47 @@ namespace CQRa.EditorTools
             spawner.Configure(terrain, material);
         }
 
-        private static void CreateSelection(Camera camera, HeightmapTerrain terrain)
+        private static Scenery CreateScenery(HeightmapTerrain terrain)
+        {
+            var go = new GameObject("Scenery");
+            var scenery = go.AddComponent<Scenery>();
+            var material = NewMaterial("Scenery", Color.white, 0.10f, 0.22f);
+
+            // Obstacle footprints are saved in the scene and mirrored into the nav grid.
+            var obstacles = new[]
+            {
+                new ObstacleSpec { Centre = new Vector2(-24f, 6f), Radius = 7f, Height = 9f, Seed = 11 },
+                new ObstacleSpec { Centre = new Vector2(28f, 14f), Radius = 6f, Height = 7f, Seed = 23 },
+                new ObstacleSpec { Centre = new Vector2(6f, -26f), Radius = 8f, Height = 11f, Seed = 37 },
+                new ObstacleSpec { Centre = new Vector2(-34f, -20f), Radius = 5f, Height = 6f, Seed = 51 },
+                new ObstacleSpec { Centre = new Vector2(40f, -38f), Radius = 4f, Height = 5f, Seed = 67 },
+            };
+
+            scenery.Configure(obstacles, material);
+            return scenery;
+        }
+
+        private static void CreateNavigation(HeightmapTerrain terrain, Scenery scenery)
+        {
+            var go = new GameObject("Navigation");
+            var nav = go.AddComponent<NavGridAuthoring>();
+            nav.Configure(terrain, scenery);
+        }
+
+        private static MoveOrderMarker CreateMoveMarker(HeightmapTerrain terrain)
+        {
+            var go = new GameObject("MoveMarker");
+            var marker = go.AddComponent<MoveOrderMarker>();
+            var material = NewMaterial("MoveMarker", new Color(1f, 0.72f, 0.2f), 0.35f, 0f);
+            marker.Configure(terrain, material);
+            return marker;
+        }
+
+        private static void CreateSelection(Camera camera, HeightmapTerrain terrain, MoveOrderMarker marker)
         {
             var go = new GameObject("Selection");
             var selection = go.AddComponent<SelectionController>();
-            selection.Configure(camera, terrain);
+            selection.Configure(camera, terrain, marker);
         }
 
         private static void CreateBootstrap()

@@ -50,6 +50,22 @@ namespace CQRa.Sim.Units
 
             entityManager.AddComponentData(entity, new HighlightState { IsSelected = 0 });
 
+            entityManager.AddComponentData(entity, new MoveTarget
+            {
+                Destination = position,
+                Field = Entity.Null,
+                DestinationCell = default,
+                ArriveRadius = RadiusFor(kind) + 2.5f,
+                HasOrder = 0,
+            });
+
+            entityManager.AddComponentData(entity, new UnitMotion
+            {
+                Velocity = float2.zero,
+                Yaw = yawRadians,
+                Speed = 0f,
+            });
+
             var description = new RenderMeshDescription(ShadowCastingMode.On, receiveShadows: true);
             var materialMeshInfo = MaterialMeshInfo.FromRenderMeshArrayIndices(materialIndex, meshIndex);
             RenderMeshUtility.AddComponents(entity, entityManager, description, renderMeshArray, materialMeshInfo);

@@ -1,3 +1,4 @@
+using Unity.Entities;
 using UnityEngine;
 
 namespace CQRa.Core
@@ -29,10 +30,35 @@ namespace CQRa.Core
             Application.targetFrameRate = 60;
             Application.runInBackground = true;
 
+            ConfigureSimulationClock();
+
             if (_logOnBoot)
             {
                 Debug.Log($"[CQRa] bootstrap ok | sim={SimHz}Hz | {Screen.width}x{Screen.height} | {SystemInfo.graphicsDeviceType}");
             }
+        }
+
+        /// <summary>
+        /// Entities' fixed-step group defaults to 60 Hz. Lock it to the simulation rate
+        /// so movement, pathfinding and every future gameplay system share one tick.
+        /// </summary>
+        private static void ConfigureSimulationClock()
+        {
+            var world = World.DefaultGameObjectInjectionWorld;
+            if (world == null || !world.IsCreated)
+            {
+                Debug.LogWarning("[CQRa] no ECS world at boot; fixed step left at default");
+                return;
+            }
+
+            var group = world.GetExistingSystemManaged<FixedStepSimulationSystemGroup>();
+            if (group == null)
+            {
+                Debug.LogWarning("[CQRa] FixedStepSimulationSystemGroup missing; fixed step left at default");
+                return;
+            }
+
+            group.Timestep = 1f / SimHz;
         }
 
         private void OnDestroy()

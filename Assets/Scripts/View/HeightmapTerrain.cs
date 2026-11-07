@@ -12,6 +12,7 @@ namespace CQRa.View
     ///
     /// The mesh is built at runtime in <see cref="Awake"/>; no serialised mesh assets.
     /// </summary>
+    [DefaultExecutionOrder(-1000)]
     [RequireComponent(typeof(MeshFilter), typeof(MeshRenderer))]
     public sealed class HeightmapTerrain : MonoBehaviour
     {
@@ -42,6 +43,9 @@ namespace CQRa.View
         public float Size => _size;
         public float MaxHeight => _maxHeight;
         public int Seed => _seed;
+
+        /// <summary>Number of height samples per axis after generation.</summary>
+        public int Resolution => _res;
 
         public Material Material
         {
@@ -103,6 +107,19 @@ namespace CQRa.View
             var a = Mathf.Lerp(h00, h10, tx);
             var b = Mathf.Lerp(h01, h11, tx);
             return Mathf.Lerp(a, b, tz);
+        }
+
+        /// <summary>Raw height sample (no interpolation). Used to hand terrain data to the sim.</summary>
+        public float GridHeight(int x, int z)
+        {
+            if (_heights == null || _res < 2)
+            {
+                return 0f;
+            }
+
+            x = Mathf.Clamp(x, 0, _res - 1);
+            z = Mathf.Clamp(z, 0, _res - 1);
+            return _heights[z * _res + x];
         }
 
         /// <summary>Approximate surface normal from finite differences.</summary>

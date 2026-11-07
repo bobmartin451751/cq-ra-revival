@@ -1,8 +1,12 @@
 using System;
+using System.Globalization;
 using System.IO;
+using CQRa.Sim.Navigation;
 using CQRa.Sim.Units;
+using CQRa.View;
 using Unity.Collections;
 using Unity.Entities;
+using Unity.Mathematics;
 using UnityEngine;
 
 namespace CQRa.Core
@@ -22,6 +26,9 @@ namespace CQRa.Core
         private RenderTexture _target;
         private string _path;
         private bool _selectAll;
+        private float2? _moveTo;
+        private int _moveTeam;
+        private int _captureFrame = WarmupFrames;
         private int _frames;
 
         private void Start()
@@ -52,8 +59,13 @@ namespace CQRa.Core
             _camera.aspect = (float)Width / Height;
 
             _selectAll = HasArg("-selectall");
+            _moveTo = ReadMoveTarget();
+            _moveTeam = ReadIntArg("-moveteam", 0);
 
-            Debug.Log($"[Capture] armed -> {_path}");
+            var waitFrames = ReadIntArg("-waitframes", WarmupFrames);
+            _captureFrame = Mathf.Max(WarmupFrames, waitFrames);
+
+            Debug.Log($"[Capture] armed -> {_path} (capture frame {_captureFrame})");
         }
 
         private void LateUpdate()
@@ -65,13 +77,21 @@ namespace CQRa.Core
 
             _frames++;
 
-            // Units are spawned in Start, so wait a frame before selecting them.
-            if (_selectAll && _frames == 2)
+            // Units are spawned in Start, so wait a frame before touching them.
+            if (_frames == 2)
             {
-                SelectAllUnits();
+                if (_selectAll)
+                {
+                    SelectAllUnits();
+                }
+
+                if (_moveTo.HasValue)
+                {
+                    IssueMoveOrder(_moveTo.Value, _moveTeam);
+                }
             }
 
-            if (_frames < WarmupFrames)
+            if (_frames < _captureFrame)
             {
                 return;
             }
@@ -161,6 +181,89 @@ namespace CQRa.Core
             }
 
             Debug.Log($"[Capture] selected {entities.Length} units");
+        }
+
+        /// <summary>
+        /// Development helper used by the Phase 3 movement screenshot: orders every unit
+        /// on a team to advance on a ground point, then drops the selection so the shot
+        /// shows normal team colours.
+        /// </summary>
+        private void IssueMoveOrder(float2 destination, int team)
+        {
+            var world = World.DefaultGameObjectInjectionWorld;
+            if (world == null || !world.IsCreated)
+            {
+                return;
+            }
+
+            var entityManager = world.EntityManager;
+            var terrain = UnityEngine.Object.FindFirstObjectByType<HeightmapTerrain>();
+            var point = new float3(
+                destination.x,
+                terrain != null ? terrain.SampleHeight(destination.x, destination.y) : 0f,
+                destination.y);
+
+            if (NavGridQuery.TryClampToWalkable(entityManager, point, out var clamped))
+            {
+                point = clamped;
+            }
+
+            using var query = entityManager.CreateEntityQuery(
+                ComponentType.ReadWrite<UnitInfo>(),
+                ComponentType.ReadWrite<MoveTarget>());
+            using var entities = query.ToEntityArray(Allocator.Temp);
+
+            var ordered = 0;
+            foreach (var entity in entities)
+            {
+                var info = entityManager.GetComponentData<UnitInfo>(entity);
+                if (info.Team != team)
+                {
+                    continue;
+                }
+
+                var target = entityManager.GetComponentData<MoveTarget>(entity);
+                target.Destination = point;
+                target.Field = Entity.Null;
+                target.HasOrder = 1;
+                entityManager.SetComponentData(entity, target);
+                ordered++;
+
+                if (!_selectAll)
+                {
+                    entityManager.SetComponentEnabled<Selected>(entity, false);
+                }
+            }
+
+            Debug.Log($"[Capture] ordered {ordered} team-{team} units to {point}");
+        }
+
+        private float2? ReadMoveTarget()
+        {
+            var text = ReadArg("-moveto");
+            if (string.IsNullOrEmpty(text))
+            {
+                return null;
+            }
+
+            var parts = text.Split(',');
+            if (parts.Length != 2 ||
+                !float.TryParse(parts[0], NumberStyles.Float, CultureInfo.InvariantCulture, out var x) ||
+                !float.TryParse(parts[1], NumberStyles.Float, CultureInfo.InvariantCulture, out var z))
+            {
+                Debug.LogWarning($"[Capture] could not parse -moveto '{text}' (expected x,z)");
+                return null;
+            }
+
+            return new float2(x, z);
+        }
+
+        private static int ReadIntArg(string flag, int fallback)
+        {
+            var text = ReadArg(flag);
+            return int.TryParse(text, NumberStyles.Integer, CultureInfo.InvariantCulture, out var value)
+                ? value
+                : fallback;
         }
 
         private static string ReadArg(string flag)
