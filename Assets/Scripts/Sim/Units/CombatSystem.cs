@@ -112,6 +112,15 @@ namespace CQRa.Sim.Units
                 {
                     if (targetDistance <= weapon.Range)
                     {
+                        // Stop a chase as soon as the target is in range, otherwise the
+                        // unit drives through/past the target while shooting.
+                        if (moveTarget.HasOrder != 0)
+                        {
+                            moveTarget.HasOrder = 0;
+                            moveTarget.Field = Entity.Null;
+                            entityManager.SetComponentData(entity, moveTarget);
+                        }
+
                         if (weapon.CooldownRemaining <= 0f)
                         {
                             Fire(entityManager, entity, state.Target, position, weapon, ref dead);

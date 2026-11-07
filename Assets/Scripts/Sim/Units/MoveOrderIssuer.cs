@@ -79,6 +79,16 @@ namespace CQRa.Sim.Units
                     target.FormationRadius = formationRadius;
                     target.HasOrder = 1;
                     entityManager.SetComponentData(entity, target);
+
+                    // A move order always overrides an attack order.
+                    if (entityManager.HasComponent<CombatState>(entity))
+                    {
+                        entityManager.SetComponentData(entity, new CombatState
+                        {
+                            Target = Entity.Null,
+                            Explicit = 0,
+                        });
+                    }
                 }
             }
             finally

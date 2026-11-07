@@ -205,6 +205,134 @@ namespace CQRa.Tests.PlayMode
         }
 
         [UnityTest]
+        public IEnumerator MoveOrder_CancelsExplicitAttack()
+        {
+            yield return null;
+
+            var world = World.DefaultGameObjectInjectionWorld;
+            var entityManager = world.EntityManager;
+            var data = CreateWorldData(entityManager, 140f, 71, 1f);
+            var owned = new NativeList<Entity>(Allocator.Persistent);
+            var shader = Shader.Find("Universal Render Pipeline/Lit");
+            var material = new Material(shader);
+            var meshes = Meshes();
+
+            try
+            {
+                var renderMeshArray = CreateRenderMeshArray(meshes, material);
+
+                var tank = UnitFactory.Spawn(
+                    entityManager, renderMeshArray, (int)UnitKind.Tank,
+                    UnitMaterials.BaseIndex(0, UnitKind.Tank),
+                    new float3(-30f, 0f, 0f), 0f, UnitKind.Tank, 0);
+                owned.Add(tank);
+
+                var infantry = UnitFactory.Spawn(
+                    entityManager, renderMeshArray, (int)UnitKind.Infantry,
+                    UnitMaterials.BaseIndex(1, UnitKind.Infantry),
+                    new float3(30f, 0f, 0f), 0f, UnitKind.Infantry, 1);
+                owned.Add(infantry);
+
+                OrderAttack(entityManager, tank, infantry);
+
+                var moveUnits = new NativeList<Entity>(1, Allocator.Temp);
+                moveUnits.Add(tank);
+                Assert.IsTrue(
+                    MoveOrderIssuer.TryIssue(entityManager, moveUnits, new float3(-60f, 0f, 0f), out _),
+                    "move order should be issued");
+                moveUnits.Dispose();
+
+                var state = entityManager.GetComponentData<CombatState>(tank);
+                Assert.AreEqual(Entity.Null, state.Target, "a move order must clear the attack target");
+                Assert.AreEqual(0, state.Explicit, "a move order must clear the explicit flag");
+
+                for (var frame = 0; frame < 600; frame++)
+                {
+                    yield return null;
+                }
+
+                Assert.Less(
+                    entityManager.GetComponentData<LocalTransform>(tank).Position.x,
+                    -45f,
+                    "the tank should follow the move order away from the enemy");
+                Assert.IsTrue(
+                    entityManager.Exists(infantry) &&
+                    entityManager.GetComponentData<Health>(infantry).Current > 0f,
+                    "the abandoned target must not take damage");
+            }
+            finally
+            {
+                Cleanup(entityManager, data, owned, material, meshes);
+            }
+        }
+
+        [UnityTest]
+        public IEnumerator ExplicitAttack_StopsAtWeaponRange()
+        {
+            yield return null;
+
+            var world = World.DefaultGameObjectInjectionWorld;
+            var entityManager = world.EntityManager;
+            var data = CreateWorldData(entityManager, 140f, 71, 1f);
+            var owned = new NativeList<Entity>(Allocator.Persistent);
+            var shader = Shader.Find("Universal Render Pipeline/Lit");
+            var material = new Material(shader);
+            var meshes = Meshes();
+
+            try
+            {
+                var renderMeshArray = CreateRenderMeshArray(meshes, material);
+
+                var tank = UnitFactory.Spawn(
+                    entityManager, renderMeshArray, (int)UnitKind.Tank,
+                    UnitMaterials.BaseIndex(0, UnitKind.Tank),
+                    new float3(-30f, 0f, 0f), 0f, UnitKind.Tank, 0);
+                owned.Add(tank);
+
+                var infantry = UnitFactory.Spawn(
+                    entityManager, renderMeshArray, (int)UnitKind.Infantry,
+                    UnitMaterials.BaseIndex(1, UnitKind.Infantry),
+                    new float3(30f, 0f, 0f), 0f, UnitKind.Infantry, 1);
+                owned.Add(infantry);
+
+                OrderAttack(entityManager, tank, infantry);
+
+                var lastPosition = entityManager.GetComponentData<LocalTransform>(tank).Position;
+                for (var frame = 0; frame < 2400; frame++)
+                {
+                    if (!entityManager.Exists(infantry))
+                    {
+                        break;
+                    }
+
+                    if (entityManager.Exists(tank))
+                    {
+                        lastPosition = entityManager.GetComponentData<LocalTransform>(tank).Position;
+                    }
+
+                    yield return null;
+                }
+
+                Assert.IsFalse(entityManager.Exists(infantry), "the ordered tank must kill the target");
+
+                var distance = math.distance(
+                    new float2(lastPosition.x, lastPosition.z),
+                    new float2(30f, 0f));
+
+                Assert.Greater(distance, 10f, "the tank must stop at weapon range, not drive into the target");
+                Assert.LessOrEqual(distance, 26f, "the tank must close to within weapon range");
+                Assert.AreEqual(
+                    0,
+                    entityManager.GetComponentData<MoveTarget>(tank).HasOrder,
+                    "the chase order must be cleared once in range");
+            }
+            finally
+            {
+                Cleanup(entityManager, data, owned, material, meshes);
+            }
+        }
+
+        [UnityTest]
         public IEnumerator Harvester_IsNotAcquiredAsThreat_ButCanBeDestroyed()
         {
             yield return null;

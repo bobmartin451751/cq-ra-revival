@@ -38,7 +38,8 @@ no unit can ever become invulnerable.
 - **Attack order.** Right-clicking an enemy issues an explicit order to every selected
   armed unit. Explicit targets are never dropped for distance: a unit outside weapon
   range walks into range (a normal move order with the target position as the flow
-  field destination), then fires. The order clears when the target dies.
+  field destination), then stops chasing and fires. The order clears when the target
+  dies, and a later move order cancels it.
 - **No friendly fire.** Targets are filtered by `UnitInfo.Team`; a unit can never
   acquire or damage a teammate.
 - **Death.** Entities at zero health are destroyed at the end of the tick. Field-cache
@@ -70,7 +71,7 @@ match resolves.
 `CombatState` an ordinary right-click writes. The capture waits 800 frames, which is
 roughly when the two spawn groups meet at the 30 Hz tick rate.
 
-Suites: EditMode 23/23, PlayMode 15/15.
+Suites: EditMode 23/23, PlayMode 17/17.
 
 ### Covered by tests
 
@@ -81,6 +82,8 @@ Suites: EditMode 23/23, PlayMode 15/15.
 - An idle tank auto-acquires and destroys an infantryman in range.
 - Friendly units never acquire or damage each other.
 - An explicit attack order chases a target 80 m away and kills it.
+- A chasing unit stops at weapon range instead of driving through its target.
+- A move order cancels an explicit attack order and the abandoned target is unharmed.
 - Killing the last enemy unit sets `MatchState.GameOver` and the winning team.
 - An unarmed harvester is still a valid (destructible) target.
 

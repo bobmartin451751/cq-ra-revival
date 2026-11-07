@@ -67,6 +67,9 @@ namespace CQRa.View
 
         private void Update()
         {
+            // Destroyed units must leave the selection immediately (HUD counts, orders).
+            PruneSelection();
+
             var mouse = Mouse.current;
             if (mouse == null)
             {
