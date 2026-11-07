@@ -53,9 +53,11 @@ namespace CQRa.Sim.Units
             entityManager.AddComponentData(entity, new MoveTarget
             {
                 Destination = position,
+                PathDestination = position,
                 Field = Entity.Null,
                 DestinationCell = default,
                 ArriveRadius = RadiusFor(kind) + 2.5f,
+                FormationRadius = 0f,
                 HasOrder = 0,
             });
 

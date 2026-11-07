@@ -9,10 +9,18 @@ namespace CQRa.Sim.Units
     /// </summary>
     public struct MoveTarget : IComponentData
     {
+        /// <summary>This unit's own arrival point (formation slot).</summary>
         public float3 Destination;
+
+        /// <summary>Shared group destination used to build the flow field.</summary>
+        public float3 PathDestination;
+
         public Entity Field;
         public int2 DestinationCell;
         public float ArriveRadius;
+
+        /// <summary>Radius of the formation the unit belongs to (0 for a solo order).</summary>
+        public float FormationRadius;
         public byte HasOrder;
     }
 

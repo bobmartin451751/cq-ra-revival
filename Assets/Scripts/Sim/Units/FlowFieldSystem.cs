@@ -58,6 +58,16 @@ namespace CQRa.Sim.Units
             var fields = new NativeList<Entity>(Allocator.Temp);
             fields.AddRange(fieldEntities);
 
+            var referenced = new NativeParallelHashSet<Entity>(math.max(4, units.Length), Allocator.Temp);
+            for (var i = 0; i < units.Length; i++)
+            {
+                var target = entityManager.GetComponentData<MoveTarget>(units[i]);
+                if (target.HasOrder != 0 && target.Field != Entity.Null)
+                {
+                    referenced.Add(target.Field);
+                }
+            }
+
             var requested = new NativeList<int>(Allocator.Temp);
             var walkable = default(NativeArray<byte>);
             var hasWalkable = false;
@@ -92,7 +102,7 @@ namespace CQRa.Sim.Units
 
                 var rawCell = NavGridMath.WorldToCell(
                     gridInfo,
-                    new float2(target.Destination.x, target.Destination.z));
+                    new float2(target.PathDestination.x, target.PathDestination.z));
                 var cell = NavGridBuilder.NearestWalkable(
                     walkable,
                     gridInfo.Size,
@@ -134,11 +144,12 @@ namespace CQRa.Sim.Units
                 lastRequested = packed;
 
                 var cell = new int2(packed % gridInfo.Size.x, packed / gridInfo.Size.x);
-                var field = BuildOrReuse(entityManager, gridInfo, walkable, fields, cell);
+                var field = BuildOrReuse(entityManager, gridInfo, walkable, fields, referenced, cell);
                 AssignField(entityManager, units, cell, field);
             }
 
             requested.Dispose();
+            referenced.Dispose();
             fields.Dispose();
 
             if (hasWalkable)
@@ -152,6 +163,7 @@ namespace CQRa.Sim.Units
             in NavGridInfo gridInfo,
             NativeArray<byte> walkable,
             NativeList<Entity> fields,
+            NativeParallelHashSet<Entity> referenced,
             int2 cell)
         {
             var fieldEntity = Entity.Null;
@@ -174,6 +186,13 @@ namespace CQRa.Sim.Units
                 {
                     fieldEntity = candidate;
                     break;
+                }
+
+                // Never repurpose a field that a unit is currently following;
+                // otherwise the unit silently starts walking to someone else's target.
+                if (referenced.Contains(candidate))
+                {
+                    continue;
                 }
 
                 if (meta.Generation < oldestGeneration)

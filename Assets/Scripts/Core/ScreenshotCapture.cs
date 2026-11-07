@@ -203,36 +203,41 @@ namespace CQRa.Core
                 terrain != null ? terrain.SampleHeight(destination.x, destination.y) : 0f,
                 destination.y);
 
-            if (NavGridQuery.TryClampToWalkable(entityManager, point, out var clamped))
-            {
-                point = clamped;
-            }
-
             using var query = entityManager.CreateEntityQuery(
-                ComponentType.ReadWrite<UnitInfo>(),
+                ComponentType.ReadOnly<UnitInfo>(),
                 ComponentType.ReadWrite<MoveTarget>());
             using var entities = query.ToEntityArray(Allocator.Temp);
 
+            var selected = new NativeList<Entity>(entities.Length, Allocator.Temp);
             var ordered = 0;
-            foreach (var entity in entities)
+            try
             {
-                var info = entityManager.GetComponentData<UnitInfo>(entity);
-                if (info.Team != team)
+                foreach (var entity in entities)
                 {
-                    continue;
+                    var info = entityManager.GetComponentData<UnitInfo>(entity);
+                    if (info.Team != team)
+                    {
+                        continue;
+                    }
+
+                    selected.Add(entity);
+
+                    if (!_selectAll)
+                    {
+                        entityManager.SetComponentEnabled<Selected>(entity, false);
+                    }
                 }
 
-                var target = entityManager.GetComponentData<MoveTarget>(entity);
-                target.Destination = point;
-                target.Field = Entity.Null;
-                target.HasOrder = 1;
-                entityManager.SetComponentData(entity, target);
-                ordered++;
+                ordered = selected.Length;
 
-                if (!_selectAll)
+                if (MoveOrderIssuer.TryIssue(entityManager, selected, point, out var resolved))
                 {
-                    entityManager.SetComponentEnabled<Selected>(entity, false);
+                    point = resolved;
                 }
+            }
+            finally
+            {
+                selected.Dispose();
             }
 
             Debug.Log($"[Capture] ordered {ordered} team-{team} units to {point}");

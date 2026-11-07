@@ -144,31 +144,33 @@ namespace CQRa.View
             var entityManager = world.EntityManager;
             var destination = new float3(point.x, point.y, point.z);
 
-            if (NavGridQuery.TryClampToWalkable(entityManager, destination, out var clamped))
-            {
-                destination = clamped;
-            }
-
             PruneSelection();
 
-            for (var i = 0; i < _selected.Count; i++)
+            var units = new NativeList<Entity>(_selected.Count, Allocator.Temp);
+            try
             {
-                var entity = _selected[i];
-                if (!entityManager.Exists(entity) || !entityManager.HasComponent<MoveTarget>(entity))
+                for (var i = 0; i < _selected.Count; i++)
                 {
-                    continue;
+                    var entity = _selected[i];
+                    if (entityManager.Exists(entity) && entityManager.HasComponent<MoveTarget>(entity))
+                    {
+                        units.Add(entity);
+                    }
                 }
 
-                var target = entityManager.GetComponentData<MoveTarget>(entity);
-                target.Destination = destination;
-                target.Field = Entity.Null;
-                target.HasOrder = 1;
-                entityManager.SetComponentData(entity, target);
+                if (MoveOrderIssuer.TryIssue(entityManager, units, destination, out var resolved))
+                {
+                    destination = resolved;
+                }
+            }
+            finally
+            {
+                units.Dispose();
             }
 
             if (_moveMarker != null)
             {
-                _moveMarker.Show(point);
+                _moveMarker.Show(new Vector3(destination.x, destination.y, destination.z));
             }
         }
 

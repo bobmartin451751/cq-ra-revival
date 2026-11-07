@@ -20,8 +20,19 @@ namespace CQRa.Sim.Units
     {
         private const float TurnRate = 7.5f;
         private const float SeparationStrength = 1.25f;
+        private const float MaxSeparation = 0.75f;
         private const float SeparationCellSize = 8f;
         private const float VelocitySmoothing = 12f;
+
+        /// <summary>
+        /// Within this radius of the group's shared destination, units steer straight
+        /// at their own formation slot instead of following the shared flow field.
+        /// The shared field leads to the click point, which can be on the far side of
+        /// the group: a unit whose slot is behind the pack would orbit the group
+        /// centre forever because the field keeps pulling it back in.
+        /// </summary>
+        private const float FormationApproachRadius = 22f;
+        private const float FormationApproachMargin = 12f;
 
         protected override void OnUpdate()
         {
@@ -147,6 +158,20 @@ namespace CQRa.Sim.Units
                 else
                 {
                     var blend = math.saturate((target.ArriveRadius + 6f - distance) / 6f);
+                    var groupDistance = math.distance(
+                        positionXZ,
+                        new float2(target.PathDestination.x, target.PathDestination.z));
+
+                    // Inside the formation footprint, steer straight at the unit's own slot.
+                    // The shared field always aims at the click point, so a unit heading for
+                    // a slot on the far side would otherwise be pulled back towards the
+                    // centre and oscillate there forever.
+                    var approachStart = target.FormationRadius > 0f
+                        ? target.FormationRadius + FormationApproachMargin
+                        : FormationApproachRadius;
+                    var approach = math.saturate(
+                        (approachStart - groupDistance) / FormationApproachMargin);
+                    blend = math.max(blend, approach);
                     desiredDirection = math.normalizesafe(
                         math.lerp(desiredDirection, directDirection, blend),
                         directDirection);
@@ -159,7 +184,23 @@ namespace CQRa.Sim.Units
                     i,
                     positionXZ);
 
-                var steer = desiredDirection + separation * SeparationStrength;
+                // Near the arrival point, spacing must not prevent units from settling.
+                var separationScale = math.lerp(
+                    0.2f,
+                    1f,
+                    math.saturate((distance - target.ArriveRadius) / 8f));
+
+                // Cap avoidance so a dense pack can deflect a unit but never reverse it.
+                // Without this, several overlapping neighbours can out-vote the move
+                // direction and lock units at the edge of a group forever.
+                var separationSteer = separation * (SeparationStrength * separationScale);
+                var separationMagnitude = math.length(separationSteer);
+                if (separationMagnitude > MaxSeparation)
+                {
+                    separationSteer *= MaxSeparation / separationMagnitude;
+                }
+
+                var steer = desiredDirection + separationSteer;
                 var desiredVelocity = math.normalizesafe(steer, desiredDirection) * info.MaxSpeed;
 
                 // Ease off on the last few metres so units settle instead of orbiting.

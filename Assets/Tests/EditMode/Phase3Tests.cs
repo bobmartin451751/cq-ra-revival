@@ -186,6 +186,80 @@ namespace CQRa.Tests.EditMode
         }
 
         [Test]
+        public void FlowField_UnreachableRegion_HasNoDirectionsAndTerminates()
+        {
+            const int size = 24;
+            var walkable = new NativeArray<byte>(size * size, Allocator.TempJob);
+            var directions = new NativeArray<byte>(size * size, Allocator.TempJob);
+            var integration = new NativeArray<int>(size * size, Allocator.TempJob);
+
+            try
+            {
+                for (var i = 0; i < walkable.Length; i++)
+                {
+                    walkable[i] = 1;
+                }
+
+                // Complete wall: no gap.
+                for (var z = 0; z < size; z++)
+                {
+                    walkable[z * size + 12] = 0;
+                }
+
+                FlowFieldBuilder.Build(walkable, new int2(size, size), new int2(18, 12), directions, integration);
+
+                Assert.AreEqual(
+                    NavGridMath.NoDirection,
+                    directions[4 * size + 4],
+                    "cells on the far side of an unbroken wall have no direction");
+                Assert.AreEqual(
+                    int.MaxValue,
+                    integration[4 * size + 4],
+                    "unreachable cells stay at max cost");
+            }
+            finally
+            {
+                walkable.Dispose();
+                directions.Dispose();
+                integration.Dispose();
+            }
+        }
+
+        [Test]
+        public void FlowField_BlockedDestination_ProducesEmptyField()
+        {
+            const int size = 8;
+            var walkable = new NativeArray<byte>(size * size, Allocator.TempJob);
+            var directions = new NativeArray<byte>(size * size, Allocator.TempJob);
+            var integration = new NativeArray<int>(size * size, Allocator.TempJob);
+
+            try
+            {
+                for (var i = 0; i < walkable.Length; i++)
+                {
+                    walkable[i] = 1;
+                }
+
+                walkable[4 * size + 4] = 0;
+                FlowFieldBuilder.Build(walkable, new int2(size, size), new int2(4, 4), directions, integration);
+
+                for (var i = 0; i < directions.Length; i++)
+                {
+                    Assert.AreEqual(
+                        NavGridMath.NoDirection,
+                        directions[i],
+                        "a blocked destination must not produce directions");
+                }
+            }
+            finally
+            {
+                walkable.Dispose();
+                directions.Dispose();
+                integration.Dispose();
+            }
+        }
+
+        [Test]
         public void TerrainSampler_MatchesFlatAndSlope()
         {
             var heights = new NativeArray<TerrainHeightSample>(9, Allocator.Temp);
