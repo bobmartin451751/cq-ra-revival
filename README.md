@@ -21,6 +21,7 @@ alone. The replay browser's AI-vision overlay lets you verify it.
 .\tools\screenshot.ps1                  # boots the scene, writes .temp/screens/phase2.png
 .\tools\screenshot.ps1 -SelectAll       # same, with every unit selected
 .\tools\screenshot.ps1 -Out .temp/screens/phase3-move.png -MoveTo "-10,6" -WaitFrames 170
+.\tools\screenshot.ps1 -Out .temp/screens/phase4-battle.png -Attack -MoveTeam 0 -WaitFrames 800
 .\tools\run-tests.ps1                   # EditMode + PlayMode suites
 .\tools\build.ps1                       # Windows player -> Builds/Windows
 ```
@@ -29,8 +30,8 @@ Open the project in Unity Hub and play `Assets/Scenes/Main.unity` to run it norm
 
 **Controls:** WASD/arrows or middle-drag to pan, wheel to zoom, Q/E to rotate,
 edge scroll at the screen border, left-click to select, drag a box to multi-select,
-Shift to add, **right-click to move**, Esc to clear. See `docs/phase2.md` and
-`docs/phase3.md` for details.
+Shift to add, **right-click to move**, **right-click an enemy to attack**, Esc to clear.
+See `docs/phase2.md`, `docs/phase3.md` and `docs/phase4.md` for details.
 
 ## Layout
 
@@ -60,5 +61,6 @@ tools/               headless scripts
 | 1 - scaffold | OK - scene, camera, tests, screenshot loop |
 | 2 - terrain, camera, selection | OK - heightmap, RTS camera rig, click + box select, highlight |
 | 3 - movement + pathfinding | OK - nav grid, Burst flow fields, steering, right-click orders |
+| 4 - combat core | OK - health, weapons, auto-acquire, attack orders, damage, death, match state |
 
 See `docs/spec.md` for the full roadmap and frozen scope.

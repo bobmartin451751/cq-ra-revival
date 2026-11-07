@@ -41,6 +41,7 @@ namespace CQRa.EditorTools
                 CreateUnits(terrain);
                 var marker = CreateMoveMarker(terrain);
                 CreateSelection(camera, terrain, marker);
+                CreateCombatFx();
                 CreateBootstrap();
 
                 EditorSceneManager.MarkSceneDirty(scene);
@@ -233,6 +234,12 @@ namespace CQRa.EditorTools
             var go = new GameObject("Selection");
             var selection = go.AddComponent<SelectionController>();
             selection.Configure(camera, terrain, marker);
+        }
+
+        private static void CreateCombatFx()
+        {
+            var go = new GameObject("CombatFX");
+            go.AddComponent<CombatTracerRenderer>();
         }
 
         private static void CreateBootstrap()

@@ -7,6 +7,7 @@ using CQRa.View;
 using Unity.Collections;
 using Unity.Entities;
 using Unity.Mathematics;
+using Unity.Transforms;
 using UnityEngine;
 
 namespace CQRa.Core
@@ -26,6 +27,7 @@ namespace CQRa.Core
         private RenderTexture _target;
         private string _path;
         private bool _selectAll;
+        private bool _attack;
         private float2? _moveTo;
         private int _moveTeam;
         private int _captureFrame = WarmupFrames;
@@ -59,6 +61,7 @@ namespace CQRa.Core
             _camera.aspect = (float)Width / Height;
 
             _selectAll = HasArg("-selectall");
+            _attack = HasArg("-attack");
             _moveTo = ReadMoveTarget();
             _moveTeam = ReadIntArg("-moveteam", 0);
 
@@ -88,6 +91,11 @@ namespace CQRa.Core
                 if (_moveTo.HasValue)
                 {
                     IssueMoveOrder(_moveTo.Value, _moveTeam);
+                }
+
+                if (_attack)
+                {
+                    IssueAttackOrder(_moveTeam);
                 }
             }
 
@@ -241,6 +249,83 @@ namespace CQRa.Core
             }
 
             Debug.Log($"[Capture] ordered {ordered} team-{team} units to {point}");
+        }
+
+        /// <summary>
+        /// Development helper for the Phase 4 combat screenshot: every armed unit on a
+        /// team is ordered to attack its nearest enemy, exactly as a right-click would.
+        /// </summary>
+        private void IssueAttackOrder(int team)
+        {
+            var world = World.DefaultGameObjectInjectionWorld;
+            if (world == null || !world.IsCreated)
+            {
+                return;
+            }
+
+            var entityManager = world.EntityManager;
+            using var query = entityManager.CreateEntityQuery(
+                ComponentType.ReadOnly<UnitInfo>(),
+                ComponentType.ReadOnly<Health>(),
+                ComponentType.ReadOnly<Weapon>(),
+                ComponentType.ReadWrite<CombatState>(),
+                ComponentType.ReadWrite<MoveTarget>(),
+                ComponentType.ReadOnly<LocalTransform>());
+            using var entities = query.ToEntityArray(Allocator.Temp);
+
+            var ordered = 0;
+            foreach (var entity in entities)
+            {
+                var info = entityManager.GetComponentData<UnitInfo>(entity);
+                if (info.Team != team || entityManager.GetComponentData<Weapon>(entity).Damage <= 0f)
+                {
+                    continue;
+                }
+
+                var position = entityManager.GetComponentData<LocalTransform>(entity).Position;
+                var target = Entity.Null;
+                var bestDistanceSq = float.MaxValue;
+
+                foreach (var candidate in entities)
+                {
+                    if (entityManager.GetComponentData<UnitInfo>(candidate).Team == team)
+                    {
+                        continue;
+                    }
+
+                    var candidatePosition = entityManager.GetComponentData<LocalTransform>(candidate).Position;
+                    var distanceSq = math.distancesq(position, candidatePosition);
+                    if (distanceSq < bestDistanceSq)
+                    {
+                        bestDistanceSq = distanceSq;
+                        target = candidate;
+                    }
+                }
+
+                if (target == Entity.Null)
+                {
+                    continue;
+                }
+
+                var state = entityManager.GetComponentData<CombatState>(entity);
+                state.Target = target;
+                state.Explicit = 1;
+                entityManager.SetComponentData(entity, state);
+
+                var move = entityManager.GetComponentData<MoveTarget>(entity);
+                move.HasOrder = 0;
+                move.Field = Entity.Null;
+                entityManager.SetComponentData(entity, move);
+
+                if (!_selectAll)
+                {
+                    entityManager.SetComponentEnabled<Selected>(entity, false);
+                }
+
+                ordered++;
+            }
+
+            Debug.Log($"[Capture] ordered {ordered} team-{team} units to attack");
         }
 
         private float2? ReadMoveTarget()

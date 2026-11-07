@@ -61,6 +61,29 @@ namespace CQRa.Sim.Units
                 HasOrder = 0,
             });
 
+            var combat = CombatStats.For(kind);
+            entityManager.AddComponentData(entity, new Health
+            {
+                Max = combat.MaxHealth,
+                Current = combat.MaxHealth,
+                Armor = combat.Armor,
+            });
+
+            entityManager.AddComponentData(entity, new Weapon
+            {
+                Damage = combat.Damage,
+                Range = combat.Range,
+                Cooldown = combat.Cooldown,
+                CooldownRemaining = 0f,
+                AcquireRange = combat.AcquireRange,
+            });
+
+            entityManager.AddComponentData(entity, new CombatState
+            {
+                Target = Entity.Null,
+                Explicit = 0,
+            });
+
             entityManager.AddComponentData(entity, new UnitMotion
             {
                 Velocity = float2.zero,

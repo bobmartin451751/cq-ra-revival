@@ -35,6 +35,7 @@ namespace CQRa.View
         private int _movingCount;
 
         private GUIStyle _hintStyle;
+        private GUIStyle _bannerStyle;
 
         public IReadOnlyList<Entity> Selected => _selected;
 
@@ -117,7 +118,11 @@ namespace CQRa.View
 
             if (mouse.rightButton.wasPressedThisFrame && _selected.Count > 0)
             {
-                IssueMoveOrder(mouse.position.ReadValue());
+                var screenPosition = mouse.position.ReadValue();
+                if (!TryIssueAttackOrder(screenPosition))
+                {
+                    IssueMoveOrder(screenPosition);
+                }
             }
 
             _movingCount = CountMovingUnits();
@@ -174,10 +179,81 @@ namespace CQRa.View
             }
         }
 
-        private void SelectAtPoint(Vector2 screenPosition, bool additive)
+        /// <summary>
+        /// Right-click on an enemy unit issues an attack order to every selected armed
+        /// unit. The target is explicit, so a unit outside weapon range will chase;
+        /// the combat system clears the order when the target dies.
+        /// </summary>
+        private bool TryIssueAttackOrder(Vector2 screenPosition)
         {
-            PruneSelection();
+            if (!TryPickUnit(screenPosition, out var target))
+            {
+                return false;
+            }
 
+            var world = World.DefaultGameObjectInjectionWorld;
+            if (world == null || !world.IsCreated)
+            {
+                return false;
+            }
+
+            var entityManager = world.EntityManager;
+            if (!entityManager.HasComponent<UnitInfo>(target))
+            {
+                return false;
+            }
+
+            var targetTeam = entityManager.GetComponentData<UnitInfo>(target).Team;
+            var ordered = 0;
+
+            for (var i = 0; i < _selected.Count; i++)
+            {
+                var entity = _selected[i];
+                if (!entityManager.Exists(entity) ||
+                    !entityManager.HasComponent<UnitInfo>(entity) ||
+                    !entityManager.HasComponent<Weapon>(entity) ||
+                    !entityManager.HasComponent<CombatState>(entity) ||
+                    entityManager.GetComponentData<UnitInfo>(entity).Team == targetTeam)
+                {
+                    continue;
+                }
+
+                if (entityManager.GetComponentData<Weapon>(entity).Damage <= 0f)
+                {
+                    continue;
+                }
+
+                var state = entityManager.GetComponentData<CombatState>(entity);
+                state.Target = target;
+                state.Explicit = 1;
+                entityManager.SetComponentData(entity, state);
+
+                // Stop moving so the unit engages immediately (or chases in combat).
+                var move = entityManager.GetComponentData<MoveTarget>(entity);
+                move.HasOrder = 0;
+                move.Field = Entity.Null;
+                entityManager.SetComponentData(entity, move);
+
+                ordered++;
+            }
+
+            if (ordered == 0)
+            {
+                return false;
+            }
+
+            if (_moveMarker != null)
+            {
+                var position = entityManager.GetComponentData<LocalTransform>(target).Position;
+                _moveMarker.Show(new Vector3(position.x, position.y, position.z));
+            }
+
+            return true;
+        }
+
+        /// <summary>Screen-space pick of the closest unit under the cursor.</summary>
+        private bool TryPickUnit(Vector2 screenPosition, out Entity picked)
+        {
             var best = Entity.Null;
             var bestDistance = _pickRadiusPixels;
 
@@ -196,12 +272,22 @@ namespace CQRa.View
                 }
             });
 
+            picked = best;
+            return best != Entity.Null;
+        }
+
+        private void SelectAtPoint(Vector2 screenPosition, bool additive)
+        {
+            PruneSelection();
+
+            var hasPicked = TryPickUnit(screenPosition, out var best);
+
             if (!additive)
             {
                 ClearSelection();
             }
 
-            if (best == Entity.Null)
+            if (!hasPicked)
             {
                 return;
             }
@@ -368,14 +454,98 @@ namespace CQRa.View
             }
 
             var moving = _movingCount;
-            var hint = $"Selected: {_selected.Count}   Moving: {moving}    LMB select · drag box · Shift add · RMB move · Esc clear";
+            var healthText = SelectedHealthText();
+            var hint = $"Selected: {_selected.Count}   Moving: {moving}{healthText}    LMB select · drag box · Shift add · RMB move / attack · Esc clear";
+
+            var match = ReadMatchState();
+            if (match.HasValue)
+            {
+                var state = match.Value;
+                var teamText = $"   R:{state.Team0Alive}  B:{state.Team1Alive}";
+                var previousColor = GUI.color;
+
+                GUI.color = new Color(0.05f, 0.04f, 0.03f, 0.72f);
+                GUI.DrawTexture(new Rect(12f, 12f, 220f, 30f), Texture2D.whiteTexture);
+                GUI.color = previousColor;
+                GUI.Label(new Rect(22f, 16f, 210f, 24f), teamText, _hintStyle);
+
+                if (state.GameOver != 0)
+                {
+                    DrawGameOverBanner(state.Winner);
+                }
+            }
+
             var previous = GUI.color;
 
             GUI.color = new Color(0.05f, 0.04f, 0.03f, 0.72f);
-            GUI.DrawTexture(new Rect(12f, Screen.height - 46f, 640f, 32f), Texture2D.whiteTexture);
+            GUI.DrawTexture(new Rect(12f, Screen.height - 46f, 700f, 32f), Texture2D.whiteTexture);
 
             GUI.color = previous;
-            GUI.Label(new Rect(22f, Screen.height - 42f, 630f, 26f), hint, _hintStyle);
+            GUI.Label(new Rect(22f, Screen.height - 42f, 690f, 26f), hint, _hintStyle);
+        }
+
+        private string SelectedHealthText()
+        {
+            var world = World.DefaultGameObjectInjectionWorld;
+            if (world == null || !world.IsCreated || _selected.Count == 0)
+            {
+                return string.Empty;
+            }
+
+            var entityManager = world.EntityManager;
+            var entity = _selected[0];
+            if (!entityManager.Exists(entity) || !entityManager.HasComponent<Health>(entity))
+            {
+                return string.Empty;
+            }
+
+            var health = entityManager.GetComponentData<Health>(entity);
+            return $"   HP: {Mathf.CeilToInt(health.Current)}/{Mathf.CeilToInt(health.Max)}";
+        }
+
+        private static MatchState? ReadMatchState()
+        {
+            var world = World.DefaultGameObjectInjectionWorld;
+            if (world == null || !world.IsCreated)
+            {
+                return null;
+            }
+
+            var entityManager = world.EntityManager;
+            using var query = entityManager.CreateEntityQuery(ComponentType.ReadOnly<MatchState>());
+            if (query.IsEmptyIgnoreFilter)
+            {
+                return null;
+            }
+
+            return entityManager.GetComponentData<MatchState>(query.GetSingletonEntity());
+        }
+
+        private void DrawGameOverBanner(byte winner)
+        {
+            if (_bannerStyle == null)
+            {
+                _bannerStyle = new GUIStyle(GUI.skin.label)
+                {
+                    fontSize = 42,
+                    alignment = TextAnchor.MiddleCenter,
+                    fontStyle = FontStyle.Bold,
+                    normal = { textColor = new Color(0.98f, 0.86f, 0.55f) },
+                };
+            }
+
+            var text = winner switch
+            {
+                0 => "RED TEAM WINS",
+                1 => "BLUE TEAM WINS",
+                _ => "DRAW",
+            };
+
+            var previous = GUI.color;
+            GUI.color = new Color(0.04f, 0.03f, 0.02f, 0.78f);
+            GUI.DrawTexture(new Rect(0f, Screen.height * 0.42f, Screen.width, 86f), Texture2D.whiteTexture);
+            GUI.color = previous;
+            GUI.Label(new Rect(0f, Screen.height * 0.42f + 18f, Screen.width, 50f), text, _bannerStyle);
         }
 
         private int CountMovingUnits()
