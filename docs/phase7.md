@@ -20,8 +20,10 @@ same toggles and credits produce the same health curve.
   anything with `Health` and either `UnitInfo` or `BuildingInfo`.
 - Auto-acquisition, explicit attack orders, chasing and the stop-at-weapon-range rule
   all work unchanged against buildings.
-- Right-clicking an enemy building with units selected issues an attack order, exactly
-  like right-clicking a unit.
+- Right-clicking an enemy **unit or building** with units selected issues an attack
+  order, exactly like right-clicking a unit.
+- Only the player's own units and buildings are selectable; enemies are never added to
+  the selection (they remain attack targets).
 - Buildings use the same armour model as units (50% on all buildings) and their own HP:
 
 | Building | HP |
@@ -71,7 +73,7 @@ same toggles and credits produce the same health curve.
 `-Siege` builds both bases and armies, then orders every armed red unit to attack the
 nearest blue building. At 900 frames the assault is engaged and tracers are visible.
 
-Suites: EditMode 34/34, PlayMode 29/29.
+Suites: EditMode 34/34, PlayMode 30/30.
 
 ### Covered by tests
 
@@ -82,6 +84,7 @@ Suites: EditMode 34/34, PlayMode 29/29.
 - Repair heals over time, spends credits, toggles off, and selling then refunds half.
 - Repair stops immediately when the team has no credits.
 - Units never acquire or damage friendly buildings.
+- Selection rules reject enemy units and buildings while accepting the player's own.
 
 ## Known limits (deliberate for Phase 7)
 

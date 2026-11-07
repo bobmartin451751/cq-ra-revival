@@ -222,6 +222,64 @@ namespace CQRa.Tests.PlayMode
             }
         }
 
+        [UnityTest]
+        public IEnumerator SelectionRules_OnlyAllowPlayerTeam()
+        {
+            yield return null;
+
+            var world = World.DefaultGameObjectInjectionWorld;
+            var entityManager = world.EntityManager;
+            var data = CreateFlatWorld(entityManager, 80f, 41, 1f);
+            var material = new Material(Shader.Find("Universal Render Pipeline/Lit"));
+            var meshes = UnitMeshes();
+            var created = new NativeList<Entity>(Allocator.Temp);
+
+            try
+            {
+                var friendlyUnit = entityManager.CreateEntity(typeof(UnitInfo));
+                entityManager.SetComponentData(friendlyUnit, new UnitInfo { Team = 0, Kind = UnitKind.Infantry });
+                created.Add(friendlyUnit);
+
+                var enemyUnit = entityManager.CreateEntity(typeof(UnitInfo));
+                entityManager.SetComponentData(enemyUnit, new UnitInfo { Team = 1, Kind = UnitKind.Infantry });
+                created.Add(enemyUnit);
+
+                var friendlyBuilding = entityManager.CreateEntity(typeof(BuildingInfo));
+                entityManager.SetComponentData(friendlyBuilding, new BuildingInfo
+                {
+                    Team = 0,
+                    Kind = BuildingKind.Barracks,
+                });
+                created.Add(friendlyBuilding);
+
+                var enemyBuilding = entityManager.CreateEntity(typeof(BuildingInfo));
+                entityManager.SetComponentData(enemyBuilding, new BuildingInfo
+                {
+                    Team = 1,
+                    Kind = BuildingKind.Barracks,
+                });
+                created.Add(enemyBuilding);
+
+                Assert.IsTrue(SelectionController.IsPlayerSelectable(entityManager, friendlyUnit));
+                Assert.IsTrue(SelectionController.IsPlayerSelectable(entityManager, friendlyBuilding));
+                Assert.IsFalse(SelectionController.IsPlayerSelectable(entityManager, enemyUnit));
+                Assert.IsFalse(SelectionController.IsPlayerSelectable(entityManager, enemyBuilding));
+            }
+            finally
+            {
+                for (var i = 0; i < created.Length; i++)
+                {
+                    if (entityManager.Exists(created[i]))
+                    {
+                        entityManager.DestroyEntity(created[i]);
+                    }
+                }
+
+                created.Dispose();
+                Cleanup(entityManager, data, material, meshes);
+            }
+        }
+
         private static Mesh[] UnitMeshes()
         {
             return new[]

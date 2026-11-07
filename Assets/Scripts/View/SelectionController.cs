@@ -268,7 +268,7 @@ namespace CQRa.View
         /// </summary>
         private bool TryIssueAttackOrder(Vector2 screenPosition)
         {
-            if (!TryPickSelectable(screenPosition, out var target))
+            if (!TryPickSelectable(screenPosition, false, out var target))
             {
                 return false;
             }
@@ -280,12 +280,12 @@ namespace CQRa.View
             }
 
             var entityManager = world.EntityManager;
-            if (!entityManager.HasComponent<UnitInfo>(target))
+            if (!TryGetTeam(entityManager, target, out var targetTeam) ||
+                targetTeam == BuildCatalog.PlayerTeam)
             {
                 return false;
             }
 
-            var targetTeam = entityManager.GetComponentData<UnitInfo>(target).Team;
             var ordered = 0;
 
             for (var i = 0; i < _selected.Count; i++)
@@ -681,13 +681,18 @@ namespace CQRa.View
             _messageUntil = Time.unscaledTime + 2.5f;
         }
 
-        private bool TryPickSelectable(Vector2 screenPosition, out Entity picked)
+        private bool TryPickSelectable(Vector2 screenPosition, bool playerOnly, out Entity picked)
         {
             var best = Entity.Null;
             var bestDistance = _pickRadiusPixels;
 
             ForEachSelectable((entity, unitPosition) =>
             {
+                if (playerOnly && !IsPlayerSelectable(entity))
+                {
+                    return;
+                }
+
                 if (!TryProject(unitPosition, out var projected))
                 {
                     return;
@@ -705,11 +710,46 @@ namespace CQRa.View
             return best != Entity.Null;
         }
 
+        public static bool IsPlayerSelectable(EntityManager entityManager, Entity entity)
+        {
+            return TryGetTeam(entityManager, entity, out var team) &&
+                   team == BuildCatalog.PlayerTeam;
+        }
+
+        private bool IsPlayerSelectable(Entity entity)
+        {
+            var world = World.DefaultGameObjectInjectionWorld;
+            if (world == null || !world.IsCreated)
+            {
+                return false;
+            }
+
+            return IsPlayerSelectable(world.EntityManager, entity);
+        }
+
+        private static bool TryGetTeam(EntityManager entityManager, Entity entity, out int team)
+        {
+            if (entityManager.HasComponent<UnitInfo>(entity))
+            {
+                team = entityManager.GetComponentData<UnitInfo>(entity).Team;
+                return true;
+            }
+
+            if (entityManager.HasComponent<BuildingInfo>(entity))
+            {
+                team = entityManager.GetComponentData<BuildingInfo>(entity).Team;
+                return true;
+            }
+
+            team = 0;
+            return false;
+        }
+
         private void SelectAtPoint(Vector2 screenPosition, bool additive)
         {
             PruneSelection();
 
-            var hasPicked = TryPickSelectable(screenPosition, out var best);
+            var hasPicked = TryPickSelectable(screenPosition, true, out var best);
 
             if (!additive)
             {
@@ -745,6 +785,11 @@ namespace CQRa.View
 
             ForEachSelectable((entity, unitPosition) =>
             {
+                if (!IsPlayerSelectable(entity))
+                {
+                    return;
+                }
+
                 if (!TryProject(unitPosition, out var projected))
                 {
                     return;
