@@ -183,6 +183,16 @@ namespace CQRa.View
                 {
                     TryProduce(UnitKind.Mcv);
                 }
+
+                if (keyboard.rKey.wasPressedThisFrame)
+                {
+                    ToggleRepairSelected();
+                }
+
+                if (keyboard.tKey.wasPressedThisFrame)
+                {
+                    SellSelectedBuildings();
+                }
             }
 
             _selectedProducer = FindSelectedProducer();
@@ -258,7 +268,7 @@ namespace CQRa.View
         /// </summary>
         private bool TryIssueAttackOrder(Vector2 screenPosition)
         {
-            if (!TryPickUnit(screenPosition, out var target))
+            if (!TryPickSelectable(screenPosition, out var target))
             {
                 return false;
             }
@@ -387,6 +397,90 @@ namespace CQRa.View
             else
             {
                 ShowMessage(ProductionFailureText(failure));
+            }
+        }
+
+        private void ToggleRepairSelected()
+        {
+            var world = World.DefaultGameObjectInjectionWorld;
+            if (world == null || !world.IsCreated)
+            {
+                return;
+            }
+
+            var entityManager = world.EntityManager;
+            var toggled = 0;
+            var failure = BuildingCommandFailure.None;
+
+            for (var i = 0; i < _selected.Count; i++)
+            {
+                var entity = _selected[i];
+                if (!entityManager.Exists(entity) ||
+                    !entityManager.HasComponent<BuildingInfo>(entity))
+                {
+                    continue;
+                }
+
+                if (BaseCommands.TryToggleRepair(entityManager, entity, out failure))
+                {
+                    toggled++;
+                }
+            }
+
+            ShowMessage(toggled > 0
+                ? "Repair toggled"
+                : BuildingCommandText(failure));
+        }
+
+        private void SellSelectedBuildings()
+        {
+            var world = World.DefaultGameObjectInjectionWorld;
+            if (world == null || !world.IsCreated)
+            {
+                return;
+            }
+
+            var entityManager = world.EntityManager;
+            var refund = 0;
+            var sold = 0;
+            var failure = BuildingCommandFailure.None;
+
+            for (var i = _selected.Count - 1; i >= 0; i--)
+            {
+                var entity = _selected[i];
+                if (!entityManager.Exists(entity) ||
+                    !entityManager.HasComponent<BuildingInfo>(entity))
+                {
+                    continue;
+                }
+
+                if (BaseCommands.TrySell(entityManager, entity, out var value, out failure))
+                {
+                    refund += value;
+                    sold++;
+                    _selected.RemoveAt(i);
+                }
+            }
+
+            ShowMessage(sold > 0
+                ? $"Sold {sold} building(s) for {refund} credits"
+                : BuildingCommandText(failure));
+        }
+
+        private static string BuildingCommandText(BuildingCommandFailure failure)
+        {
+            switch (failure)
+            {
+                case BuildingCommandFailure.NotABuilding:
+                    return "Select a building first";
+                case BuildingCommandFailure.NoEconomy:
+                    return "Economy not initialised";
+                case BuildingCommandFailure.AlreadyFull:
+                    return "Building is at full health";
+                case BuildingCommandFailure.CannotSell:
+                    return "The Construction Yard cannot be sold";
+                default:
+                    return string.Empty;
             }
         }
 
@@ -587,30 +681,6 @@ namespace CQRa.View
             _messageUntil = Time.unscaledTime + 2.5f;
         }
 
-        private bool TryPickUnit(Vector2 screenPosition, out Entity picked)
-        {
-            var best = Entity.Null;
-            var bestDistance = _pickRadiusPixels;
-
-            ForEachUnit((entity, unitPosition) =>
-            {
-                if (!TryProject(unitPosition, out var projected))
-                {
-                    return;
-                }
-
-                var distance = (projected - screenPosition).magnitude;
-                if (distance < bestDistance)
-                {
-                    bestDistance = distance;
-                    best = entity;
-                }
-            });
-
-            picked = best;
-            return best != Entity.Null;
-        }
-
         private bool TryPickSelectable(Vector2 screenPosition, out Entity picked)
         {
             var best = Entity.Null;
@@ -686,33 +756,6 @@ namespace CQRa.View
                     AddToSelection(entity);
                 }
             });
-        }
-
-        private void ForEachUnit(System.Action<Entity, Vector3> action)
-        {
-            var world = World.DefaultGameObjectInjectionWorld;
-            if (world == null || !world.IsCreated)
-            {
-                return;
-            }
-
-            var entityManager = world.EntityManager;
-            using var query = entityManager.CreateEntityQuery(
-                ComponentType.ReadOnly<UnitTag>(),
-                ComponentType.ReadOnly<LocalTransform>());
-
-            using var entities = query.ToEntityArray(Allocator.Temp);
-
-            foreach (var entity in entities)
-            {
-                if (!entityManager.Exists(entity) ||
-                    !entityManager.HasComponent<LocalTransform>(entity))
-                {
-                    continue;
-                }
-
-                action(entity, entityManager.GetComponentData<LocalTransform>(entity).Position);
-            }
         }
 
         private void ForEachSelectable(System.Action<Entity, Vector3> action)
@@ -845,9 +888,11 @@ namespace CQRa.View
                 DrawMarquee(_dragStart, _dragCurrent);
             }
 
+            DrawHealthBars();
+
             var moving = _movingCount;
             var healthText = SelectedHealthText();
-            var hint = $"Selected: {_selected.Count}   Moving: {moving}{healthText}    1-4 build · D deploy · Z/X/C/V produce · RMB rally/move/attack · Esc clear";
+            var hint = $"Selected: {_selected.Count}   Moving: {moving}{healthText}    1-4 build · D deploy · Z/X/C/V produce · R repair · T sell · RMB rally/move/attack · Esc clear";
 
             var match = ReadMatchState();
             if (match.HasValue)
@@ -919,7 +964,10 @@ namespace CQRa.View
             }
 
             var health = entityManager.GetComponentData<Health>(entity);
-            return $"   HP: {Mathf.CeilToInt(health.Current)}/{Mathf.CeilToInt(health.Max)}";
+            var repairing = entityManager.HasComponent<RepairState>(entity) &&
+                            entityManager.GetComponentData<RepairState>(entity).Active != 0;
+            var suffix = repairing ? "  [REPAIRING]" : string.Empty;
+            return $"   HP: {Mathf.CeilToInt(health.Current)}/{Mathf.CeilToInt(health.Max)}{suffix}";
         }
 
         private static MatchState? ReadMatchState()
@@ -959,6 +1007,70 @@ namespace CQRa.View
 
             state = entityManager.GetComponentData<EconomyState>(query.GetSingletonEntity());
             return true;
+        }
+
+        private void DrawHealthBars()
+        {
+            var world = World.DefaultGameObjectInjectionWorld;
+            if (world == null || !world.IsCreated || _camera == null)
+            {
+                return;
+            }
+
+            var entityManager = world.EntityManager;
+            using var query = entityManager.CreateEntityQuery(new EntityQueryDesc
+            {
+                All = new[]
+                {
+                    ComponentType.ReadOnly<Health>(),
+                    ComponentType.ReadOnly<LocalTransform>(),
+                },
+                Any = new[]
+                {
+                    ComponentType.ReadOnly<UnitTag>(),
+                    ComponentType.ReadOnly<BuildingTag>(),
+                },
+            });
+
+            using var entities = query.ToEntityArray(Allocator.Temp);
+            var previous = GUI.color;
+
+            foreach (var entity in entities)
+            {
+                var health = entityManager.GetComponentData<Health>(entity);
+                if (health.Current >= health.Max - 0.01f)
+                {
+                    continue;
+                }
+
+                var position = entityManager.GetComponentData<LocalTransform>(entity).Position;
+                var isBuilding = entityManager.HasComponent<BuildingTag>(entity);
+                var projected = _camera.WorldToScreenPoint(
+                    new Vector3(position.x, position.y + (isBuilding ? 12f : 3f), position.z));
+
+                if (projected.z <= 0f)
+                {
+                    continue;
+                }
+
+                var width = isBuilding ? 64f : 34f;
+                var height = isBuilding ? 7f : 5f;
+                var x = projected.x - width * 0.5f;
+                var y = Screen.height - projected.y;
+
+                var fraction = Mathf.Clamp01(health.Current / Mathf.Max(1f, health.Max));
+
+                GUI.color = new Color(0.05f, 0.04f, 0.03f, 0.75f);
+                GUI.DrawTexture(new Rect(x - 1f, y - 1f, width + 2f, height + 2f), Texture2D.whiteTexture);
+
+                GUI.color = Color.Lerp(
+                    new Color(0.72f, 0.16f, 0.12f),
+                    new Color(0.42f, 0.72f, 0.24f),
+                    fraction);
+                GUI.DrawTexture(new Rect(x, y, width * fraction, height), Texture2D.whiteTexture);
+            }
+
+            GUI.color = previous;
         }
 
         private void DrawBuildPanel()

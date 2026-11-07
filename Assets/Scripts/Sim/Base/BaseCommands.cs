@@ -20,6 +20,15 @@ namespace CQRa.Sim.Base
         AlreadyDeployed = 8,
     }
 
+    public enum BuildingCommandFailure : byte
+    {
+        None = 0,
+        NotABuilding = 1,
+        NoEconomy = 2,
+        AlreadyFull = 3,
+        CannotSell = 4,
+    }
+
     /// <summary>
     /// Player-facing base commands shared by the input layer, tests and capture tools.
     /// Everything here goes through the same deterministic entity state the simulation
@@ -384,6 +393,122 @@ namespace CQRa.Sim.Base
             }
 
             return candidates;
+        }
+
+        /// <summary>
+        /// Toggles continuous repair. Cancelling is always free; starting requires damaged
+        /// health and an economy singleton.
+        /// </summary>
+        public static bool TryToggleRepair(
+            EntityManager entityManager,
+            Entity building,
+            out BuildingCommandFailure failure)
+        {
+            failure = BuildingCommandFailure.None;
+
+            if (!IsBuilding(entityManager, building) ||
+                !entityManager.HasComponent<RepairState>(building))
+            {
+                failure = BuildingCommandFailure.NotABuilding;
+                return false;
+            }
+
+            var repair = entityManager.GetComponentData<RepairState>(building);
+            if (repair.Active != 0)
+            {
+                repair.Active = 0;
+                entityManager.SetComponentData(building, repair);
+                return true;
+            }
+
+            var health = entityManager.GetComponentData<Health>(building);
+            if (health.Current >= health.Max - 0.001f)
+            {
+                failure = BuildingCommandFailure.AlreadyFull;
+                return false;
+            }
+
+            if (!TryGetEconomy(entityManager, out _, out _))
+            {
+                failure = BuildingCommandFailure.NoEconomy;
+                return false;
+            }
+
+            repair.Active = 1;
+            entityManager.SetComponentData(building, repair);
+            return true;
+        }
+
+        /// <summary>Sells a building for half its cost, frees its nav footprint and removes it.</summary>
+        public static bool TrySell(
+            EntityManager entityManager,
+            Entity building,
+            out int refund,
+            out BuildingCommandFailure failure)
+        {
+            refund = 0;
+            failure = BuildingCommandFailure.None;
+
+            if (!IsBuilding(entityManager, building))
+            {
+                failure = BuildingCommandFailure.NotABuilding;
+                return false;
+            }
+
+            var info = entityManager.GetComponentData<BuildingInfo>(building);
+            if (!RepairRules.CanSell(info.Kind))
+            {
+                failure = BuildingCommandFailure.CannotSell;
+                return false;
+            }
+
+            if (!TryGetEconomy(entityManager, out var economyEntity, out var economy))
+            {
+                failure = BuildingCommandFailure.NoEconomy;
+                return false;
+            }
+
+            refund = RepairRules.SellRefund(info.Kind);
+            Economy.AddCredits(ref economy, info.Team, refund);
+            entityManager.SetComponentData(economyEntity, economy);
+
+            RemoveBuilding(entityManager, building);
+            return true;
+        }
+
+        /// <summary>
+        /// Removes a building and frees the nav cells it blocked. Also used by combat when
+        /// a building is destroyed.
+        /// </summary>
+        public static void RemoveBuilding(EntityManager entityManager, Entity building)
+        {
+            if (!entityManager.Exists(building))
+            {
+                return;
+            }
+
+            if (entityManager.HasComponent<BuildingInfo>(building) &&
+                entityManager.HasComponent<LocalTransform>(building))
+            {
+                var info = entityManager.GetComponentData<BuildingInfo>(building);
+                var position = entityManager.GetComponentData<LocalTransform>(building).Position;
+                var spec = BuildCatalog.Get(info.Kind);
+                NavGridQuery.UnblockCircle(
+                    entityManager,
+                    new float2(position.x, position.z),
+                    spec.NavRadius);
+                NavGridQuery.InvalidateFlowFields(entityManager);
+            }
+
+            entityManager.DestroyEntity(building);
+        }
+
+        private static bool IsBuilding(EntityManager entityManager, Entity entity)
+        {
+            return entity != Entity.Null &&
+                   entityManager.Exists(entity) &&
+                   entityManager.HasComponent<BuildingInfo>(entity) &&
+                   entityManager.HasComponent<BuildingTag>(entity);
         }
 
         /// <summary>

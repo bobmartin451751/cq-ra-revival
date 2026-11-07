@@ -69,6 +69,8 @@ namespace CQRa.Sim.Base
                 Armor = 0.5f,
             });
 
+            entityManager.AddComponentData(entity, new RepairState { Active = 0 });
+
             if (kind == BuildingKind.ConstructionYard)
             {
                 entityManager.AddComponent<ConstructionYardTag>(entity);

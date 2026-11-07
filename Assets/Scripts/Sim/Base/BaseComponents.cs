@@ -37,6 +37,30 @@ namespace CQRa.Sim.Base
     {
     }
 
+    /// <summary>Toggles continuous repair on a damaged building.</summary>
+    public struct RepairState : IComponentData
+    {
+        public byte Active;
+    }
+
+    /// <summary>Repair and sell tuning shared by the systems and HUD.</summary>
+    public static class RepairRules
+    {
+        public const float HealPerSecond = 40f;
+        public const float CreditsPerSecond = 30f;
+
+        /// <summary>Selling refunds half the original cost; the yard is not sellable.</summary>
+        public static int SellRefund(BuildingKind kind)
+        {
+            return BuildCatalog.Get(kind).Cost / 2;
+        }
+
+        public static bool CanSell(BuildingKind kind)
+        {
+            return kind != BuildingKind.ConstructionYard;
+        }
+    }
+
     /// <summary>A finite ore patch in the world.</summary>
     public struct OreNode : IComponentData
     {

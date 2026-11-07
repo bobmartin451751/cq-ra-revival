@@ -31,6 +31,7 @@ namespace CQRa.Core
         private bool _attack;
         private bool _base;
         private bool _army;
+        private bool _siege;
         private float2? _moveTo;
         private int _moveTeam;
         private int _captureFrame = WarmupFrames;
@@ -67,6 +68,7 @@ namespace CQRa.Core
             _attack = HasArg("-attack");
             _base = HasArg("-base");
             _army = HasArg("-army");
+            _siege = HasArg("-siege");
             _moveTo = ReadMoveTarget();
             _moveTeam = ReadIntArg("-moveteam", 0);
 
@@ -108,9 +110,14 @@ namespace CQRa.Core
                     BuildBases();
                 }
 
-                if (_army)
+                if (_army || _siege)
                 {
                     BuildArmies();
+                }
+
+                if (_siege)
+                {
+                    SiegeEnemyBase();
                 }
             }
 
@@ -409,6 +416,81 @@ namespace CQRa.Core
             }
 
             Debug.Log($"[Capture] built {built} structures, queued {queued} units");
+        }
+
+        /// <summary>
+        /// Development helper for the Phase 7 screenshot: order every armed red unit to
+        /// attack the nearest blue building, exercising building targeting and destruction.
+        /// </summary>
+        private void SiegeEnemyBase()
+        {
+            var world = World.DefaultGameObjectInjectionWorld;
+            if (world == null || !world.IsCreated)
+            {
+                return;
+            }
+
+            var entityManager = world.EntityManager;
+            using var unitQuery = entityManager.CreateEntityQuery(
+                ComponentType.ReadOnly<UnitInfo>(),
+                ComponentType.ReadOnly<Weapon>(),
+                ComponentType.ReadOnly<CombatState>(),
+                ComponentType.ReadOnly<MoveTarget>(),
+                ComponentType.ReadOnly<LocalTransform>());
+            using var buildings = entityManager.CreateEntityQuery(
+                ComponentType.ReadOnly<BuildingInfo>(),
+                ComponentType.ReadOnly<LocalTransform>());
+            using var units = unitQuery.ToEntityArray(Allocator.Temp);
+            using var buildingEntities = buildings.ToEntityArray(Allocator.Temp);
+
+            var ordered = 0;
+
+            foreach (var unit in units)
+            {
+                var info = entityManager.GetComponentData<UnitInfo>(unit);
+                if (info.Team != 0 || entityManager.GetComponentData<Weapon>(unit).Damage <= 0f)
+                {
+                    continue;
+                }
+
+                var position = entityManager.GetComponentData<LocalTransform>(unit).Position;
+                var target = Entity.Null;
+                var bestDistanceSq = float.MaxValue;
+
+                foreach (var building in buildingEntities)
+                {
+                    if (entityManager.GetComponentData<BuildingInfo>(building).Team == 0)
+                    {
+                        continue;
+                    }
+
+                    var candidate = entityManager.GetComponentData<LocalTransform>(building).Position;
+                    var distanceSq = math.distancesq(position, candidate);
+                    if (distanceSq < bestDistanceSq)
+                    {
+                        bestDistanceSq = distanceSq;
+                        target = building;
+                    }
+                }
+
+                if (target == Entity.Null)
+                {
+                    continue;
+                }
+
+                var state = entityManager.GetComponentData<CombatState>(unit);
+                state.Target = target;
+                state.Explicit = 1;
+                entityManager.SetComponentData(unit, state);
+
+                var move = entityManager.GetComponentData<MoveTarget>(unit);
+                move.HasOrder = 0;
+                move.Field = Entity.Null;
+                entityManager.SetComponentData(unit, move);
+                ordered++;
+            }
+
+            Debug.Log($"[Capture] ordered {ordered} red units to besiege the blue base");
         }
 
         private float2? ReadMoveTarget()

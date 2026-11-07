@@ -107,6 +107,35 @@ namespace CQRa.Sim.Navigation
             }
         }
 
+        /// <summary>
+        /// Frees every nav cell whose centre lies inside the circle. Used when a building
+        /// is destroyed or sold. Safe because buildings can only be placed on walkable
+        /// ground, so nothing natural is behind the footprint.
+        /// </summary>
+        public static void UnblockCircle(EntityManager entityManager, float2 centre, float radius)
+        {
+            if (!TryGetGrid(entityManager, out var info, out var gridEntity))
+            {
+                return;
+            }
+
+            var buffer = entityManager.GetBuffer<NavCell>(gridEntity);
+            var min = NavGridMath.WorldToCell(info, centre - radius);
+            var max = NavGridMath.WorldToCell(info, centre + radius);
+
+            for (var z = math.max(0, min.y); z <= math.min(info.Size.y - 1, max.y); z++)
+            {
+                for (var x = math.max(0, min.x); x <= math.min(info.Size.x - 1, max.x); x++)
+                {
+                    var cellCentre = NavGridMath.CellCentre(info, new int2(x, z));
+                    if (math.distance(cellCentre, centre) <= radius)
+                    {
+                        buffer[z * info.Size.x + x] = new NavCell { Walkable = 1 };
+                    }
+                }
+            }
+        }
+
         /// <summary>Drops every cached flow field so new blockers are respected.</summary>
         public static void InvalidateFlowFields(EntityManager entityManager)
         {

@@ -1,3 +1,4 @@
+using CQRa.Sim.Base;
 using Unity.Collections;
 using Unity.Entities;
 using Unity.Mathematics;
@@ -37,6 +38,22 @@ namespace CQRa.Sim.Units
 
             using var allUnits = unitQuery.ToEntityArray(Allocator.Temp);
             var count = allUnits.Length;
+
+            using var targetQuery = entityManager.CreateEntityQuery(new EntityQueryDesc
+            {
+                All = new[]
+                {
+                    ComponentType.ReadOnly<Health>(),
+                    ComponentType.ReadOnly<LocalTransform>(),
+                },
+                Any = new[]
+                {
+                    ComponentType.ReadOnly<UnitInfo>(),
+                    ComponentType.ReadOnly<BuildingInfo>(),
+                },
+            });
+
+            using var targets = targetQuery.ToEntityArray(Allocator.Temp);
 
             if (count == 0)
             {
@@ -100,7 +117,7 @@ namespace CQRa.Sim.Units
                 {
                     state.Target = FindNearestEnemy(
                         entityManager,
-                        allUnits,
+                        targets,
                         entity,
                         info.Team,
                         position,
@@ -141,9 +158,20 @@ namespace CQRa.Sim.Units
 
             for (var i = 0; i < dead.Length; i++)
             {
-                if (entityManager.Exists(dead[i]))
+                var entity = dead[i];
+                if (!entityManager.Exists(entity))
                 {
-                    entityManager.DestroyEntity(dead[i]);
+                    continue;
+                }
+
+                if (entityManager.HasComponent<BuildingTag>(entity))
+                {
+                    // Buildings free their nav footprint when destroyed.
+                    BaseCommands.RemoveBuilding(entityManager, entity);
+                }
+                else
+                {
+                    entityManager.DestroyEntity(entity);
                 }
             }
 
@@ -176,19 +204,37 @@ namespace CQRa.Sim.Units
         {
             if (target == Entity.Null ||
                 !entityManager.Exists(target) ||
-                !entityManager.HasComponent<Health>(target) ||
-                !entityManager.HasComponent<UnitInfo>(target))
+                !entityManager.HasComponent<Health>(target))
             {
                 return false;
             }
 
             return entityManager.GetComponentData<Health>(target).Current > 0f &&
-                   entityManager.GetComponentData<UnitInfo>(target).Team != team;
+                   TryGetTeam(entityManager, target, out var targetTeam) &&
+                   targetTeam != team;
+        }
+
+        private static bool TryGetTeam(EntityManager entityManager, Entity entity, out int team)
+        {
+            if (entityManager.HasComponent<UnitInfo>(entity))
+            {
+                team = entityManager.GetComponentData<UnitInfo>(entity).Team;
+                return true;
+            }
+
+            if (entityManager.HasComponent<BuildingInfo>(entity))
+            {
+                team = entityManager.GetComponentData<BuildingInfo>(entity).Team;
+                return true;
+            }
+
+            team = 0;
+            return false;
         }
 
         private static Entity FindNearestEnemy(
             EntityManager entityManager,
-            NativeArray<Entity> units,
+            NativeArray<Entity> targets,
             Entity self,
             int team,
             float3 position,
@@ -197,21 +243,16 @@ namespace CQRa.Sim.Units
             var best = Entity.Null;
             var bestDistanceSq = acquireRange * acquireRange;
 
-            for (var i = 0; i < units.Length; i++)
+            for (var i = 0; i < targets.Length; i++)
             {
-                var candidate = units[i];
+                var candidate = targets[i];
                 if (candidate == self)
                 {
                     continue;
                 }
 
-                if (!entityManager.HasComponent<Health>(candidate) ||
-                    !entityManager.HasComponent<UnitInfo>(candidate))
-                {
-                    continue;
-                }
-
-                if (entityManager.GetComponentData<UnitInfo>(candidate).Team == team ||
+                if (!TryGetTeam(entityManager, candidate, out var candidateTeam) ||
+                    candidateTeam == team ||
                     entityManager.GetComponentData<Health>(candidate).Current <= 0f)
                 {
                     continue;
@@ -254,28 +295,33 @@ namespace CQRa.Sim.Units
                 ? entityManager.CreateEntity(typeof(MatchState))
                 : query.GetSingletonEntity();
 
-            using var unitQuery = entityManager.CreateEntityQuery(
-                ComponentType.ReadOnly<UnitTag>(),
-                ComponentType.ReadOnly<UnitInfo>(),
-                ComponentType.ReadOnly<Health>());
+            using var targetQuery = entityManager.CreateEntityQuery(new EntityQueryDesc
+            {
+                All = new[] { ComponentType.ReadOnly<Health>() },
+                Any = new[]
+                {
+                    ComponentType.ReadOnly<UnitInfo>(),
+                    ComponentType.ReadOnly<BuildingInfo>(),
+                },
+            });
 
-            using var units = unitQuery.ToEntityArray(Allocator.Temp);
+            using var entities = targetQuery.ToEntityArray(Allocator.Temp);
 
             var team0 = 0;
             var team1 = 0;
-            for (var i = 0; i < units.Length; i++)
+            for (var i = 0; i < entities.Length; i++)
             {
-                var info = entityManager.GetComponentData<UnitInfo>(units[i]);
-                if (entityManager.GetComponentData<Health>(units[i]).Current <= 0f)
+                if (entityManager.GetComponentData<Health>(entities[i]).Current <= 0f ||
+                    !TryGetTeam(entityManager, entities[i], out var team))
                 {
                     continue;
                 }
 
-                if (info.Team == 0)
+                if (team == 0)
                 {
                     team0++;
                 }
-                else if (info.Team == 1)
+                else if (team == 1)
                 {
                     team1++;
                 }
