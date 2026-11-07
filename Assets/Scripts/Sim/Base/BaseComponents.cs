@@ -67,6 +67,9 @@ namespace CQRa.Sim.Base
         public HarvesterPhase Phase;
         public Entity Ore;
         public float Cargo;
+
+        /// <summary>1 while the current move order was issued by the harvester loop itself.</summary>
+        public byte AutoOrder;
     }
 
     public readonly struct BuildingSpec
@@ -104,12 +107,12 @@ namespace CQRa.Sim.Base
             switch (kind)
             {
                 case BuildingKind.PowerPlant:
-                    return new BuildingSpec(6f, 5f, 300, 100, 0);
+                    return new BuildingSpec(6f, 6f, 300, 100, 0);
                 case BuildingKind.Refinery:
-                    return new BuildingSpec(9f, 8f, 600, 0, 40);
+                    return new BuildingSpec(9f, 9f, 600, 0, 40);
                 default:
                     // The construction yard is deployed, not purchased.
-                    return new BuildingSpec(9f, 8f, 0, 10, 0);
+                    return new BuildingSpec(9f, 9f, 0, 10, 0);
             }
         }
 

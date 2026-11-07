@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using CQRa.Sim.Base;
 using Unity.Collections;
 using Unity.Entities;
 using Unity.Mathematics;
@@ -88,6 +89,14 @@ namespace CQRa.Sim.Units
                             Target = Entity.Null,
                             Explicit = 0,
                         });
+                    }
+
+                    // ...and it also takes the harvester out of auto-drive.
+                    if (entityManager.HasComponent<HarvesterJob>(entity))
+                    {
+                        var job = entityManager.GetComponentData<HarvesterJob>(entity);
+                        job.AutoOrder = 0;
+                        entityManager.SetComponentData(entity, job);
                     }
                 }
             }

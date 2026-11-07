@@ -30,9 +30,9 @@ generated at scene start; there are no prefabs or imported assets.
 
 | Building | Cost | Power | Footprint | Nav block | HP |
 |---|---:|---:|---:|---:|---:|
-| Construction Yard | deployed | +10 | 9 m | 8 m | 1200 |
-| Power Plant | 300 | +100 | 6 m | 5 m | 600 |
-| Refinery | 600 | -40 | 9 m | 8 m | 900 |
+| Construction Yard | deployed | +10 | 9 m | 9 m | 1200 |
+| Power Plant | 300 | +100 | 6 m | 6 m | 600 |
+| Refinery | 600 | -40 | 9 m | 9 m | 900 |
 
 Flow:
 
@@ -61,7 +61,9 @@ Harvesters are unarmed units with a `HarvesterJob` component:
 - Ore patches are finite entities with an `OreNode.Amount`; they are depleted, not
   removed, so the loop deterministically picks the next nearest patch.
 - The loop only writes move orders when the harvester has no order, so a player move
-  order always wins until the harvester arrives.
+  order always wins until the harvester arrives. `HarvesterJob.AutoOrder` distinguishes
+  the loop's own orders from player orders, so passing near an ore patch or refinery
+  cannot cancel a player order.
 
 `EconomyAuthoring` places 10 deterministic ore patches and skips any that land on
 non-walkable terrain.
@@ -76,7 +78,7 @@ non-walkable terrain.
 `-base` deploys both MCVs and places a power plant plus a refinery for each team through
 the normal build rules, then lets the harvesters run.
 
-Suites: EditMode 28/28, PlayMode 21/21.
+Suites: EditMode 28/28, PlayMode 22/22.
 
 ### Covered by tests
 
@@ -89,6 +91,7 @@ Suites: EditMode 28/28, PlayMode 21/21.
 - Placement rejected outside the build radius and when credits are insufficient.
 - Harvester deposits cargo at a refinery.
 - Harvester finds ore, drives to it and depletes the patch.
+- A player move order is not cancelled by passing next to an ore patch.
 
 ## Known limits (deliberate for Phase 5)
 

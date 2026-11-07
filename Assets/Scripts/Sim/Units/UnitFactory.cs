@@ -91,6 +91,7 @@ namespace CQRa.Sim.Units
                     Phase = CQRa.Sim.Base.HarvesterPhase.Idle,
                     Ore = Entity.Null,
                     Cargo = 0f,
+                    AutoOrder = 0,
                 });
             }
 

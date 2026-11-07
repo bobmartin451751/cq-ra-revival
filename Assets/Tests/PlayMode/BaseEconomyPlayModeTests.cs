@@ -213,6 +213,74 @@ namespace CQRa.Tests.PlayMode
             }
         }
 
+        [UnityTest]
+        public IEnumerator Harvester_PlayerOrder_NotCancelledByPassingOre()
+        {
+            yield return null;
+
+            var world = World.DefaultGameObjectInjectionWorld;
+            var entityManager = world.EntityManager;
+            var data = CreateFlatWorld(entityManager, 140f, 71, 1f);
+            var owned = new NativeList<Entity>(Allocator.Persistent);
+            var material = new Material(Shader.Find("Universal Render Pipeline/Lit"));
+            var meshes = UnitMeshes();
+
+            try
+            {
+                var renderMeshArray = UnitFactory.CreateRenderMeshArray(Materials(material), meshes);
+                CreateEconomy(entityManager, 100, 100);
+
+                BuildingFactory.SpawnBuilding(
+                    entityManager, 0, BuildingKind.Refinery, new float3(-30f, 0f, 0f));
+
+                var ore = BuildingFactory.SpawnOre(
+                    entityManager, new float3(4f, 0f, 0f), 500, 7f);
+
+                var harvester = UnitFactory.Spawn(
+                    entityManager, renderMeshArray, 2,
+                    UnitMaterials.BaseIndex(0, UnitKind.Harvester),
+                    float3.zero, 0f, UnitKind.Harvester, 0);
+                owned.Add(harvester);
+
+                var job = entityManager.GetComponentData<HarvesterJob>(harvester);
+                job.Phase = HarvesterPhase.ToOre;
+                job.Ore = ore;
+                job.AutoOrder = 0;
+                entityManager.SetComponentData(harvester, job);
+
+                // The ore is already inside harvest range, so the only thing that keeps
+                // the harvester moving is the player order it must not cancel.
+                var moveUnits = new NativeList<Entity>(1, Allocator.Temp);
+                moveUnits.Add(harvester);
+                Assert.IsTrue(
+                    MoveOrderIssuer.TryIssue(
+                        entityManager, moveUnits, new float3(20f, 0f, 0f), out _),
+                    "player move order should be issued");
+                moveUnits.Dispose();
+
+                yield return new WaitForSeconds(0.5f);
+
+                var position = entityManager.GetComponentData<LocalTransform>(harvester).Position;
+                var move = entityManager.GetComponentData<MoveTarget>(harvester);
+                var current = entityManager.GetComponentData<HarvesterJob>(harvester);
+
+                Assert.Greater(position.x, 1f, "the player order must keep the harvester moving");
+                Assert.AreNotEqual(
+                    0,
+                    move.HasOrder,
+                    "starting next to an ore patch must not cancel a player move order");
+                Assert.AreEqual(
+                    HarvesterPhase.ToOre,
+                    current.Phase,
+                    "the harvester must not start mining under a player order");
+                Assert.AreEqual(0, current.AutoOrder);
+            }
+            finally
+            {
+                Cleanup(entityManager, data, owned, material, meshes);
+            }
+        }
+
         private static Entity CreateEconomy(EntityManager entityManager, int team0, int team1)
         {
             // EconomySystem creates the singleton on its first tick, so reuse it if the

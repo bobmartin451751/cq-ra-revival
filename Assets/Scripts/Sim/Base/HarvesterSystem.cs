@@ -81,18 +81,21 @@ namespace CQRa.Sim.Base
                         {
                             job.Ore = Entity.Null;
                             job.Phase = job.Cargo > 0f ? HarvesterPhase.ToRefinery : HarvesterPhase.Idle;
+                            job.AutoOrder = 0;
                             break;
                         }
 
                         var orePosition = entityManager.GetComponentData<LocalTransform>(job.Ore).Position;
-                        if (Distance2D(position, orePosition) <= HarvestRange)
+                        if (Distance2D(position, orePosition) <= HarvestRange &&
+                            (job.AutoOrder != 0 || move.HasOrder == 0))
                         {
                             job.Phase = HarvesterPhase.Harvesting;
+                            job.AutoOrder = 0;
                             ClearOrder(ref move);
                         }
                         else if (move.HasOrder == 0)
                         {
-                            IssueMove(ref move, orePosition);
+                            IssueMove(ref move, ref job, orePosition);
                         }
 
                         break;
@@ -102,6 +105,7 @@ namespace CQRa.Sim.Base
                         {
                             // Player took control mid-harvest; resume the loop afterwards.
                             job.Phase = HarvesterPhase.Idle;
+                            job.AutoOrder = 0;
                             break;
                         }
 
@@ -109,6 +113,7 @@ namespace CQRa.Sim.Base
                         {
                             job.Ore = Entity.Null;
                             job.Phase = HarvesterPhase.ToRefinery;
+                            job.AutoOrder = 0;
                             break;
                         }
 
@@ -137,6 +142,7 @@ namespace CQRa.Sim.Base
                         if (job.Cargo <= 0f)
                         {
                             job.Phase = HarvesterPhase.Idle;
+                            job.AutoOrder = 0;
                             break;
                         }
 
@@ -144,6 +150,7 @@ namespace CQRa.Sim.Base
                         if (refinery == Entity.Null)
                         {
                             job.Phase = HarvesterPhase.Idle;
+                            job.AutoOrder = 0;
                             break;
                         }
 
@@ -153,12 +160,13 @@ namespace CQRa.Sim.Base
                             Economy.AddCredits(ref economy, team, (int)job.Cargo);
                             job.Cargo = 0f;
                             job.Phase = HarvesterPhase.Idle;
+                            job.AutoOrder = 0;
                             economyChanged = true;
                             ClearOrder(ref move);
                         }
                         else if (move.HasOrder == 0)
                         {
-                            IssueMove(ref move, refineryPosition);
+                            IssueMove(ref move, ref job, refineryPosition);
                         }
 
                         break;
@@ -213,13 +221,14 @@ namespace CQRa.Sim.Base
                    entityManager.GetComponentData<OreNode>(ore).Amount > 0;
         }
 
-        private static void IssueMove(ref MoveTarget move, float3 destination)
+        private static void IssueMove(ref MoveTarget move, ref HarvesterJob job, float3 destination)
         {
             move.Destination = destination;
             move.PathDestination = destination;
             move.Field = Entity.Null;
             move.FormationRadius = 0f;
             move.HasOrder = 1;
+            job.AutoOrder = 1;
         }
 
         private static void ClearOrder(ref MoveTarget move)
