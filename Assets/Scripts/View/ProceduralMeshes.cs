@@ -344,6 +344,80 @@ namespace CQRa.View
                 new MeshPart(Box(new Vector3(3.6f, 0.4f, 1.2f)), new Vector3(0f, 0.55f, 3.7f)));
         }
 
+        /// <summary>Mobile construction vehicle: a fat tracked hull with a cab and crane.</summary>
+        public static Mesh Mcv()
+        {
+            return Merge(
+                new MeshPart(Box(new Vector3(1.0f, 1.4f, 9.2f)), new Vector3(-2.1f, 0.7f, 0f)),
+                new MeshPart(Box(new Vector3(1.0f, 1.4f, 9.2f)), new Vector3(2.1f, 0.7f, 0f)),
+                new MeshPart(Box(new Vector3(4.6f, 2.5f, 8.4f)), new Vector3(0f, 2.2f, 0f)),
+                new MeshPart(Box(new Vector3(3.0f, 1.6f, 3.2f)), new Vector3(0f, 4.1f, -2.2f)),
+                new MeshPart(Cylinder(0.22f, 5.5f, 8), new Vector3(0.6f, 4.4f, 2.4f), Quaternion.Euler(58f, 0f, 0f)),
+                new MeshPart(Box(new Vector3(0.5f, 0.5f, 5.0f)), new Vector3(0.6f, 5.6f, 4.4f)));
+        }
+
+        // ---- Buildings (metres) ------------------------------------------------------
+
+        public static Mesh ConstructionYard()
+        {
+            return Merge(
+                new MeshPart(Box(new Vector3(16f, 5.0f, 14f)), new Vector3(0f, 2.5f, 0f)),
+                new MeshPart(Box(new Vector3(9f, 3.0f, 7f)), new Vector3(-4f, 6.5f, -3f)),
+                new MeshPart(Box(new Vector3(11f, 1.2f, 11f)), new Vector3(2f, 5.6f, 2f)),
+                new MeshPart(Cylinder(0.45f, 12f, 8), new Vector3(6f, 6.0f, -4f), Quaternion.Euler(0f, 0f, 18f)),
+                new MeshPart(Box(new Vector3(0.8f, 0.8f, 9f)), new Vector3(7.8f, 9.4f, -4f)),
+                new MeshPart(Box(new Vector3(2.0f, 1.5f, 2.0f)), new Vector3(-6f, 7.0f, 5f)));
+        }
+
+        public static Mesh PowerPlant()
+        {
+            return Merge(
+                new MeshPart(Box(new Vector3(11f, 4.0f, 9f)), new Vector3(0f, 2.0f, 0f)),
+                new MeshPart(Cylinder(2.0f, 9f, 12), new Vector3(-2.8f, 4.5f, 0.5f)),
+                new MeshPart(Cylinder(2.0f, 9f, 12), new Vector3(2.8f, 4.5f, 0.5f)),
+                new MeshPart(Box(new Vector3(1.2f, 6.0f, 1.2f)), new Vector3(0f, 7.0f, -3.2f)),
+                new MeshPart(Box(new Vector3(3.2f, 1.0f, 4.0f)), new Vector3(0f, 4.6f, 3.2f)));
+        }
+
+        public static Mesh Refinery()
+        {
+            return Merge(
+                new MeshPart(Box(new Vector3(14f, 5.0f, 12f)), new Vector3(0f, 2.5f, 0f)),
+                new MeshPart(Cylinder(2.6f, 7f, 14), new Vector3(-4.5f, 7.0f, -2.5f)),
+                new MeshPart(Cylinder(2.6f, 7f, 14), new Vector3(0f, 7.0f, -2.5f)),
+                new MeshPart(Box(new Vector3(3.0f, 1.0f, 8f)), new Vector3(4.0f, 4.0f, 3.0f)),
+                new MeshPart(Box(new Vector3(2.0f, 2.4f, 2.0f)), new Vector3(5.0f, 6.0f, 3.0f)));
+        }
+
+        /// <summary>Low ore crystal pile, deterministic per seed.</summary>
+        public static Mesh OreCluster(int seed)
+        {
+            var random = new System.Random(seed * 104729 + 7);
+            var parts = new List<MeshPart>();
+
+            var chunks = 6 + random.Next(4);
+            for (var i = 0; i < chunks; i++)
+            {
+                var angle = (float)random.NextDouble() * Mathf.PI * 2f;
+                var distance = 1.2f + 4.2f * (float)random.NextDouble();
+                var height = 0.9f + 1.8f * (float)random.NextDouble();
+                var width = 0.8f + 1.1f * (float)random.NextDouble();
+
+                parts.Add(new MeshPart(
+                    Box(new Vector3(width, height, width * 0.85f)),
+                    new Vector3(
+                        Mathf.Cos(angle) * distance,
+                        height * 0.45f,
+                        Mathf.Sin(angle) * distance),
+                    Quaternion.Euler(
+                        ((float)random.NextDouble() - 0.5f) * 16f,
+                        (float)random.NextDouble() * 360f,
+                        ((float)random.NextDouble() - 0.5f) * 16f)));
+            }
+
+            return Merge(parts.ToArray());
+        }
+
         private static Vector3 FaceNormal(int face)
         {
             switch (face)

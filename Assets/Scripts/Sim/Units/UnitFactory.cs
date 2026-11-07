@@ -84,6 +84,16 @@ namespace CQRa.Sim.Units
                 Explicit = 0,
             });
 
+            if (kind == UnitKind.Harvester)
+            {
+                entityManager.AddComponentData(entity, new CQRa.Sim.Base.HarvesterJob
+                {
+                    Phase = CQRa.Sim.Base.HarvesterPhase.Idle,
+                    Ore = Entity.Null,
+                    Cargo = 0f,
+                });
+            }
+
             entityManager.AddComponentData(entity, new UnitMotion
             {
                 Velocity = float2.zero,
@@ -104,6 +114,7 @@ namespace CQRa.Sim.Units
             {
                 case UnitKind.Tank: return 3.4f;
                 case UnitKind.Harvester: return 3.8f;
+                case UnitKind.Mcv: return 4.2f;
                 default: return 0.6f;
             }
         }
@@ -114,6 +125,7 @@ namespace CQRa.Sim.Units
             {
                 case UnitKind.Tank: return 9.0f;
                 case UnitKind.Harvester: return 6.0f;
+                case UnitKind.Mcv: return 4.5f;
                 default: return 4.0f;
             }
         }

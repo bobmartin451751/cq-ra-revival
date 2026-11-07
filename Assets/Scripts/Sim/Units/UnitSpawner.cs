@@ -19,6 +19,7 @@ namespace CQRa.Sim.Units
         [SerializeField] private int _tanksPerTeam = 4;
         [SerializeField] private int _infantryPerTeam = 6;
         [SerializeField] private int _harvestersPerTeam = 1;
+        [SerializeField] private int _mcvsPerTeam = 1;
         [SerializeField] private float _spacing = 8f;
 
         private Mesh[] _meshes;
@@ -95,6 +96,7 @@ namespace CQRa.Sim.Units
                 ProceduralMeshes.Infantry(),
                 ProceduralMeshes.Tank(),
                 ProceduralMeshes.Harvester(),
+                ProceduralMeshes.Mcv(),
             };
 
             _renderMeshArray = UnitFactory.CreateRenderMeshArray(_materials, _meshes);
@@ -105,11 +107,12 @@ namespace CQRa.Sim.Units
             for (var team = 0; team < TeamCount; team++)
             {
                 var direction = team == 0 ? 1f : -1f;
-                var teamZ = direction * 42f;
+                var teamZ = direction * 32f;
                 var yaw = team == 0 ? 0f : Mathf.PI;
                 var index = 0;
 
                 index = SpawnKind(entityManager, team, UnitKind.Harvester, _harvestersPerTeam, index, teamZ, yaw);
+                index = SpawnKind(entityManager, team, UnitKind.Mcv, _mcvsPerTeam, index, teamZ, yaw);
                 index = SpawnKind(entityManager, team, UnitKind.Tank, _tanksPerTeam, index, teamZ, yaw);
                 SpawnKind(entityManager, team, UnitKind.Infantry, _infantryPerTeam, index, teamZ, yaw);
             }
@@ -210,6 +213,7 @@ namespace CQRa.Sim.Units
             {
                 UnitKind.Tank => new Color(0.32f, 0.33f, 0.34f),
                 UnitKind.Harvester => new Color(0.58f, 0.44f, 0.20f),
+                UnitKind.Mcv => new Color(0.42f, 0.42f, 0.28f),
                 _ => new Color(0.43f, 0.27f, 0.18f),
             };
 

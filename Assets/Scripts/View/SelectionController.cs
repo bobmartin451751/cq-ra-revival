@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using CQRa.Sim.Base;
 using CQRa.Sim.Navigation;
 using CQRa.Sim.Units;
 using Unity.Collections;
@@ -36,6 +37,11 @@ namespace CQRa.View
 
         private GUIStyle _hintStyle;
         private GUIStyle _bannerStyle;
+        private GUIStyle _panelStyle;
+
+        private int _armedBuild = -1;
+        private string _message;
+        private float _messageUntil;
 
         public IReadOnlyList<Entity> Selected => _selected;
 
@@ -106,6 +112,10 @@ namespace CQRa.View
                 {
                     SelectInBox(_dragStart, _dragCurrent, additive);
                 }
+                else if (_armedBuild >= 0)
+                {
+                    TryPlaceAtPoint(_dragCurrent);
+                }
                 else
                 {
                     SelectAtPoint(_dragCurrent, additive);
@@ -116,7 +126,32 @@ namespace CQRa.View
 
             if (keyboard != null && keyboard.escapeKey.wasPressedThisFrame)
             {
-                ClearSelection();
+                if (_armedBuild >= 0)
+                {
+                    _armedBuild = -1;
+                }
+                else
+                {
+                    ClearSelection();
+                }
+            }
+
+            if (keyboard != null)
+            {
+                if (keyboard.digit1Key.wasPressedThisFrame)
+                {
+                    ArmBuild(0);
+                }
+
+                if (keyboard.digit2Key.wasPressedThisFrame)
+                {
+                    ArmBuild(1);
+                }
+
+                if (keyboard.dKey.wasPressedThisFrame)
+                {
+                    DeploySelectedMcvs();
+                }
             }
 
             if (mouse.rightButton.wasPressedThisFrame && _selected.Count > 0)
@@ -255,6 +290,128 @@ namespace CQRa.View
         }
 
         /// <summary>Screen-space pick of the closest unit under the cursor.</summary>
+        private void ArmBuild(int index)
+        {
+            if (index < 0 || index >= BuildCatalog.PlayerBuildable.Length)
+            {
+                return;
+            }
+
+            var world = World.DefaultGameObjectInjectionWorld;
+            if (world == null || !world.IsCreated ||
+                BaseCommands.FindConstructionYard(world.EntityManager, BuildCatalog.PlayerTeam) == Entity.Null)
+            {
+                ShowMessage("Deploy an MCV first (select it, press D)");
+                return;
+            }
+
+            _armedBuild = index;
+            ShowMessage($"Placing {BuildCatalog.DisplayName(BuildCatalog.PlayerBuildable[index])} - left-click to place, Esc to cancel");
+        }
+
+        private void TryPlaceAtPoint(Vector2 screenPosition)
+        {
+            if (!TerrainPicker.TryPick(_camera, screenPosition, _terrain, out var point))
+            {
+                return;
+            }
+
+            var world = World.DefaultGameObjectInjectionWorld;
+            if (world == null || !world.IsCreated)
+            {
+                return;
+            }
+
+            var kind = BuildCatalog.PlayerBuildable[_armedBuild];
+            if (BaseCommands.TryPlaceBuilding(
+                    world.EntityManager,
+                    BuildCatalog.PlayerTeam,
+                    kind,
+                    new Unity.Mathematics.float3(point.x, point.y, point.z),
+                    out var failure))
+            {
+                _armedBuild = -1;
+                ShowMessage($"{BuildCatalog.DisplayName(kind)} placed");
+            }
+            else
+            {
+                ShowMessage(FailureText(failure));
+            }
+        }
+
+        private void DeploySelectedMcvs()
+        {
+            var world = World.DefaultGameObjectInjectionWorld;
+            if (world == null || !world.IsCreated)
+            {
+                return;
+            }
+
+            PruneSelection();
+            var entityManager = world.EntityManager;
+            var deployed = 0;
+            var failure = BuildFailure.None;
+
+            for (var i = _selected.Count - 1; i >= 0; i--)
+            {
+                var entity = _selected[i];
+                if (!entityManager.Exists(entity) ||
+                    !entityManager.HasComponent<UnitInfo>(entity) ||
+                    entityManager.GetComponentData<UnitInfo>(entity).Kind != UnitKind.Mcv)
+                {
+                    continue;
+                }
+
+                if (BaseCommands.TryDeployMcv(entityManager, entity, out failure))
+                {
+                    deployed++;
+                    _selected.RemoveAt(i);
+                }
+            }
+
+            if (deployed > 0)
+            {
+                ShowMessage("Construction Yard deployed");
+            }
+            else
+            {
+                ShowMessage(_selected.Count == 0
+                    ? "Select an MCV first"
+                    : FailureText(failure == BuildFailure.None ? BuildFailure.NotAnMcv : failure));
+            }
+        }
+
+        private static string FailureText(BuildFailure failure)
+        {
+            switch (failure)
+            {
+                case BuildFailure.NoEconomy:
+                    return "Economy not initialised";
+                case BuildFailure.NotEnoughCredits:
+                    return "Not enough credits";
+                case BuildFailure.NoConstructionYard:
+                    return "No Construction Yard";
+                case BuildFailure.OutsideBuildRadius:
+                    return "Too far from the Construction Yard";
+                case BuildFailure.BadTerrain:
+                    return "Cannot build there";
+                case BuildFailure.Occupied:
+                    return "That spot is occupied";
+                case BuildFailure.AlreadyDeployed:
+                    return "Construction Yard already deployed";
+                case BuildFailure.NotAnMcv:
+                    return "That is not an MCV";
+                default:
+                    return string.Empty;
+            }
+        }
+
+        private void ShowMessage(string message)
+        {
+            _message = message;
+            _messageUntil = Time.unscaledTime + 2.5f;
+        }
+
         private bool TryPickUnit(Vector2 screenPosition, out Entity picked)
         {
             var best = Entity.Null;
@@ -458,7 +615,7 @@ namespace CQRa.View
 
             var moving = _movingCount;
             var healthText = SelectedHealthText();
-            var hint = $"Selected: {_selected.Count}   Moving: {moving}{healthText}    LMB select · drag box · Shift add · RMB move / attack · Esc clear";
+            var hint = $"Selected: {_selected.Count}   Moving: {moving}{healthText}    1/2 build · D deploy · LMB select · RMB move / attack · Esc clear";
 
             var match = ReadMatchState();
             if (match.HasValue)
@@ -476,6 +633,32 @@ namespace CQRa.View
                 {
                     DrawGameOverBanner(state.Winner);
                 }
+            }
+
+            if (ReadEconomy(out var economy))
+            {
+                var powerMade = Economy.GetPowerMade(economy, BuildCatalog.PlayerTeam);
+                var powerUsed = Economy.GetPowerUsed(economy, BuildCatalog.PlayerTeam);
+                var economyText =
+                    $"Credits: {Economy.GetCredits(economy, BuildCatalog.PlayerTeam)}" +
+                    $"    Power: {powerUsed}/{powerMade}";
+
+                var previousColor = GUI.color;
+                GUI.color = new Color(0.05f, 0.04f, 0.03f, 0.72f);
+                GUI.DrawTexture(new Rect(12f, 48f, 300f, 30f), Texture2D.whiteTexture);
+                GUI.color = previousColor;
+                GUI.Label(new Rect(22f, 52f, 290f, 24f), economyText, _hintStyle);
+            }
+
+            DrawBuildPanel();
+
+            if (_message != null && Time.unscaledTime < _messageUntil)
+            {
+                var previousColor = GUI.color;
+                GUI.color = new Color(0.05f, 0.04f, 0.03f, 0.78f);
+                GUI.DrawTexture(new Rect(Screen.width * 0.5f - 260f, Screen.height - 96f, 520f, 30f), Texture2D.whiteTexture);
+                GUI.color = previousColor;
+                GUI.Label(new Rect(Screen.width * 0.5f - 250f, Screen.height - 92f, 500f, 24f), _message, _hintStyle);
             }
 
             var previous = GUI.color;
@@ -522,6 +705,65 @@ namespace CQRa.View
             }
 
             return entityManager.GetComponentData<MatchState>(query.GetSingletonEntity());
+        }
+
+        private static bool ReadEconomy(out EconomyState state)
+        {
+            state = default;
+
+            var world = World.DefaultGameObjectInjectionWorld;
+            if (world == null || !world.IsCreated)
+            {
+                return false;
+            }
+
+            var entityManager = world.EntityManager;
+            using var query = entityManager.CreateEntityQuery(ComponentType.ReadOnly<EconomyState>());
+            if (query.IsEmptyIgnoreFilter)
+            {
+                return false;
+            }
+
+            state = entityManager.GetComponentData<EconomyState>(query.GetSingletonEntity());
+            return true;
+        }
+
+        private void DrawBuildPanel()
+        {
+            if (_panelStyle == null)
+            {
+                _panelStyle = new GUIStyle(GUI.skin.label)
+                {
+                    fontSize = 14,
+                    normal = { textColor = new Color(0.95f, 0.92f, 0.82f) },
+                };
+            }
+
+            var width = 310f;
+            var height = 112f;
+            var x = Screen.width - width - 12f;
+            var y = Screen.height - height - 54f;
+
+            var previous = GUI.color;
+            GUI.color = new Color(0.05f, 0.04f, 0.03f, 0.74f);
+            GUI.DrawTexture(new Rect(x, y, width, height), Texture2D.whiteTexture);
+            GUI.color = previous;
+
+            GUI.Label(new Rect(x + 10f, y + 6f, width - 20f, 22f), "BUILD", _panelStyle);
+
+            for (var i = 0; i < BuildCatalog.PlayerBuildable.Length; i++)
+            {
+                var kind = BuildCatalog.PlayerBuildable[i];
+                var spec = BuildCatalog.Get(kind);
+                var marker = _armedBuild == i ? ">" : " ";
+                var line = $"{marker} [{i + 1}] {BuildCatalog.DisplayName(kind),-16} {spec.Cost}";
+                GUI.Label(new Rect(x + 10f, y + 30f + i * 24f, width - 20f, 22f), line, _panelStyle);
+            }
+
+            GUI.Label(
+                new Rect(x + 10f, y + 30f + BuildCatalog.PlayerBuildable.Length * 24f, width - 20f, 22f),
+                "   [D] Deploy MCV  [Esc] Cancel",
+                _panelStyle);
         }
 
         private void DrawGameOverBanner(byte winner)

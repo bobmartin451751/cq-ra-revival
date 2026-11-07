@@ -1,0 +1,355 @@
+using System.Collections;
+using CQRa.Sim.Base;
+using CQRa.Sim.Navigation;
+using CQRa.Sim.Units;
+using CQRa.View;
+using NUnit.Framework;
+using Unity.Collections;
+using Unity.Entities;
+using Unity.Mathematics;
+using Unity.Rendering;
+using Unity.Transforms;
+using UnityEngine;
+using UnityEngine.TestTools;
+
+namespace CQRa.Tests.PlayMode
+{
+    public sealed class BaseEconomyPlayModeTests
+    {
+        [UnityTest]
+        public IEnumerator AutoBuildBase_DeploysAndPlacesStructures()
+        {
+            yield return null;
+
+            var world = World.DefaultGameObjectInjectionWorld;
+            var entityManager = world.EntityManager;
+            var data = CreateFlatWorld(entityManager, 180f, 91, 1f);
+            var owned = new NativeList<Entity>(Allocator.Persistent);
+            var material = new Material(Shader.Find("Universal Render Pipeline/Lit"));
+            var meshes = UnitMeshes();
+
+            try
+            {
+                var renderMeshArray = UnitFactory.CreateRenderMeshArray(Materials(material), meshes);
+                var economy = CreateEconomy(entityManager, 3000, 3000);
+
+                var mcv = UnitFactory.Spawn(
+                    entityManager, renderMeshArray, 3,
+                    UnitMaterials.BaseIndex(0, UnitKind.Mcv),
+                    float3.zero, 0f, UnitKind.Mcv, 0);
+                owned.Add(mcv);
+
+                var placed = BaseCommands.AutoBuildBase(entityManager, 0);
+                Assert.AreEqual(3, placed, "MCV + power plant + refinery should be placed");
+
+                Assert.IsFalse(entityManager.Exists(mcv), "the MCV is consumed by deployment");
+                Assert.AreNotEqual(Entity.Null, BaseCommands.FindConstructionYard(entityManager, 0));
+                Assert.AreNotEqual(Entity.Null, BaseCommands.FindNearestRefinery(entityManager, 0, float3.zero));
+
+                var state = entityManager.GetComponentData<EconomyState>(economy);
+                Assert.AreEqual(2100, Economy.GetCredits(state, 0), "3000 - 300 - 600");
+
+                var powerPlant = FindBuilding(entityManager, 0, BuildingKind.PowerPlant);
+                Assert.AreNotEqual(Entity.Null, powerPlant);
+                Assert.AreEqual(100, entityManager.GetComponentData<BuildingInfo>(powerPlant).PowerProduced);
+
+                for (var frame = 0; frame < 5; frame++)
+                {
+                    yield return null;
+                }
+
+                state = entityManager.GetComponentData<EconomyState>(economy);
+                Assert.AreEqual(110, Economy.GetPowerMade(state, 0), "yard 10 + power plant 100");
+                Assert.AreEqual(40, Economy.GetPowerUsed(state, 0), "refinery draw");
+            }
+            finally
+            {
+                Cleanup(entityManager, data, owned, material, meshes);
+            }
+        }
+
+        [UnityTest]
+        public IEnumerator PlaceBuilding_RejectsOutsideRadiusAndInsufficientCredits()
+        {
+            yield return null;
+
+            var world = World.DefaultGameObjectInjectionWorld;
+            var entityManager = world.EntityManager;
+            var data = CreateFlatWorld(entityManager, 180f, 91, 1f);
+            var owned = new NativeList<Entity>(Allocator.Persistent);
+            var material = new Material(Shader.Find("Universal Render Pipeline/Lit"));
+            var meshes = UnitMeshes();
+
+            try
+            {
+                var economy = CreateEconomy(entityManager, 1000, 1000);
+                BuildingFactory.SpawnBuilding(entityManager, 0, BuildingKind.ConstructionYard, float3.zero);
+
+                var ok = BaseCommands.TryPlaceBuilding(
+                    entityManager, 0, BuildingKind.PowerPlant, new float3(60f, 0f, 0f), out var failure);
+
+                Assert.IsFalse(ok);
+                Assert.AreEqual(BuildFailure.OutsideBuildRadius, failure);
+                Assert.AreEqual(1000, Economy.GetCredits(entityManager.GetComponentData<EconomyState>(economy), 0));
+
+                var state = entityManager.GetComponentData<EconomyState>(economy);
+                Economy.SetCredits(ref state, 0, 100);
+                entityManager.SetComponentData(economy, state);
+
+                ok = BaseCommands.TryPlaceBuilding(
+                    entityManager, 0, BuildingKind.PowerPlant, new float3(26f, 0f, 0f), out failure);
+
+                Assert.IsFalse(ok);
+                Assert.AreEqual(BuildFailure.NotEnoughCredits, failure);
+                Assert.AreEqual(100, Economy.GetCredits(entityManager.GetComponentData<EconomyState>(economy), 0));
+                Assert.AreEqual(Entity.Null, FindBuilding(entityManager, 0, BuildingKind.PowerPlant));
+            }
+            finally
+            {
+                Cleanup(entityManager, data, owned, material, meshes);
+            }
+        }
+
+        [UnityTest]
+        public IEnumerator Harvester_DeliversCargoToRefinery()
+        {
+            yield return null;
+
+            var world = World.DefaultGameObjectInjectionWorld;
+            var entityManager = world.EntityManager;
+            var data = CreateFlatWorld(entityManager, 120f, 61, 1f);
+            var owned = new NativeList<Entity>(Allocator.Persistent);
+            var material = new Material(Shader.Find("Universal Render Pipeline/Lit"));
+            var meshes = UnitMeshes();
+
+            try
+            {
+                var renderMeshArray = UnitFactory.CreateRenderMeshArray(Materials(material), meshes);
+                var economy = CreateEconomy(entityManager, 100, 100);
+
+                BuildingFactory.SpawnBuilding(
+                    entityManager, 0, BuildingKind.Refinery, new float3(15f, 0f, 0f));
+
+                var harvester = UnitFactory.Spawn(
+                    entityManager, renderMeshArray, 2,
+                    UnitMaterials.BaseIndex(0, UnitKind.Harvester),
+                    float3.zero, 0f, UnitKind.Harvester, 0);
+                owned.Add(harvester);
+
+                var job = entityManager.GetComponentData<HarvesterJob>(harvester);
+                job.Phase = HarvesterPhase.ToRefinery;
+                job.Cargo = 350f;
+                entityManager.SetComponentData(harvester, job);
+
+                var delivered = false;
+                for (var frame = 0; frame < 240 && !delivered; frame++)
+                {
+                    yield return null;
+                    delivered = Economy.GetCredits(entityManager.GetComponentData<EconomyState>(economy), 0) >= 450;
+                }
+
+                Assert.IsTrue(delivered, "the harvester must deposit its cargo at the refinery");
+                Assert.AreEqual(
+                    0f,
+                    entityManager.GetComponentData<HarvesterJob>(harvester).Cargo,
+                    0.001f,
+                    "cargo is emptied on deposit");
+            }
+            finally
+            {
+                Cleanup(entityManager, data, owned, material, meshes);
+            }
+        }
+
+        [UnityTest]
+        public IEnumerator Harvester_SeeksAndHarvestsOre()
+        {
+            yield return null;
+
+            var world = World.DefaultGameObjectInjectionWorld;
+            var entityManager = world.EntityManager;
+            var data = CreateFlatWorld(entityManager, 140f, 71, 1f);
+            var owned = new NativeList<Entity>(Allocator.Persistent);
+            var material = new Material(Shader.Find("Universal Render Pipeline/Lit"));
+            var meshes = UnitMeshes();
+
+            try
+            {
+                var renderMeshArray = UnitFactory.CreateRenderMeshArray(Materials(material), meshes);
+                var economy = CreateEconomy(entityManager, 100, 100);
+
+                BuildingFactory.SpawnBuilding(
+                    entityManager, 0, BuildingKind.Refinery, new float3(-30f, 0f, 0f));
+
+                var ore = BuildingFactory.SpawnOre(
+                    entityManager, new float3(10f, 0f, 0f), 500, 7f);
+
+                var harvester = UnitFactory.Spawn(
+                    entityManager, renderMeshArray, 2,
+                    UnitMaterials.BaseIndex(0, UnitKind.Harvester),
+                    float3.zero, 0f, UnitKind.Harvester, 0);
+                owned.Add(harvester);
+
+                var harvested = false;
+                for (var frame = 0; frame < 1800 && !harvested; frame++)
+                {
+                    yield return null;
+                    harvested = entityManager.GetComponentData<OreNode>(ore).Amount < 500;
+                }
+
+                Assert.IsTrue(harvested, "the harvester must drive to the ore patch and start mining");
+                Assert.Greater(
+                    entityManager.GetComponentData<HarvesterJob>(harvester).Cargo,
+                    0f,
+                    "mined ore must accumulate as cargo");
+
+                // The ore entity must not disappear while it still has reserves.
+                Assert.IsTrue(entityManager.Exists(ore));
+                Assert.GreaterOrEqual(entityManager.GetComponentData<OreNode>(ore).Amount, 0);
+            }
+            finally
+            {
+                Cleanup(entityManager, data, owned, material, meshes);
+            }
+        }
+
+        private static Entity CreateEconomy(EntityManager entityManager, int team0, int team1)
+        {
+            // EconomySystem creates the singleton on its first tick, so reuse it if the
+            // test has already advanced a frame.
+            using var query = entityManager.CreateEntityQuery(ComponentType.ReadOnly<EconomyState>());
+            var entity = query.IsEmptyIgnoreFilter
+                ? entityManager.CreateEntity(typeof(EconomyState))
+                : query.GetSingletonEntity();
+
+            entityManager.SetComponentData(entity, new EconomyState
+            {
+                Team0Credits = team0,
+                Team1Credits = team1,
+            });
+
+            return entity;
+        }
+
+        private static Entity FindBuilding(EntityManager entityManager, int team, BuildingKind kind)
+        {
+            using var query = entityManager.CreateEntityQuery(ComponentType.ReadOnly<BuildingInfo>());
+            using var entities = query.ToEntityArray(Allocator.Temp);
+
+            for (var i = 0; i < entities.Length; i++)
+            {
+                var info = entityManager.GetComponentData<BuildingInfo>(entities[i]);
+                if (info.Team == team && info.Kind == kind)
+                {
+                    return entities[i];
+                }
+            }
+
+            return Entity.Null;
+        }
+
+        private static Mesh[] UnitMeshes()
+        {
+            return new[]
+            {
+                ProceduralMeshes.Box(new Vector3(0.9f, 1.2f, 0.9f)),
+                ProceduralMeshes.Box(new Vector3(3f, 1.5f, 7f)),
+                ProceduralMeshes.Box(new Vector3(4f, 2f, 7f)),
+                ProceduralMeshes.Box(new Vector3(5f, 3f, 8f)),
+            };
+        }
+
+        private static Material[] Materials(Material material)
+        {
+            var materials = new Material[UnitMaterials.Count];
+            for (var i = 0; i < materials.Length; i++)
+            {
+                materials[i] = material;
+            }
+
+            return materials;
+        }
+
+        private static void Cleanup(
+            EntityManager entityManager,
+            Entity data,
+            NativeList<Entity> owned,
+            Material material,
+            Mesh[] meshes)
+        {
+            foreach (var entity in owned)
+            {
+                if (entityManager.Exists(entity))
+                {
+                    entityManager.DestroyEntity(entity);
+                }
+            }
+
+            owned.Dispose();
+            DestroyAll<BuildingTag>(entityManager);
+            DestroyAll<OreNode>(entityManager);
+            DestroyAll<EconomyState>(entityManager);
+            DestroyAll<MatchState>(entityManager);
+
+            if (entityManager.Exists(data))
+            {
+                entityManager.DestroyEntity(data);
+            }
+
+            foreach (var mesh in meshes)
+            {
+                if (mesh != null)
+                {
+                    Object.DestroyImmediate(mesh);
+                }
+            }
+
+            Object.DestroyImmediate(material);
+        }
+
+        private static void DestroyAll<T>(EntityManager entityManager)
+        {
+            using var query = entityManager.CreateEntityQuery(ComponentType.ReadOnly<T>());
+            if (query.IsEmptyIgnoreFilter)
+            {
+                return;
+            }
+
+            var entities = query.ToEntityArray(Allocator.Temp);
+            entityManager.DestroyEntity(entities);
+            entities.Dispose();
+        }
+
+        private static Entity CreateFlatWorld(EntityManager entityManager, float size, int resolution, float cellSize)
+        {
+            var entity = entityManager.CreateEntity();
+            var cells = Mathf.CeilToInt(size / cellSize);
+
+            entityManager.AddComponentData(entity, new TerrainInfo { Resolution = resolution, Size = size });
+
+            var heights = entityManager.AddBuffer<TerrainHeightSample>(entity);
+            heights.ResizeUninitialized(resolution * resolution);
+            for (var i = 0; i < heights.Length; i++)
+            {
+                heights[i] = new TerrainHeightSample { Height = 0f };
+            }
+
+            entityManager.AddComponentData(entity, new NavGridInfo
+            {
+                Origin = new float2(-size * 0.5f, -size * 0.5f),
+                Size = new int2(cells, cells),
+                CellSize = cellSize,
+                MaxSlope = 2f,
+            });
+
+            var nav = entityManager.AddBuffer<NavCell>(entity);
+            nav.ResizeUninitialized(cells * cells);
+            for (var i = 0; i < nav.Length; i++)
+            {
+                nav[i] = new NavCell { Walkable = 1 };
+            }
+
+            return entity;
+        }
+    }
+}

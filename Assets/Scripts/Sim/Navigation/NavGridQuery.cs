@@ -60,5 +60,65 @@ namespace CQRa.Sim.Navigation
 
             return true;
         }
+
+        /// <summary>True when the nav grid at this world point is walkable (or when no grid exists).</summary>
+        public static bool IsWalkable(EntityManager entityManager, float2 point)
+        {
+            if (!TryGetGrid(entityManager, out var info, out var gridEntity))
+            {
+                return true;
+            }
+
+            var cell = NavGridMath.WorldToCell(info, point);
+            if (!info.InBounds(cell))
+            {
+                return false;
+            }
+
+            var buffer = entityManager.GetBuffer<NavCell>(gridEntity, true);
+            return buffer[cell.y * info.Size.x + cell.x].Walkable != 0;
+        }
+
+        /// <summary>
+        /// Permanently blocks every nav cell whose centre lies inside the circle.
+        /// Used when a building is placed so units path around it.
+        /// </summary>
+        public static void BlockCircle(EntityManager entityManager, float2 centre, float radius)
+        {
+            if (!TryGetGrid(entityManager, out var info, out var gridEntity))
+            {
+                return;
+            }
+
+            var buffer = entityManager.GetBuffer<NavCell>(gridEntity);
+            var min = NavGridMath.WorldToCell(info, centre - radius);
+            var max = NavGridMath.WorldToCell(info, centre + radius);
+
+            for (var z = math.max(0, min.y); z <= math.min(info.Size.y - 1, max.y); z++)
+            {
+                for (var x = math.max(0, min.x); x <= math.min(info.Size.x - 1, max.x); x++)
+                {
+                    var cellCentre = NavGridMath.CellCentre(info, new int2(x, z));
+                    if (math.distance(cellCentre, centre) <= radius)
+                    {
+                        buffer[z * info.Size.x + x] = new NavCell { Walkable = 0 };
+                    }
+                }
+            }
+        }
+
+        /// <summary>Drops every cached flow field so new blockers are respected.</summary>
+        public static void InvalidateFlowFields(EntityManager entityManager)
+        {
+            using var query = entityManager.CreateEntityQuery(ComponentType.ReadOnly<FlowFieldMeta>());
+            if (query.IsEmptyIgnoreFilter)
+            {
+                return;
+            }
+
+            var entities = query.ToEntityArray(Allocator.Temp);
+            entityManager.DestroyEntity(entities);
+            entities.Dispose();
+        }
     }
 }

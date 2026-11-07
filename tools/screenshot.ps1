@@ -2,6 +2,7 @@ param(
     [string]$Out = ".temp/screens/phase2.png",
     [switch]$SelectAll,
     [switch]$Attack,
+    [switch]$Base,
     [string]$MoveTo = "",
     [int]$MoveTeam = 0,
     [int]$WaitFrames = 0
@@ -29,6 +30,7 @@ $arguments = @(
 
 if ($SelectAll) { $arguments += "-selectall" }
 if ($Attack) { $arguments += @("-attack", "-moveteam", $MoveTeam, "-waitframes", $WaitFrames) }
+if ($Base) { $arguments += @("-base", "-waitframes", $WaitFrames) }
 if ($MoveTo) { $arguments += @("-moveto", $MoveTo, "-moveteam", $MoveTeam, "-waitframes", $WaitFrames)
 }
 

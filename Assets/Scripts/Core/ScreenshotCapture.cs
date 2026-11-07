@@ -1,6 +1,7 @@
 using System;
 using System.Globalization;
 using System.IO;
+using CQRa.Sim.Base;
 using CQRa.Sim.Navigation;
 using CQRa.Sim.Units;
 using CQRa.View;
@@ -28,6 +29,7 @@ namespace CQRa.Core
         private string _path;
         private bool _selectAll;
         private bool _attack;
+        private bool _base;
         private float2? _moveTo;
         private int _moveTeam;
         private int _captureFrame = WarmupFrames;
@@ -62,6 +64,7 @@ namespace CQRa.Core
 
             _selectAll = HasArg("-selectall");
             _attack = HasArg("-attack");
+            _base = HasArg("-base");
             _moveTo = ReadMoveTarget();
             _moveTeam = ReadIntArg("-moveteam", 0);
 
@@ -96,6 +99,11 @@ namespace CQRa.Core
                 if (_attack)
                 {
                     IssueAttackOrder(_moveTeam);
+                }
+
+                if (_base)
+                {
+                    BuildBases();
                 }
             }
 
@@ -326,6 +334,28 @@ namespace CQRa.Core
             }
 
             Debug.Log($"[Capture] ordered {ordered} team-{team} units to attack");
+        }
+
+        /// <summary>
+        /// Development helper for the Phase 5 base screenshot: deploy both MCVs and let
+        /// each team place a power plant and a refinery through the normal build rules.
+        /// </summary>
+        private void BuildBases()
+        {
+            var world = World.DefaultGameObjectInjectionWorld;
+            if (world == null || !world.IsCreated)
+            {
+                return;
+            }
+
+            var entityManager = world.EntityManager;
+            var total = 0;
+            for (var team = 0; team < 2; team++)
+            {
+                total += BaseCommands.AutoBuildBase(entityManager, team);
+            }
+
+            Debug.Log($"[Capture] built {total} base structures");
         }
 
         private float2? ReadMoveTarget()

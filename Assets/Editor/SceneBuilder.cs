@@ -1,5 +1,6 @@
 using System;
 using System.IO;
+using CQRa.Sim.Base;
 using CQRa.Sim.Navigation;
 using CQRa.Sim.Units;
 using CQRa.View;
@@ -42,6 +43,8 @@ namespace CQRa.EditorTools
                 var marker = CreateMoveMarker(terrain);
                 CreateSelection(camera, terrain, marker);
                 CreateCombatFx();
+                CreateBaseVisuals();
+                CreateEconomy(terrain);
                 CreateBootstrap();
 
                 EditorSceneManager.MarkSceneDirty(scene);
@@ -240,6 +243,19 @@ namespace CQRa.EditorTools
         {
             var go = new GameObject("CombatFX");
             go.AddComponent<CombatTracerRenderer>();
+        }
+
+        private static void CreateBaseVisuals()
+        {
+            var go = new GameObject("BaseVisuals");
+            go.AddComponent<BaseRenderer>();
+        }
+
+        private static void CreateEconomy(HeightmapTerrain terrain)
+        {
+            var go = new GameObject("Economy");
+            var economy = go.AddComponent<EconomyAuthoring>();
+            economy.Configure(terrain);
         }
 
         private static void CreateBootstrap()
