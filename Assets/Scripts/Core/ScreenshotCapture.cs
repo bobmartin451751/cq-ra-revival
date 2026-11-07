@@ -30,6 +30,7 @@ namespace CQRa.Core
         private bool _selectAll;
         private bool _attack;
         private bool _base;
+        private bool _army;
         private float2? _moveTo;
         private int _moveTeam;
         private int _captureFrame = WarmupFrames;
@@ -65,6 +66,7 @@ namespace CQRa.Core
             _selectAll = HasArg("-selectall");
             _attack = HasArg("-attack");
             _base = HasArg("-base");
+            _army = HasArg("-army");
             _moveTo = ReadMoveTarget();
             _moveTeam = ReadIntArg("-moveteam", 0);
 
@@ -104,6 +106,11 @@ namespace CQRa.Core
                 if (_base)
                 {
                     BuildBases();
+                }
+
+                if (_army)
+                {
+                    BuildArmies();
                 }
             }
 
@@ -356,6 +363,52 @@ namespace CQRa.Core
             }
 
             Debug.Log($"[Capture] built {total} base structures");
+        }
+
+        /// <summary>
+        /// Development helper for the Phase 6 screenshot: build each team a full base
+        /// (yard, power, refinery) plus barracks and war factory, then queue one
+        /// infantryman and one tank per team through the normal production rules.
+        /// </summary>
+        private void BuildArmies()
+        {
+            var world = World.DefaultGameObjectInjectionWorld;
+            if (world == null || !world.IsCreated)
+            {
+                return;
+            }
+
+            var entityManager = world.EntityManager;
+            var built = 0;
+            var queued = 0;
+
+            for (var team = 0; team < 2; team++)
+            {
+                built += BaseCommands.AutoBuildBase(entityManager, team);
+                built += BaseCommands.AutoBuildProduction(entityManager, team);
+
+                if (ProductionCommands.TryEnqueue(
+                        entityManager, team, UnitKind.Infantry, Entity.Null, out var failure))
+                {
+                    queued++;
+                }
+                else
+                {
+                    Debug.Log($"[Capture] team{team} infantry enqueue failed: {failure}");
+                }
+
+                if (ProductionCommands.TryEnqueue(
+                        entityManager, team, UnitKind.Tank, Entity.Null, out failure))
+                {
+                    queued++;
+                }
+                else
+                {
+                    Debug.Log($"[Capture] team{team} tank enqueue failed: {failure}");
+                }
+            }
+
+            Debug.Log($"[Capture] built {built} structures, queued {queued} units");
         }
 
         private float2? ReadMoveTarget()

@@ -8,6 +8,8 @@ namespace CQRa.Sim.Base
         ConstructionYard = 0,
         PowerPlant = 1,
         Refinery = 2,
+        Barracks = 3,
+        WarFactory = 4,
     }
 
     /// <summary>Marks a static player building.</summary>
@@ -100,6 +102,8 @@ namespace CQRa.Sim.Base
         {
             BuildingKind.PowerPlant,
             BuildingKind.Refinery,
+            BuildingKind.Barracks,
+            BuildingKind.WarFactory,
         };
 
         public static BuildingSpec Get(BuildingKind kind)
@@ -110,6 +114,10 @@ namespace CQRa.Sim.Base
                     return new BuildingSpec(6f, 6f, 300, 100, 0);
                 case BuildingKind.Refinery:
                     return new BuildingSpec(9f, 9f, 600, 0, 40);
+                case BuildingKind.Barracks:
+                    return new BuildingSpec(7f, 7f, 400, 0, 20);
+                case BuildingKind.WarFactory:
+                    return new BuildingSpec(11f, 11f, 900, 0, 60);
                 default:
                     // The construction yard is deployed, not purchased.
                     return new BuildingSpec(9f, 9f, 0, 10, 0);
@@ -124,6 +132,10 @@ namespace CQRa.Sim.Base
                     return "Power Plant";
                 case BuildingKind.Refinery:
                     return "Refinery";
+                case BuildingKind.Barracks:
+                    return "Barracks";
+                case BuildingKind.WarFactory:
+                    return "War Factory";
                 default:
                     return "Construction Yard";
             }

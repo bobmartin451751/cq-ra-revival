@@ -386,6 +386,27 @@ namespace CQRa.Sim.Base
             return candidates;
         }
 
+        /// <summary>
+        /// Development helper: place a barracks and a war factory around the yard.
+        /// Used by the Phase 6 capture rig.
+        /// </summary>
+        public static int AutoBuildProduction(EntityManager entityManager, int team)
+        {
+            var yard = FindConstructionYard(entityManager, team);
+            if (yard == Entity.Null)
+            {
+                return 0;
+            }
+
+            var centre = entityManager.GetComponentData<LocalTransform>(yard).Position;
+            var candidates = BuildCandidates(centre);
+
+            var placed = 0;
+            placed += AutoPlace(entityManager, team, BuildingKind.Barracks, candidates);
+            placed += AutoPlace(entityManager, team, BuildingKind.WarFactory, candidates);
+            return placed;
+        }
+
         private static Entity FindMcv(EntityManager entityManager, int team)
         {
             using var query = entityManager.CreateEntityQuery(

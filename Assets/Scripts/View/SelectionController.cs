@@ -42,6 +42,7 @@ namespace CQRa.View
         private int _armedBuild = -1;
         private string _message;
         private float _messageUntil;
+        private Entity _selectedProducer = Entity.Null;
 
         public IReadOnlyList<Entity> Selected => _selected;
 
@@ -148,16 +149,49 @@ namespace CQRa.View
                     ArmBuild(1);
                 }
 
+                if (keyboard.digit3Key.wasPressedThisFrame)
+                {
+                    ArmBuild(2);
+                }
+
+                if (keyboard.digit4Key.wasPressedThisFrame)
+                {
+                    ArmBuild(3);
+                }
+
                 if (keyboard.dKey.wasPressedThisFrame)
                 {
                     DeploySelectedMcvs();
                 }
+
+                if (keyboard.zKey.wasPressedThisFrame)
+                {
+                    TryProduce(UnitKind.Infantry);
+                }
+
+                if (keyboard.xKey.wasPressedThisFrame)
+                {
+                    TryProduce(UnitKind.Tank);
+                }
+
+                if (keyboard.cKey.wasPressedThisFrame)
+                {
+                    TryProduce(UnitKind.Harvester);
+                }
+
+                if (keyboard.vKey.wasPressedThisFrame)
+                {
+                    TryProduce(UnitKind.Mcv);
+                }
             }
+
+            _selectedProducer = FindSelectedProducer();
 
             if (mouse.rightButton.wasPressedThisFrame && _selected.Count > 0)
             {
                 var screenPosition = mouse.position.ReadValue();
-                if (!TryIssueAttackOrder(screenPosition))
+                if (!TryIssueAttackOrder(screenPosition) &&
+                    !TrySetRally(screenPosition))
                 {
                     IssueMoveOrder(screenPosition);
                 }
@@ -309,6 +343,141 @@ namespace CQRa.View
             ShowMessage($"Placing {BuildCatalog.DisplayName(BuildCatalog.PlayerBuildable[index])} - left-click to place, Esc to cancel");
         }
 
+        private Entity FindSelectedProducer()
+        {
+            var world = World.DefaultGameObjectInjectionWorld;
+            if (world == null || !world.IsCreated)
+            {
+                return Entity.Null;
+            }
+
+            var entityManager = world.EntityManager;
+            for (var i = 0; i < _selected.Count; i++)
+            {
+                var entity = _selected[i];
+                if (entityManager.Exists(entity) &&
+                    entityManager.HasComponent<ProductionTag>(entity) &&
+                    entityManager.HasComponent<BuildingInfo>(entity))
+                {
+                    return entity;
+                }
+            }
+
+            return Entity.Null;
+        }
+
+        private void TryProduce(UnitKind kind)
+        {
+            var world = World.DefaultGameObjectInjectionWorld;
+            if (world == null || !world.IsCreated)
+            {
+                return;
+            }
+
+            var spec = ProductionCatalog.Get(kind);
+            if (ProductionCommands.TryEnqueue(
+                    world.EntityManager,
+                    BuildCatalog.PlayerTeam,
+                    kind,
+                    _selectedProducer,
+                    out var failure))
+            {
+                ShowMessage($"{spec.Label} queued  (-{spec.Cost})");
+            }
+            else
+            {
+                ShowMessage(ProductionFailureText(failure));
+            }
+        }
+
+        private static string ProductionFailureText(ProductionFailure failure)
+        {
+            switch (failure)
+            {
+                case ProductionFailure.NoBuilding:
+                    return $"Build a {nameof(BuildingKind.Barracks)} or {nameof(BuildingKind.WarFactory)} first";
+                case ProductionFailure.NotEnoughCredits:
+                    return "Not enough credits";
+                case ProductionFailure.QueueFull:
+                    return "Production queue is full";
+                case ProductionFailure.NoEconomy:
+                    return "Economy not initialised";
+                default:
+                    return string.Empty;
+            }
+        }
+
+        /// <summary>
+        /// Right-click with production buildings selected (and no units) sets their rally
+        /// point. Returns false when the selection is not building-only.
+        /// </summary>
+        private bool TrySetRally(Vector2 screenPosition)
+        {
+            var world = World.DefaultGameObjectInjectionWorld;
+            if (world == null || !world.IsCreated)
+            {
+                return false;
+            }
+
+            var entityManager = world.EntityManager;
+            var hasProducer = false;
+
+            for (var i = 0; i < _selected.Count; i++)
+            {
+                var entity = _selected[i];
+                if (!entityManager.Exists(entity))
+                {
+                    continue;
+                }
+
+                if (entityManager.HasComponent<UnitTag>(entity))
+                {
+                    return false; // mixed selection with units: treat as a move order
+                }
+
+                if (entityManager.HasComponent<ProductionTag>(entity))
+                {
+                    hasProducer = true;
+                }
+            }
+
+            if (!hasProducer ||
+                !TerrainPicker.TryPick(_camera, screenPosition, _terrain, out var point))
+            {
+                return false;
+            }
+
+            var rally = new float3(point.x, point.y, point.z);
+            var applied = 0;
+
+            for (var i = 0; i < _selected.Count; i++)
+            {
+                var entity = _selected[i];
+                if (entityManager.Exists(entity) && entityManager.HasComponent<RallyPoint>(entity))
+                {
+                    entityManager.SetComponentData(entity, new RallyPoint
+                    {
+                        Value = rally,
+                        HasValue = 1,
+                    });
+                    applied++;
+                }
+            }
+
+            if (applied == 0)
+            {
+                return false;
+            }
+
+            if (_moveMarker != null)
+            {
+                _moveMarker.Show(new Vector3(rally.x, rally.y, rally.z));
+            }
+
+            ShowMessage("Rally point set");
+            return true;
+        }
+
         private void TryPlaceAtPoint(Vector2 screenPosition)
         {
             if (!TerrainPicker.TryPick(_camera, screenPosition, _terrain, out var point))
@@ -436,11 +605,35 @@ namespace CQRa.View
             return best != Entity.Null;
         }
 
+        private bool TryPickSelectable(Vector2 screenPosition, out Entity picked)
+        {
+            var best = Entity.Null;
+            var bestDistance = _pickRadiusPixels;
+
+            ForEachSelectable((entity, unitPosition) =>
+            {
+                if (!TryProject(unitPosition, out var projected))
+                {
+                    return;
+                }
+
+                var distance = (projected - screenPosition).magnitude;
+                if (distance < bestDistance)
+                {
+                    bestDistance = distance;
+                    best = entity;
+                }
+            });
+
+            picked = best;
+            return best != Entity.Null;
+        }
+
         private void SelectAtPoint(Vector2 screenPosition, bool additive)
         {
             PruneSelection();
 
-            var hasPicked = TryPickUnit(screenPosition, out var best);
+            var hasPicked = TryPickSelectable(screenPosition, out var best);
 
             if (!additive)
             {
@@ -474,7 +667,7 @@ namespace CQRa.View
             var min = new Vector2(Mathf.Min(a.x, b.x), Mathf.Min(a.y, b.y));
             var max = new Vector2(Mathf.Max(a.x, b.x), Mathf.Max(a.y, b.y));
 
-            ForEachUnit((entity, unitPosition) =>
+            ForEachSelectable((entity, unitPosition) =>
             {
                 if (!TryProject(unitPosition, out var projected))
                 {
@@ -501,6 +694,39 @@ namespace CQRa.View
             using var query = entityManager.CreateEntityQuery(
                 ComponentType.ReadOnly<UnitTag>(),
                 ComponentType.ReadOnly<LocalTransform>());
+
+            using var entities = query.ToEntityArray(Allocator.Temp);
+
+            foreach (var entity in entities)
+            {
+                if (!entityManager.Exists(entity) ||
+                    !entityManager.HasComponent<LocalTransform>(entity))
+                {
+                    continue;
+                }
+
+                action(entity, entityManager.GetComponentData<LocalTransform>(entity).Position);
+            }
+        }
+
+        private void ForEachSelectable(System.Action<Entity, Vector3> action)
+        {
+            var world = World.DefaultGameObjectInjectionWorld;
+            if (world == null || !world.IsCreated)
+            {
+                return;
+            }
+
+            var entityManager = world.EntityManager;
+            using var query = entityManager.CreateEntityQuery(new EntityQueryDesc
+            {
+                All = new[] { ComponentType.ReadOnly<LocalTransform>() },
+                Any = new[]
+                {
+                    ComponentType.ReadOnly<UnitTag>(),
+                    ComponentType.ReadOnly<BuildingTag>(),
+                },
+            });
 
             using var entities = query.ToEntityArray(Allocator.Temp);
 
@@ -615,7 +841,7 @@ namespace CQRa.View
 
             var moving = _movingCount;
             var healthText = SelectedHealthText();
-            var hint = $"Selected: {_selected.Count}   Moving: {moving}{healthText}    1/2 build · D deploy · LMB select · RMB move / attack · Esc clear";
+            var hint = $"Selected: {_selected.Count}   Moving: {moving}{healthText}    1-4 build · D deploy · Z/X/C/V produce · RMB rally/move/attack · Esc clear";
 
             var match = ReadMatchState();
             if (match.HasValue)
@@ -651,6 +877,7 @@ namespace CQRa.View
             }
 
             DrawBuildPanel();
+            DrawProductionPanel();
 
             if (_message != null && Time.unscaledTime < _messageUntil)
             {
@@ -740,7 +967,7 @@ namespace CQRa.View
             }
 
             var width = 310f;
-            var height = 112f;
+            var height = 30f + BuildCatalog.PlayerBuildable.Length * 24f + 24f;
             var x = Screen.width - width - 12f;
             var y = Screen.height - height - 54f;
 
@@ -764,6 +991,74 @@ namespace CQRa.View
                 new Rect(x + 10f, y + 30f + BuildCatalog.PlayerBuildable.Length * 24f, width - 20f, 22f),
                 "   [D] Deploy MCV  [Esc] Cancel",
                 _panelStyle);
+        }
+
+        private void DrawProductionPanel()
+        {
+            var width = 400f;
+            var height = 92f;
+            var x = 12f;
+            var y = Screen.height - height - 54f;
+
+            var previous = GUI.color;
+            GUI.color = new Color(0.05f, 0.04f, 0.03f, 0.74f);
+            GUI.DrawTexture(new Rect(x, y, width, height), Texture2D.whiteTexture);
+            GUI.color = previous;
+
+            GUI.Label(
+                new Rect(x + 10f, y + 6f, width - 20f, 22f),
+                "PRODUCTION   [Z] Infantry 100   [X] Tank 350",
+                _panelStyle);
+            GUI.Label(
+                new Rect(x + 10f, y + 30f, width - 20f, 22f),
+                $"             [C] Harvester 500   [V] MCV 1000",
+                _panelStyle);
+
+            var queueText = "Select a Barracks or War Factory to see its queue";
+            if (_selectedProducer != Entity.Null && ReadQueueText(_selectedProducer, out var text))
+            {
+                queueText = "Queue: " + text;
+            }
+
+            GUI.Label(new Rect(x + 10f, y + 56f, width - 20f, 22f), queueText, _panelStyle);
+        }
+
+        private static bool ReadQueueText(Entity producer, out string text)
+        {
+            text = string.Empty;
+
+            var world = World.DefaultGameObjectInjectionWorld;
+            if (world == null || !world.IsCreated)
+            {
+                return false;
+            }
+
+            var entityManager = world.EntityManager;
+            if (!entityManager.Exists(producer) ||
+                !entityManager.HasComponent<ProductionOrder>(producer))
+            {
+                return false;
+            }
+
+            var queue = entityManager.GetBuffer<ProductionOrder>(producer, true);
+            if (queue.Length == 0)
+            {
+                text = "idle";
+                return true;
+            }
+
+            var parts = new List<string>(queue.Length);
+            for (var i = 0; i < queue.Length; i++)
+            {
+                var order = queue[i];
+                var label = ProductionCatalog.Get(order.Kind).Label;
+                parts.Add(i == 0
+                    ? $"{label} {order.Remaining:0.0}s"
+                    : $"{label} {order.Total:0.0}s");
+            }
+
+            text = string.Join(" · ", parts);
+            return true;
         }
 
         private void DrawGameOverBanner(byte winner)

@@ -45,6 +45,8 @@ namespace CQRa.Sim.Units
 
         private void OnDestroy()
         {
+            UnitFactory.ClearDefaultVisuals();
+
             if (_meshes != null)
             {
                 foreach (var mesh in _meshes)
@@ -100,6 +102,7 @@ namespace CQRa.Sim.Units
             };
 
             _renderMeshArray = UnitFactory.CreateRenderMeshArray(_materials, _meshes);
+            UnitFactory.SetDefaultVisuals(_renderMeshArray);
 
             var entityManager = world.EntityManager;
             SpawnedCount = 0;

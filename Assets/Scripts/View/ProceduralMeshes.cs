@@ -389,6 +389,30 @@ namespace CQRa.View
                 new MeshPart(Box(new Vector3(2.0f, 2.4f, 2.0f)), new Vector3(5.0f, 6.0f, 3.0f)));
         }
 
+        /// <summary>Low barracks block with a flag mast and crates.</summary>
+        public static Mesh Barracks()
+        {
+            return Merge(
+                new MeshPart(Box(new Vector3(11f, 3.2f, 8f)), new Vector3(0f, 1.6f, 0f)),
+                new MeshPart(Box(new Vector3(7f, 2.0f, 3f)), new Vector3(0f, 2.2f, 4.2f)),
+                new MeshPart(Box(new Vector3(1.0f, 7f, 1.0f)), new Vector3(-4.4f, 3.5f, 2.6f)),
+                new MeshPart(Box(new Vector3(1.8f, 0.6f, 0.12f)), new Vector3(-3.6f, 6.2f, 2.6f)),
+                new MeshPart(Box(new Vector3(1.6f, 1.2f, 1.6f)), new Vector3(4.0f, 3.2f, -3.2f)),
+                new MeshPart(Box(new Vector3(1.6f, 1.2f, 1.6f)), new Vector3(4.0f, 4.4f, -3.2f)));
+        }
+
+        /// <summary>Large factory hall with a vehicle door and roof gantry.</summary>
+        public static Mesh WarFactory()
+        {
+            return Merge(
+                new MeshPart(Box(new Vector3(18f, 7f, 14f)), new Vector3(0f, 3.5f, 0f)),
+                new MeshPart(Box(new Vector3(6f, 5f, 1f)), new Vector3(4f, 2.5f, 7.2f)),
+                new MeshPart(Box(new Vector3(20f, 1f, 15f)), new Vector3(0f, 7.4f, 0f)),
+                new MeshPart(Box(new Vector3(1.2f, 6f, 1.2f)), new Vector3(-7f, 10f, 4f)),
+                new MeshPart(Box(new Vector3(0.8f, 0.8f, 12f)), new Vector3(-7f, 12.4f, 0f)),
+                new MeshPart(Box(new Vector3(3f, 2.4f, 3f)), new Vector3(6f, 9.1f, -4f)));
+        }
+
         /// <summary>Low ore crystal pile, deterministic per seed.</summary>
         public static Mesh OreCluster(int seed)
         {

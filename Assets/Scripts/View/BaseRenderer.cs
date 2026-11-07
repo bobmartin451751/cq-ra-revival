@@ -28,6 +28,8 @@ namespace CQRa.View
                 ProceduralMeshes.ConstructionYard(),
                 ProceduralMeshes.PowerPlant(),
                 ProceduralMeshes.Refinery(),
+                ProceduralMeshes.Barracks(),
+                ProceduralMeshes.WarFactory(),
                 ProceduralMeshes.OreCluster(17),
             };
 
@@ -48,9 +50,13 @@ namespace CQRa.View
                         name = $"Building_T{team}_{(BuildingKind)kind}",
                     };
 
-                    var tint = kind == (int)BuildingKind.PowerPlant
-                        ? new Color(0.34f, 0.38f, 0.36f)
-                        : structure;
+                    var tint = kind switch
+                    {
+                        (int)BuildingKind.PowerPlant => new Color(0.34f, 0.38f, 0.36f),
+                        (int)BuildingKind.Barracks => new Color(0.40f, 0.36f, 0.28f),
+                        (int)BuildingKind.WarFactory => new Color(0.30f, 0.32f, 0.33f),
+                        _ => structure,
+                    };
 
                     material.SetColor("_BaseColor", Color.Lerp(tint, teamColors[team], 0.45f));
                     material.SetFloat("_Smoothness", 0.22f);
@@ -67,6 +73,14 @@ namespace CQRa.View
             ore.EnableKeyword("_EMISSION");
             ore.SetColor("_EmissionColor", new Color(0.16f, 0.10f, 0.01f));
             _materials[BuildingFactory.OreMaterialIndex] = ore;
+
+            var highlight = new Material(shader) { name = "Building_Highlight" };
+            highlight.SetColor("_BaseColor", new Color(0.98f, 0.94f, 0.74f));
+            highlight.SetFloat("_Smoothness", 0.55f);
+            highlight.SetFloat("_Metallic", 0.05f);
+            highlight.EnableKeyword("_EMISSION");
+            highlight.SetColor("_EmissionColor", new Color(0.34f, 0.28f, 0.12f));
+            _materials[BuildingFactory.HighlightMaterialIndex] = highlight;
 
             BuildingFactory.Initialize(_materials, _meshes);
             Debug.Log($"[BaseRenderer] ready ({BuildingFactory.MaterialCount} materials, {_meshes.Length} meshes)");

@@ -14,10 +14,11 @@ namespace CQRa.Sim.Base
     /// </summary>
     public static class BuildingFactory
     {
-        public const int BuildingKindCount = 3;
+        public const int BuildingKindCount = 5;
         public const int OreMeshIndex = BuildingKindCount;
-        public const int OreMaterialIndex = 6;
-        public const int MaterialCount = 7;
+        public const int OreMaterialIndex = BuildingKindCount * 2;
+        public const int HighlightMaterialIndex = OreMaterialIndex + 1;
+        public const int MaterialCount = HighlightMaterialIndex + 1;
 
         private static RenderMeshArray _renderMeshArray;
         private static bool _initialized;
@@ -76,6 +77,26 @@ namespace CQRa.Sim.Base
             {
                 entityManager.AddComponent<RefineryTag>(entity);
             }
+            else if (kind == BuildingKind.Barracks || kind == BuildingKind.WarFactory)
+            {
+                entityManager.AddComponent<ProductionTag>(entity);
+                entityManager.AddBuffer<ProductionOrder>(entity);
+
+                var direction = new float2(-position.x, -position.z);
+                direction = math.normalizesafe(direction, new float2(0f, 1f));
+                entityManager.AddComponentData(entity, new RallyPoint
+                {
+                    Value = new float3(
+                        position.x + direction.x * 22f,
+                        position.y,
+                        position.z + direction.y * 22f),
+                    HasValue = 1,
+                });
+            }
+
+            entityManager.AddComponentData(entity, new Selected());
+            entityManager.SetComponentEnabled<Selected>(entity, false);
+            entityManager.AddComponentData(entity, new HighlightState { IsSelected = 0 });
 
             if (_initialized)
             {
@@ -136,6 +157,10 @@ namespace CQRa.Sim.Base
                     return 1200f;
                 case BuildingKind.Refinery:
                     return 900f;
+                case BuildingKind.Barracks:
+                    return 500f;
+                case BuildingKind.WarFactory:
+                    return 800f;
                 default:
                     return 600f;
             }

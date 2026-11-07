@@ -14,9 +14,28 @@ namespace CQRa.Sim.Units
     /// </summary>
     public static class UnitFactory
     {
+        private static RenderMeshArray _defaultRenderMeshArray;
+        private static bool _hasDefaultVisuals;
+
         public static RenderMeshArray CreateRenderMeshArray(Material[] materials, Mesh[] meshes)
         {
             return new RenderMeshArray(materials, meshes);
+        }
+
+        /// <summary>
+        /// Stores the scene's shared visuals so gameplay systems (production) can spawn
+        /// units without owning UnityEngine materials themselves.
+        /// </summary>
+        public static void SetDefaultVisuals(RenderMeshArray renderMeshArray)
+        {
+            _defaultRenderMeshArray = renderMeshArray;
+            _hasDefaultVisuals = true;
+        }
+
+        public static void ClearDefaultVisuals()
+        {
+            _hasDefaultVisuals = false;
+            _defaultRenderMeshArray = default;
         }
 
         public static Entity Spawn(
@@ -24,6 +43,40 @@ namespace CQRa.Sim.Units
             RenderMeshArray renderMeshArray,
             int meshIndex,
             int materialIndex,
+            float3 position,
+            float yawRadians,
+            UnitKind kind,
+            int team)
+        {
+            var entity = CreateUnit(entityManager, position, yawRadians, kind, team);
+            AddRenderComponents(entityManager, entity, renderMeshArray, meshIndex, materialIndex);
+            return entity;
+        }
+
+        /// <summary>Spawns a unit using the scene-wide unit visuals, if they were registered.</summary>
+        public static Entity SpawnDefault(
+            EntityManager entityManager,
+            float3 position,
+            float yawRadians,
+            UnitKind kind,
+            int team)
+        {
+            var entity = CreateUnit(entityManager, position, yawRadians, kind, team);
+            if (_hasDefaultVisuals)
+            {
+                AddRenderComponents(
+                    entityManager,
+                    entity,
+                    _defaultRenderMeshArray,
+                    (int)kind,
+                    UnitMaterials.BaseIndex(team, kind));
+            }
+
+            return entity;
+        }
+
+        private static Entity CreateUnit(
+            EntityManager entityManager,
             float3 position,
             float yawRadians,
             UnitKind kind,
@@ -102,11 +155,19 @@ namespace CQRa.Sim.Units
                 Speed = 0f,
             });
 
+            return entity;
+        }
+
+        private static void AddRenderComponents(
+            EntityManager entityManager,
+            Entity entity,
+            RenderMeshArray renderMeshArray,
+            int meshIndex,
+            int materialIndex)
+        {
             var description = new RenderMeshDescription(ShadowCastingMode.On, receiveShadows: true);
             var materialMeshInfo = MaterialMeshInfo.FromRenderMeshArrayIndices(materialIndex, meshIndex);
             RenderMeshUtility.AddComponents(entity, entityManager, description, renderMeshArray, materialMeshInfo);
-
-            return entity;
         }
 
         public static float RadiusFor(UnitKind kind)
