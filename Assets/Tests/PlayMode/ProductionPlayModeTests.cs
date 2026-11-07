@@ -148,6 +148,55 @@ namespace CQRa.Tests.PlayMode
             }
         }
 
+        [UnityTest]
+        public IEnumerator Production_FallsBackToAnotherProducerWithRoom()
+        {
+            yield return null;
+
+            var world = World.DefaultGameObjectInjectionWorld;
+            var entityManager = world.EntityManager;
+            var data = CreateFlatWorld(entityManager, 140f, 71, 1f);
+            var material = new Material(Shader.Find("Universal Render Pipeline/Lit"));
+
+            try
+            {
+                CreateEconomy(entityManager, 5000, 5000);
+
+                var first = BuildingFactory.SpawnBuilding(
+                    entityManager, 0, BuildingKind.Barracks, new float3(-12f, 0f, 0f));
+                var second = BuildingFactory.SpawnBuilding(
+                    entityManager, 0, BuildingKind.Barracks, new float3(12f, 0f, 0f));
+
+                for (var i = 0; i < ProductionCatalog.QueueLimit; i++)
+                {
+                    Assert.IsTrue(ProductionCommands.TryEnqueue(
+                        entityManager, 0, UnitKind.Infantry, first, out _));
+                }
+
+                Assert.AreEqual(
+                    ProductionCatalog.QueueLimit,
+                    entityManager.GetBuffer<ProductionOrder>(first).Length);
+
+                Assert.IsTrue(
+                    ProductionCommands.TryEnqueue(
+                        entityManager, 0, UnitKind.Infantry, first, out var failure),
+                    $"a full selected barracks must fall back to another ({failure})");
+
+                Assert.AreEqual(
+                    1,
+                    entityManager.GetBuffer<ProductionOrder>(second).Length,
+                    "the second barracks should receive the order");
+                Assert.AreEqual(
+                    ProductionCatalog.QueueLimit,
+                    entityManager.GetBuffer<ProductionOrder>(first).Length,
+                    "the full queue must be left untouched");
+            }
+            finally
+            {
+                Cleanup(entityManager, data, material);
+            }
+        }
+
         private static Entity CreateEconomy(EntityManager entityManager, int team0, int team1)
         {
             using var query = entityManager.CreateEntityQuery(ComponentType.ReadOnly<EconomyState>());

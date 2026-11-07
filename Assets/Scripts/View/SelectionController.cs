@@ -395,7 +395,8 @@ namespace CQRa.View
             switch (failure)
             {
                 case ProductionFailure.NoBuilding:
-                    return $"Build a {nameof(BuildingKind.Barracks)} or {nameof(BuildingKind.WarFactory)} first";
+                    return $"Build a {BuildCatalog.DisplayName(BuildingKind.Barracks)} or " +
+                           $"{BuildCatalog.DisplayName(BuildingKind.WarFactory)} first";
                 case ProductionFailure.NotEnoughCredits:
                     return "Not enough credits";
                 case ProductionFailure.QueueFull:
@@ -519,6 +520,7 @@ namespace CQRa.View
             PruneSelection();
             var entityManager = world.EntityManager;
             var deployed = 0;
+            var hadMcv = false;
             var failure = BuildFailure.None;
 
             for (var i = _selected.Count - 1; i >= 0; i--)
@@ -531,6 +533,8 @@ namespace CQRa.View
                     continue;
                 }
 
+                hadMcv = true;
+
                 if (BaseCommands.TryDeployMcv(entityManager, entity, out failure))
                 {
                     deployed++;
@@ -542,11 +546,13 @@ namespace CQRa.View
             {
                 ShowMessage("Construction Yard deployed");
             }
+            else if (!hadMcv)
+            {
+                ShowMessage("Select an MCV first");
+            }
             else
             {
-                ShowMessage(_selected.Count == 0
-                    ? "Select an MCV first"
-                    : FailureText(failure == BuildFailure.None ? BuildFailure.NotAnMcv : failure));
+                ShowMessage(FailureText(failure));
             }
         }
 

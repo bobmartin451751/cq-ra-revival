@@ -35,20 +35,17 @@ namespace CQRa.Sim.Base
             }
 
             var spec = ProductionCatalog.Get(kind);
-            var building = FindProducer(entityManager, team, spec.Producer, preferredBuilding);
+            var building = FindProducerWithRoom(
+                entityManager, team, spec.Producer, preferredBuilding, out var anyProducer);
+
             if (building == Entity.Null ||
                 !entityManager.HasComponent<ProductionOrder>(building))
             {
-                failure = ProductionFailure.NoBuilding;
+                failure = anyProducer ? ProductionFailure.QueueFull : ProductionFailure.NoBuilding;
                 return false;
             }
 
             var queue = entityManager.GetBuffer<ProductionOrder>(building);
-            if (queue.Length >= ProductionCatalog.QueueLimit)
-            {
-                failure = ProductionFailure.QueueFull;
-                return false;
-            }
 
             if (!BuildRules.CanAfford(Economy.GetCredits(economy, team), spec.Cost))
             {
@@ -67,6 +64,63 @@ namespace CQRa.Sim.Base
             });
 
             return true;
+        }
+
+        /// <summary>
+        /// Prefers the selected building when it can build the kind and has room; otherwise
+        /// picks the first matching producer with a free queue slot. With several barracks
+        /// or factories, a full queue on one building no longer blocks the others.
+        /// </summary>
+        private static Entity FindProducerWithRoom(
+            EntityManager entityManager,
+            int team,
+            BuildingKind producerKind,
+            Entity preferredBuilding,
+            out bool anyProducer)
+        {
+            anyProducer = false;
+
+            if (preferredBuilding != Entity.Null &&
+                entityManager.Exists(preferredBuilding) &&
+                entityManager.HasComponent<BuildingInfo>(preferredBuilding) &&
+                entityManager.HasComponent<ProductionTag>(preferredBuilding))
+            {
+                var preferredInfo = entityManager.GetComponentData<BuildingInfo>(preferredBuilding);
+                if (preferredInfo.Team == team && preferredInfo.Kind == producerKind)
+                {
+                    anyProducer = true;
+                    if (entityManager.HasComponent<ProductionOrder>(preferredBuilding) &&
+                        entityManager.GetBuffer<ProductionOrder>(preferredBuilding, true).Length <
+                        ProductionCatalog.QueueLimit)
+                    {
+                        return preferredBuilding;
+                    }
+                }
+            }
+
+            using var query = entityManager.CreateEntityQuery(
+                ComponentType.ReadOnly<ProductionTag>(),
+                ComponentType.ReadOnly<BuildingInfo>(),
+                ComponentType.ReadOnly<ProductionOrder>());
+            using var entities = query.ToEntityArray(Allocator.Temp);
+
+            for (var i = 0; i < entities.Length; i++)
+            {
+                var info = entityManager.GetComponentData<BuildingInfo>(entities[i]);
+                if (info.Team != team || info.Kind != producerKind)
+                {
+                    continue;
+                }
+
+                anyProducer = true;
+                if (entityManager.GetBuffer<ProductionOrder>(entities[i], true).Length <
+                    ProductionCatalog.QueueLimit)
+                {
+                    return entities[i];
+                }
+            }
+
+            return Entity.Null;
         }
 
         /// <summary>

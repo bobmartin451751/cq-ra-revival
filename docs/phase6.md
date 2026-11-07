@@ -38,6 +38,8 @@ Rules:
 
 - **Queue.** Each production building has a 5-item FIFO queue. Only the front item
   advances; the HUD shows its remaining seconds and the rest as full build times.
+- **Multiple producers.** The selected building is preferred; if its queue is full the
+  next barracks/factory of the team with room takes the order.
 - **Payment.** Credits are deducted at enqueue time. Enqueue fails on no producer,
   insufficient credits, or a full queue, and leaves the balance untouched.
 - **Completion.** The order is consumed, then the unit spawns just outside the
@@ -62,7 +64,7 @@ Rules:
 `-army` deploys both bases, places a barracks and war factory per team through the real
 build rules, and queues one infantryman and one tank per team.
 
-Suites: EditMode 32/32, PlayMode 24/24.
+Suites: EditMode 32/32, PlayMode 25/25.
 
 ### Covered by tests
 
@@ -72,6 +74,7 @@ Suites: EditMode 32/32, PlayMode 24/24.
 - Barracks spawns an infantryman, consumes the queue entry and pays 100 credits.
 - The produced unit receives a move order whose destination is the rally point.
 - Enqueue fails without a producer, without credits, and with a full 5-item queue.
+- A full selected producer falls back to another producer of the same kind with room.
 - Failed enqueues never modify the credit balance.
 
 ## Known limits (deliberate for Phase 6)
