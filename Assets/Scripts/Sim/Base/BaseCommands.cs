@@ -512,6 +512,32 @@ namespace CQRa.Sim.Base
         }
 
         /// <summary>
+        /// Places one building at the first valid deterministic site around the team's
+        /// construction yard. Used by the AI and capture helpers.
+        /// </summary>
+        public static bool TryAutoPlace(EntityManager entityManager, int team, BuildingKind kind)
+        {
+            var yard = FindConstructionYard(entityManager, team);
+            if (yard == Entity.Null)
+            {
+                return false;
+            }
+
+            var centre = entityManager.GetComponentData<LocalTransform>(yard).Position;
+            var candidates = BuildCandidates(centre);
+
+            for (var i = 0; i < candidates.Length; i++)
+            {
+                if (TryPlaceBuilding(entityManager, team, kind, candidates[i], out _))
+                {
+                    return true;
+                }
+            }
+
+            return false;
+        }
+
+        /// <summary>
         /// Development helper: place a barracks and a war factory around the yard.
         /// Used by the Phase 6 capture rig.
         /// </summary>

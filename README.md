@@ -25,6 +25,7 @@ alone. The replay browser's AI-vision overlay lets you verify it.
 .\tools\screenshot.ps1 -Out .temp/screens/phase5-base.png -Base -WaitFrames 1400
 .\tools\screenshot.ps1 -Out .temp/screens/phase6-army.png -Army -WaitFrames 2400
 .\tools\screenshot.ps1 -Out .temp/screens/phase7-siege.png -Siege -WaitFrames 900
+.\tools\screenshot.ps1 -Out .temp/screens/phase8-ai.png -Ai -AiLevel 3 -WaitFrames 6000
 .\tools\run-tests.ps1                   # EditMode + PlayMode suites
 .\tools\build.ps1                       # Windows player -> Builds/Windows
 ```
@@ -37,7 +38,7 @@ Shift to add, **right-click to move**, **right-click an enemy unit or building t
 attack**, **1-4 to arm a building, D to deploy a selected MCV, Z/X/C/V to produce
 units, R to repair, T to sell**, Esc to clear/cancel. Right-click with production
 buildings selected sets their rally point. See `docs/phase2.md` through
-`docs/phase7.md` for details.
+`docs/phase8.md` for details.
 
 ## Layout
 
@@ -71,5 +72,6 @@ tools/               headless scripts
 | 5 - base + economy | OK - MCV deploy, build placement, credits, power, ore, harvester loop |
 | 6 - production | OK - barracks/war factory, queues, unit construction, rally points |
 | 7 - building combat | OK - buildings targetable/destructible, repair, sell, nav freeing |
+| 8 - skirmish AI | OK - deterministic AI commander, build/produce/attack, 4 difficulty tiers |
 
 See `docs/spec.md` for the full roadmap and frozen scope.

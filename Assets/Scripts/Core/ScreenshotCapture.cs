@@ -1,6 +1,7 @@
 using System;
 using System.Globalization;
 using System.IO;
+using CQRa.Sim.AI;
 using CQRa.Sim.Base;
 using CQRa.Sim.Navigation;
 using CQRa.Sim.Units;
@@ -32,6 +33,8 @@ namespace CQRa.Core
         private bool _base;
         private bool _army;
         private bool _siege;
+        private bool _ai;
+        private int _aiLevel;
         private float2? _moveTo;
         private int _moveTeam;
         private int _captureFrame = WarmupFrames;
@@ -69,6 +72,8 @@ namespace CQRa.Core
             _base = HasArg("-base");
             _army = HasArg("-army");
             _siege = HasArg("-siege");
+            _ai = HasArg("-ai");
+            _aiLevel = ReadIntArg("-ailevel", (int)AiDifficulty.Veteran);
             _moveTo = ReadMoveTarget();
             _moveTeam = ReadIntArg("-moveteam", 0);
 
@@ -103,6 +108,11 @@ namespace CQRa.Core
                 if (_attack)
                 {
                     IssueAttackOrder(_moveTeam);
+                }
+
+                if (_ai)
+                {
+                    EnableAi();
                 }
 
                 if (_base)
@@ -354,6 +364,40 @@ namespace CQRa.Core
         /// Development helper for the Phase 5 base screenshot: deploy both MCVs and let
         /// each team place a power plant and a refinery through the normal build rules.
         /// </summary>
+        /// <summary>
+        /// Development helper for the Phase 8 screenshot: give each team an AI commander
+        /// and let them play the normal rules from the starting MCVs.
+        /// </summary>
+        private void EnableAi()
+        {
+            var world = World.DefaultGameObjectInjectionWorld;
+            if (world == null || !world.IsCreated)
+            {
+                return;
+            }
+
+            var entityManager = world.EntityManager;
+            using var existing = entityManager.CreateEntityQuery(ComponentType.ReadOnly<AiCommander>());
+            if (!existing.IsEmptyIgnoreFilter)
+            {
+                return;
+            }
+
+            var level = (AiDifficulty)math.clamp(_aiLevel, 0, 3);
+            for (var team = 0; team < 2; team++)
+            {
+                var entity = entityManager.CreateEntity(typeof(AiCommander));
+                entityManager.SetComponentData(entity, new AiCommander
+                {
+                    Team = team,
+                    Difficulty = level,
+                    ThinkTimer = 0f,
+                });
+            }
+
+            Debug.Log($"[Capture] AI enabled for both teams ({level})");
+        }
+
         private void BuildBases()
         {
             var world = World.DefaultGameObjectInjectionWorld;

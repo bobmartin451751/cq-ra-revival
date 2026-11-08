@@ -5,6 +5,8 @@ param(
     [switch]$Base,
     [switch]$Army,
     [switch]$Siege,
+    [switch]$Ai,
+    [int]$AiLevel = 1,
     [string]$MoveTo = "",
     [int]$MoveTeam = 0,
     [int]$WaitFrames = 0
@@ -35,6 +37,7 @@ if ($Attack) { $arguments += @("-attack", "-moveteam", $MoveTeam, "-waitframes",
 if ($Base) { $arguments += @("-base", "-waitframes", $WaitFrames) }
 if ($Army) { $arguments += @("-army", "-waitframes", $WaitFrames) }
 if ($Siege) { $arguments += @("-siege", "-waitframes", $WaitFrames) }
+if ($Ai) { $arguments += @("-ai", "-ailevel", $AiLevel, "-waitframes", $WaitFrames) }
 if ($MoveTo) { $arguments += @("-moveto", $MoveTo, "-moveteam", $MoveTeam, "-waitframes", $WaitFrames)
 }
 
