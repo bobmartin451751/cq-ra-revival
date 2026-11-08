@@ -1,0 +1,31 @@
+{
+  "missions": [
+    {
+      "id": "m1",
+      "name": "First Contact",
+      "briefing": "A hostile commander has dug in across the basin. Establish your base, keep the harvesters running, and wipe them out.",
+      "difficulty": "Recruit",
+      "objective": "destroyAll",
+      "objectiveText": "Destroy every enemy unit and structure.",
+      "surviveSeconds": 0
+    },
+    {
+      "id": "m2",
+      "name": "Hold the Line",
+      "briefing": "Enemy pressure is building. Fortify the approach, protect your economy, and outlast the assault.",
+      "difficulty": "Veteran",
+      "objective": "survive",
+      "objectiveText": "Survive for 5 minutes.",
+      "surviveSeconds": 300
+    },
+    {
+      "id": "m3",
+      "name": "Break Their Base",
+      "briefing": "Strike the heart of the enemy base. Destroy their Construction Yard and they cannot rebuild.",
+      "difficulty": "Hardened",
+      "objective": "destroyYard",
+      "objectiveText": "Destroy the enemy Construction Yard.",
+      "surviveSeconds": 0
+    }
+  ]
+}

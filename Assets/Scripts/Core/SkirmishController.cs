@@ -1,5 +1,7 @@
 using System;
 using CQRa.Sim.AI;
+using CQRa.Sim.Base;
+using CQRa.Sim.Campaign;
 using CQRa.Sim.Units;
 using CQRa.View;
 using Unity.Entities;
@@ -27,6 +29,16 @@ namespace CQRa.Core
         private int _winner = 255;
         private bool _captureRun;
 
+        private int _menuMode; // 0 = skirmish, 1 = campaign
+        private int _selectedMission;
+        private bool _campaignActive;
+        private bool _missionWon;
+        private string _missionObjective = "destroyAll";
+        private string _missionObjectiveText = string.Empty;
+        private float _surviveSeconds;
+        private float _missionElapsed;
+        private static int _pendingMission = -1;
+
         private GUIStyle _label;
         private GUIStyle _title;
         private GUIStyle _subtitle;
@@ -43,6 +55,7 @@ namespace CQRa.Core
         private void Awake()
         {
             _captureRun = HasArg("-screenshot");
+            MissionCatalog.Load();
 
             var world = World.DefaultGameObjectInjectionWorld;
             if (world != null && world.IsCreated)
@@ -66,6 +79,12 @@ namespace CQRa.Core
             {
                 // Capture modes script their own setup; never show the menu in batch runs.
                 BeginMatch(false);
+            }
+            else if (_pendingMission >= 0)
+            {
+                var mission = _pendingMission;
+                _pendingMission = -1;
+                BeginMission(mission);
             }
             else
             {
@@ -94,19 +113,104 @@ namespace CQRa.Core
             }
 
             var match = entityManager.GetComponentData<MatchState>(query.GetSingletonEntity());
+
+            if (_campaignActive)
+            {
+                UpdateCampaignMission(entityManager, match);
+                return;
+            }
+
             if (match.GameOver == 0)
             {
                 return;
             }
 
+            EndMatch(match.Winner);
+        }
+
+        private void UpdateCampaignMission(EntityManager entityManager, in MatchState match)
+        {
+            _missionElapsed += Time.deltaTime;
+
+            if (match.GameOver != 0 && match.Winner == SkirmishCommands.AiTeam)
+            {
+                EndMission(false);
+                return;
+            }
+
+            switch (_missionObjective)
+            {
+                case "destroyAll":
+                    if (match.GameOver != 0 && match.Winner == SkirmishCommands.PlayerTeam)
+                    {
+                        EndMission(true);
+                    }
+
+                    break;
+
+                case "survive":
+                    if (_missionElapsed >= _surviveSeconds)
+                    {
+                        EndMission(true);
+                    }
+
+                    break;
+
+                case "destroyYard":
+                    if (match.GameOver != 0 && match.Winner == SkirmishCommands.PlayerTeam)
+                    {
+                        EndMission(true);
+                    }
+                    else if (BaseCommands.FindConstructionYard(entityManager, SkirmishCommands.AiTeam) == Entity.Null)
+                    {
+                        EndMission(true);
+                    }
+
+                    break;
+            }
+        }
+
+        private void EndMatch(int winner)
+        {
             _matchOver = true;
-            _winner = match.Winner;
+            _winner = winner;
             Time.timeScale = 0f;
 
             if (_selection != null)
             {
                 _selection.enabled = false;
             }
+        }
+
+        private void EndMission(bool won)
+        {
+            _missionWon = won;
+            if (won)
+            {
+                MissionCatalog.MarkCompleted(_selectedMission);
+            }
+
+            EndMatch(won ? SkirmishCommands.PlayerTeam : SkirmishCommands.AiTeam);
+        }
+
+        private void BeginMission(int index)
+        {
+            var missions = MissionCatalog.Missions;
+            if (missions == null || index < 0 || index >= missions.Length)
+            {
+                return;
+            }
+
+            var mission = missions[index];
+            _selectedMission = index;
+            _difficulty = MissionCatalog.DifficultyFor(mission);
+            _campaignActive = true;
+            _missionWon = false;
+            _missionObjective = mission.objective ?? "destroyAll";
+            _missionObjectiveText = mission.objectiveText ?? string.Empty;
+            _surviveSeconds = mission.surviveSeconds;
+            _missionElapsed = 0f;
+            BeginMatch(true);
         }
 
         private void BeginMatch(bool withAi)
@@ -154,10 +258,41 @@ namespace CQRa.Core
                 $"AI: {_difficulty}",
                 _label);
 
+            if (_campaignActive)
+            {
+                DrawObjectiveHud();
+            }
+
             if (_matchOver)
             {
-                DrawResult();
+                if (_campaignActive)
+                {
+                    DrawCampaignResult();
+                }
+                else
+                {
+                    DrawResult();
+                }
             }
+        }
+
+        private void DrawObjectiveHud()
+        {
+            var previous = GUI.color;
+            GUI.color = new Color(0.04f, 0.035f, 0.03f, 0.78f);
+            GUI.DrawTexture(new Rect(12f, 12f, 430f, 62f), Texture2D.whiteTexture);
+            GUI.color = previous;
+
+            GUI.Label(
+                new Rect(22f, 16f, 410f, 22f),
+                MissionCatalog.Missions[_selectedMission].name,
+                _subtitle);
+
+            var objective = _missionObjective == "survive"
+                ? $"{_missionObjectiveText}  ({Mathf.CeilToInt(Mathf.Max(0f, _surviveSeconds - _missionElapsed))}s)"
+                : _missionObjectiveText;
+
+            GUI.Label(new Rect(22f, 44f, 410f, 22f), objective, _label);
         }
 
         private void DrawMenu()
@@ -167,8 +302,8 @@ namespace CQRa.Core
             GUI.DrawTexture(new Rect(0f, 0f, Screen.width, Screen.height), Texture2D.whiteTexture);
             GUI.color = previous;
 
-            var width = 520f;
-            var height = 420f;
+            var width = 540f;
+            var height = 470f;
             var x = (Screen.width - width) * 0.5f;
             var y = (Screen.height - height) * 0.5f;
             var panel = new Rect(x, y, width, height);
@@ -177,14 +312,46 @@ namespace CQRa.Core
             GUI.DrawTexture(panel, Texture2D.whiteTexture);
             GUI.color = previous;
 
-            GUI.Label(new Rect(x + 30f, y + 24f, width - 60f, 54f), "C&Q R-A REVIVAL", _title);
-            GUI.Label(new Rect(x + 30f, y + 78f, width - 60f, 30f), "SKIRMISH", _subtitle);
+            GUI.Label(new Rect(x + 30f, y + 18f, width - 60f, 54f), "C&Q R-A REVIVAL", _title);
+
+            var half = (width - 60f) * 0.5f;
+            var previousColor = GUI.backgroundColor;
+            GUI.backgroundColor = _menuMode == 0
+                ? new Color(0.72f, 0.48f, 0.20f)
+                : new Color(0.28f, 0.26f, 0.22f);
+            if (GUI.Button(new Rect(x + 30f, y + 78f, half, 34f), "SKIRMISH", _button))
+            {
+                _menuMode = 0;
+            }
+
+            GUI.backgroundColor = _menuMode == 1
+                ? new Color(0.72f, 0.48f, 0.20f)
+                : new Color(0.28f, 0.26f, 0.22f);
+            if (GUI.Button(new Rect(x + 34f + half, y + 78f, half, 34f), "CAMPAIGN", _button))
+            {
+                _menuMode = 1;
+            }
+
+            GUI.backgroundColor = previousColor;
+
             GUI.Label(
-                new Rect(x + 30f, y + 112f, width - 60f, 46f),
+                new Rect(x + 30f, y + 120f, width - 60f, 24f),
                 "The AI plays by exactly the same rules: no bonuses, no stat changes.",
                 _label);
 
-            GUI.Label(new Rect(x + 30f, y + 158f, width - 60f, 24f), "DIFFICULTY", _label);
+            if (_menuMode == 0)
+            {
+                DrawSkirmishMenu(x, y, width);
+            }
+            else
+            {
+                DrawCampaignMenu(x, y, width);
+            }
+        }
+
+        private void DrawSkirmishMenu(float x, float y, float width)
+        {
+            GUI.Label(new Rect(x + 30f, y + 156f, width - 60f, 24f), "DIFFICULTY", _label);
 
             var difficulties = new[]
             {
@@ -204,7 +371,7 @@ namespace CQRa.Core
                     : new Color(0.28f, 0.26f, 0.22f);
 
                 if (GUI.Button(
-                        new Rect(x + 30f + i * 116f, y + 186f, 106f, 38f),
+                        new Rect(x + 30f + i * 121f, y + 184f, 111f, 38f),
                         difficulty.ToString(),
                         _button))
                 {
@@ -215,23 +382,125 @@ namespace CQRa.Core
             }
 
             GUI.Label(
-                new Rect(x + 30f, y + 236f, width - 60f, 46f),
+                new Rect(x + 30f, y + 234f, width - 60f, 46f),
                 Describe(_difficulty),
                 _label);
 
-            var start = GUI.Button(
-                new Rect(x + 30f, y + 300f, width - 60f, 52f),
-                "START MATCH",
-                _button);
+            if (GUI.Button(
+                    new Rect(x + 30f, y + 300f, width - 60f, 52f),
+                    "START MATCH",
+                    _button))
+            {
+                _campaignActive = false;
+                BeginMatch(true);
+            }
 
             GUI.Label(
-                new Rect(x + 30f, y + 360f, width - 60f, 24f),
+                new Rect(x + 30f, y + 372f, width - 60f, 24f),
                 "WASD/edges pan · wheel zoom · Q/E rotate",
                 _label);
+        }
 
-            if (start)
+        private void DrawCampaignMenu(float x, float y, float width)
+        {
+            var missions = MissionCatalog.Missions;
+            if (missions == null || missions.Length == 0)
             {
-                BeginMatch(true);
+                GUI.Label(new Rect(x + 30f, y + 160f, width - 60f, 24f), "No missions found.", _label);
+                return;
+            }
+
+            GUI.Label(new Rect(x + 30f, y + 150f, width - 60f, 22f), "MISSIONS", _label);
+
+            for (var i = 0; i < missions.Length && i < 5; i++)
+            {
+                var unlocked = MissionCatalog.IsUnlocked(i);
+                var completed = MissionCatalog.IsCompleted(i);
+                var marker = completed ? " *" : unlocked ? string.Empty : "  [LOCKED]";
+                var label = $"{i + 1}. {missions[i].name}{marker}";
+
+                var previousColor = GUI.backgroundColor;
+                if (i == _selectedMission)
+                {
+                    GUI.backgroundColor = new Color(0.72f, 0.48f, 0.20f);
+                }
+                else if (!unlocked)
+                {
+                    GUI.backgroundColor = new Color(0.18f, 0.17f, 0.16f);
+                }
+                else
+                {
+                    GUI.backgroundColor = new Color(0.28f, 0.26f, 0.22f);
+                }
+
+                if (GUI.Button(
+                        new Rect(x + 30f, y + 176f + i * 36f, width - 60f, 32f),
+                        label,
+                        _button) && unlocked)
+                {
+                    _selectedMission = i;
+                }
+
+                GUI.backgroundColor = previousColor;
+            }
+
+            var mission = missions[Mathf.Clamp(_selectedMission, 0, missions.Length - 1)];
+            GUI.Label(
+                new Rect(x + 30f, y + 330f, width - 60f, 76f),
+                mission.briefing,
+                _label);
+
+            if (GUI.Button(
+                    new Rect(x + 30f, y + 410f, width - 60f, 40f),
+                    "START MISSION",
+                    _button) &&
+                MissionCatalog.IsUnlocked(_selectedMission))
+            {
+                BeginMission(_selectedMission);
+            }
+        }
+
+        private void DrawCampaignResult()
+        {
+            var previous = GUI.color;
+            GUI.color = new Color(0.04f, 0.03f, 0.02f, 0.78f);
+            GUI.DrawTexture(new Rect(0f, Screen.height * 0.3f, Screen.width, 280f), Texture2D.whiteTexture);
+            GUI.color = previous;
+
+            GUI.Label(
+                new Rect(0f, Screen.height * 0.3f + 18f, Screen.width, 60f),
+                _missionWon ? "MISSION COMPLETE" : "MISSION FAILED",
+                _title);
+
+            var buttonY = Screen.height * 0.3f + 110f;
+            var hasNext = _missionWon && _selectedMission + 1 < MissionCatalog.Missions.Length;
+
+            if (GUI.Button(
+                    new Rect(Screen.width * 0.5f - 330f, buttonY, 200f, 44f),
+                    "RETRY",
+                    _button))
+            {
+                _pendingMission = _selectedMission;
+                Restart();
+            }
+
+            if (hasNext &&
+                GUI.Button(
+                    new Rect(Screen.width * 0.5f - 110f, buttonY, 220f, 44f),
+                    "NEXT MISSION",
+                    _button))
+            {
+                _pendingMission = _selectedMission + 1;
+                Restart();
+            }
+
+            if (GUI.Button(
+                    new Rect(Screen.width * 0.5f + 150f, buttonY, 200f, 44f),
+                    "MAIN MENU",
+                    _button))
+            {
+                _pendingMission = -1;
+                Restart();
             }
         }
 
