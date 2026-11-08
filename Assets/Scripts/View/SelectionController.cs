@@ -1038,6 +1038,11 @@ namespace CQRa.View
                     return;
                 }
 
+                if (!playerOnly && IsCloakHiddenFromPlayer(entity))
+                {
+                    return;
+                }
+
                 if (!TryProject(unitPosition, out var projected))
                 {
                     return;
@@ -1102,6 +1107,20 @@ namespace CQRa.View
 
             team = 0;
             return false;
+        }
+
+        private static bool IsCloakHiddenFromPlayer(Entity entity)
+        {
+            var world = World.DefaultGameObjectInjectionWorld;
+            if (world == null || !world.IsCreated)
+            {
+                return false;
+            }
+
+            return CloakQuery.IsHiddenFrom(
+                world.EntityManager,
+                entity,
+                BuildCatalog.PlayerTeam);
         }
 
         private void SelectAtPoint(Vector2 screenPosition, bool additive)

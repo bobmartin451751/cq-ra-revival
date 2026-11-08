@@ -53,6 +53,11 @@ namespace CQRa.Sim.Fog
                         new float2(position.x, position.z));
                 }
 
+                if (team != 0 && CloakQuery.IsHiddenFrom(entityManager, entity, 0))
+                {
+                    hide = true;
+                }
+
                 if (hide)
                 {
                     toHide.Add(entity);

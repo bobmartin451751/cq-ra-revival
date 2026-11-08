@@ -399,6 +399,11 @@ namespace CQRa.Sim.AI
                         continue;
                     }
 
+                    if (CloakQuery.IsHiddenFrom(entityManager, candidate, team))
+                    {
+                        continue;
+                    }
+
                     var distanceSq = math.distancesq(position, candidatePosition);
                     if (distanceSq < bestDistanceSq ||
                         (distanceSq == bestDistanceSq && best != Entity.Null && candidate.Index < best.Index))
@@ -455,6 +460,11 @@ namespace CQRa.Sim.AI
 
                 var candidatePosition = entityManager.GetComponentData<LocalTransform>(candidate).Position;
                 if (!IsVisibleTo(hasFog, fogInfo, fogCells, candidatePosition))
+                {
+                    continue;
+                }
+
+                if (CloakQuery.IsHiddenFrom(entityManager, candidate, team))
                 {
                     continue;
                 }

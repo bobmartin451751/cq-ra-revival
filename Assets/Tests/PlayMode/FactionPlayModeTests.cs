@@ -1,12 +1,14 @@
 using System.Collections;
 using CQRa.Sim.Factions;
 using CQRa.Sim.Fog;
+using CQRa.Sim.Navigation;
 using CQRa.Sim.Units;
 using CQRa.View;
 using NUnit.Framework;
 using Unity.Collections;
 using Unity.Entities;
 using Unity.Mathematics;
+using Unity.Transforms;
 using UnityEngine;
 using UnityEngine.TestTools;
 
@@ -184,6 +186,98 @@ namespace CQRa.Tests.PlayMode
             }
         }
 
+        [UnityTest]
+        public IEnumerator Mantis_CloaksWhenStill_AndUncloaksWhenMoving()
+        {
+            yield return null;
+
+            var world = World.DefaultGameObjectInjectionWorld;
+            var entityManager = world.EntityManager;
+            var material = new Material(Shader.Find("Universal Render Pipeline/Lit"));
+            var meshes = Meshes();
+            var mantis = Entity.Null;
+            var watcher = Entity.Null;
+            var data = CreateFlatWorld(entityManager, 100f, 51, 1f);
+
+            try
+            {
+                FactionRuntime.Set(FactionId.Verdant, FactionId.Meridian);
+                var renderMeshArray = UnitFactory.CreateRenderMeshArray(Materials(material), meshes);
+
+                mantis = UnitFactory.Spawn(
+                    entityManager, renderMeshArray, (int)UnitKind.Mantis,
+                    UnitMaterials.BaseIndex(0, UnitKind.Mantis),
+                    float3.zero, 0f, UnitKind.Mantis, 0);
+
+                watcher = UnitFactory.Spawn(
+                    entityManager, renderMeshArray, (int)UnitKind.Infantry,
+                    UnitMaterials.BaseIndex(1, UnitKind.Infantry),
+                    new float3(30f, 0f, 0f), 0f, UnitKind.Infantry, 1);
+
+                yield return new WaitForSeconds(3.5f);
+
+                Assert.AreEqual(
+                    1,
+                    entityManager.GetComponentData<Cloak>(mantis).Cloaked,
+                    "stationary Mantis should cloak");
+                Assert.IsTrue(
+                    CloakQuery.IsHiddenFrom(entityManager, mantis, 1),
+                    "a cloaked Mantis is hidden from distant enemies");
+
+                var watcherTransform = entityManager.GetComponentData<LocalTransform>(watcher);
+                watcherTransform.Position = new float3(2f, 0f, 0f);
+                entityManager.SetComponentData(watcher, watcherTransform);
+
+                Assert.IsFalse(
+                    CloakQuery.IsHiddenFrom(entityManager, mantis, 1),
+                    "proximity detection reveals the Mantis");
+
+                watcherTransform.Position = new float3(30f, 0f, 0f);
+                entityManager.SetComponentData(watcher, watcherTransform);
+
+                var units = new NativeList<Entity>(1, Allocator.Temp);
+                units.Add(mantis);
+                var issued = MoveOrderIssuer.TryIssue(
+                    entityManager, units, new float3(20f, 0f, 0f), out _);
+                units.Dispose();
+                Assert.IsTrue(issued);
+
+                for (var i = 0; i < 20 &&
+                     entityManager.GetComponentData<Cloak>(mantis).Cloaked != 0; i++)
+                {
+                    yield return new WaitForSeconds(0.1f);
+                }
+
+                Assert.AreEqual(
+                    0,
+                    entityManager.GetComponentData<Cloak>(mantis).Cloaked,
+                    "moving should break the cloak");
+            }
+            finally
+            {
+                FactionRuntime.Reset();
+                foreach (var entity in new[] { mantis, watcher })
+                {
+                    if (entityManager.Exists(entity))
+                    {
+                        entityManager.DestroyEntity(entity);
+                    }
+                }
+
+                if (entityManager.Exists(data))
+                {
+                    entityManager.DestroyEntity(data);
+                }
+
+                foreach (var mesh in meshes)
+                {
+                    Object.DestroyImmediate(mesh);
+                }
+
+                Object.DestroyImmediate(material);
+            }
+        }
+
         private static Mesh[] Meshes()
         {
             return new[]
@@ -209,6 +303,42 @@ namespace CQRa.Tests.PlayMode
             }
 
             return materials;
+        }
+
+        private static Entity CreateFlatWorld(
+            EntityManager entityManager,
+            float size,
+            int resolution,
+            float cellSize)
+        {
+            var entity = entityManager.CreateEntity();
+            var cells = Mathf.CeilToInt(size / cellSize);
+
+            entityManager.AddComponentData(entity, new TerrainInfo { Resolution = resolution, Size = size });
+
+            var heights = entityManager.AddBuffer<TerrainHeightSample>(entity);
+            heights.ResizeUninitialized(resolution * resolution);
+            for (var i = 0; i < heights.Length; i++)
+            {
+                heights[i] = new TerrainHeightSample { Height = 0f };
+            }
+
+            entityManager.AddComponentData(entity, new NavGridInfo
+            {
+                Origin = new float2(-size * 0.5f, -size * 0.5f),
+                Size = new int2(cells, cells),
+                CellSize = cellSize,
+                MaxSlope = 2f,
+            });
+
+            var nav = entityManager.AddBuffer<NavCell>(entity);
+            nav.ResizeUninitialized(cells * cells);
+            for (var i = 0; i < nav.Length; i++)
+            {
+                nav[i] = new NavCell { Walkable = 1 };
+            }
+
+            return entity;
         }
     }
 }

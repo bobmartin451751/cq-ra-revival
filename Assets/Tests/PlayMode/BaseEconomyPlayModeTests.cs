@@ -53,10 +53,7 @@ namespace CQRa.Tests.PlayMode
                 Assert.AreNotEqual(Entity.Null, powerPlant);
                 Assert.AreEqual(100, entityManager.GetComponentData<BuildingInfo>(powerPlant).PowerProduced);
 
-                for (var frame = 0; frame < 5; frame++)
-                {
-                    yield return null;
-                }
+                yield return new WaitForSeconds(0.3f);
 
                 state = entityManager.GetComponentData<EconomyState>(economy);
                 Assert.AreEqual(110, Economy.GetPowerMade(state, 0), "yard 10 + power plant 100");

@@ -45,6 +45,14 @@ namespace CQRa.Sim.Units
         public float TimeSinceHit;
     }
 
+    /// <summary>Cloak state for the Verdant Mantis.</summary>
+    public struct Cloak : IComponentData
+    {
+        public byte Cloaked;
+        public float Delay;
+        public float Timer;
+    }
+
     /// <summary>Static gameplay identity. Grows as later phases add movement and combat.</summary>
     public struct UnitInfo : IComponentData
     {

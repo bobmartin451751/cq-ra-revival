@@ -343,6 +343,11 @@ namespace CQRa.Sim.Units
                     continue;
                 }
 
+                if (CloakQuery.IsHiddenFrom(entityManager, candidate, team))
+                {
+                    continue;
+                }
+
                 var distanceSq = math.distancesq(position, candidatePosition);
 
                 // Tie-break on entity index so acquisition is deterministic.

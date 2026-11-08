@@ -181,6 +181,16 @@ namespace CQRa.Sim.Units
                 });
             }
 
+            if (kind == UnitKind.Mantis)
+            {
+                entityManager.AddComponentData(entity, new Cloak
+                {
+                    Cloaked = 0,
+                    Delay = 3f,
+                    Timer = 0f,
+                });
+            }
+
             entityManager.AddComponentData(entity, new UnitMotion
             {
                 Velocity = float2.zero,
