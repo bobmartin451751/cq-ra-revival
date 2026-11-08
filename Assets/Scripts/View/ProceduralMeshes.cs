@@ -448,6 +448,16 @@ namespace CQRa.View
                 new MeshPart(Box(new Vector3(1.0f, 0.5f, 1.3f)), new Vector3(1.5f, 2.75f, 0f)));
         }
 
+        /// <summary>Supply crate, roughly 1.8 m across.</summary>
+        public static Mesh Crate()
+        {
+            return Merge(
+                new MeshPart(Box(new Vector3(1.8f, 1.4f, 1.8f)), new Vector3(0f, 0.7f, 0f)),
+                new MeshPart(Box(new Vector3(2.0f, 0.22f, 0.3f)), new Vector3(0f, 0.9f, 0f)),
+                new MeshPart(Box(new Vector3(0.3f, 0.22f, 2.0f)), new Vector3(0f, 0.9f, 0f)),
+                new MeshPart(Box(new Vector3(0.4f, 0.5f, 0.4f)), new Vector3(0.5f, 1.55f, 0.5f)));
+        }
+
         /// <summary>Low ore crystal pile, deterministic per seed.</summary>
         public static Mesh OreCluster(int seed)
         {

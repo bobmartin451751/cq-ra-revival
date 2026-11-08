@@ -18,8 +18,10 @@ namespace CQRa.Sim.Base
     {
         public const int BuildingKindCount = 7;
         public const int OreMeshIndex = BuildingKindCount;
+        public const int CrateMeshIndex = OreMeshIndex + 1;
         public const int OreMaterialIndex = BuildingKindCount * 2;
-        public const int HighlightMaterialIndex = OreMaterialIndex + 1;
+        public const int CrateMaterialIndex = OreMaterialIndex + 1;
+        public const int HighlightMaterialIndex = CrateMaterialIndex + 1;
         public const int MaterialCount = HighlightMaterialIndex + 1;
 
         private static RenderMeshArray _renderMeshArray;
@@ -151,6 +153,33 @@ namespace CQRa.Sim.Base
             if (_initialized)
             {
                 AddRenderComponents(entityManager, entity, OreMeshIndex, OreMaterialIndex);
+            }
+
+            return entity;
+        }
+
+        public static Entity SpawnCrate(
+            EntityManager entityManager,
+            float3 position,
+            int reward,
+            byte kind)
+        {
+            var entity = entityManager.CreateEntity();
+
+            entityManager.AddComponentData(entity, LocalTransform.FromPositionRotationScale(
+                position,
+                quaternion.RotateY(reward * 0.37f),
+                1f));
+
+            entityManager.AddComponentData(entity, new Crate
+            {
+                Reward = reward,
+                Kind = kind,
+            });
+
+            if (_initialized)
+            {
+                AddRenderComponents(entityManager, entity, CrateMeshIndex, CrateMaterialIndex);
             }
 
             return entity;

@@ -90,6 +90,33 @@ namespace CQRa.Sim.Fog
                 }
             }
 
+            using var crateQuery = entityManager.CreateEntityQuery(
+                ComponentType.ReadOnly<Crate>(),
+                ComponentType.ReadOnly<LocalTransform>());
+            using var crates = crateQuery.ToEntityArray(Allocator.Temp);
+            for (var i = 0; i < crates.Length; i++)
+            {
+                var entity = crates[i];
+                var hide = false;
+                if (hasFog)
+                {
+                    var position = entityManager.GetComponentData<LocalTransform>(entity).Position;
+                    hide = !FogMath.IsExplored(
+                        playerCells,
+                        info,
+                        new float2(position.x, position.z));
+                }
+
+                if (hide)
+                {
+                    toHide.Add(entity);
+                }
+                else
+                {
+                    toShow.Add(entity);
+                }
+            }
+
             // Apply structural changes only after every fog read is done.
             for (var i = 0; i < toHide.Length; i++)
             {

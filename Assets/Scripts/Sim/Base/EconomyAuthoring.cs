@@ -19,6 +19,16 @@ namespace CQRa.Sim.Base
         [SerializeField] private int _orePerPatch = 3000;
         [SerializeField] private float _oreRadius = 7f;
 
+        private static readonly Vector2[] CratePositions =
+        {
+            new Vector2(0f, 0f),
+            new Vector2(-46f, 44f),
+            new Vector2(52f, -34f),
+            new Vector2(-64f, -46f),
+            new Vector2(72f, 18f),
+            new Vector2(24f, -58f),
+        };
+
         private static readonly Vector2[] OrePositions =
         {
             new Vector2(-70f, 0f),
@@ -80,6 +90,31 @@ namespace CQRa.Sim.Base
             }
 
             Debug.Log($"[Economy] {spawned} ore patches | credits {BuildCatalog.InitialCredits}");
+
+            using var existingCrates = entityManager.CreateEntityQuery(ComponentType.ReadOnly<Crate>());
+            if (existingCrates.IsEmptyIgnoreFilter)
+            {
+                var crates = 0;
+                for (var i = 0; i < CratePositions.Length; i++)
+                {
+                    var point = CratePositions[i];
+                    if (!NavGridQuery.IsWalkable(entityManager, point))
+                    {
+                        continue;
+                    }
+
+                    var y = _terrain != null ? _terrain.SampleHeight(point.x, point.y) : 0f;
+                    var repair = i % 3 == 2;
+                    BuildingFactory.SpawnCrate(
+                        entityManager,
+                        new float3(point.x, y, point.y),
+                        repair ? 80 : 250,
+                        (byte)(repair ? 1 : 0));
+                    crates++;
+                }
+
+                Debug.Log($"[Economy] {crates} crates");
+            }
         }
 
         private static void EnsureEconomy(EntityManager entityManager)

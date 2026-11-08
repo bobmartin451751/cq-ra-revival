@@ -78,6 +78,7 @@ namespace CQRa.Sim.AI
             DestroyAll<UnitTag>(entityManager);
             DestroyAll<BuildingTag>(entityManager);
             DestroyAll<OreNode>(entityManager);
+            DestroyAll<Crate>(entityManager);
             DestroyAll<EconomyState>(entityManager);
             DestroyAll<MatchState>(entityManager);
             DestroyAll<FlowFieldMeta>(entityManager);

@@ -17,6 +17,13 @@ namespace CQRa.Sim.Base
         public float Total;
     }
 
+    /// <summary>Pickup crate. Kind 0 = credits, kind 1 = repair.</summary>
+    public struct Crate : IComponentData
+    {
+        public int Reward;
+        public byte Kind;
+    }
+
     /// <summary>Where completed units gather. Set by right-clicking with the building selected.</summary>
     public struct RallyPoint : IComponentData
     {

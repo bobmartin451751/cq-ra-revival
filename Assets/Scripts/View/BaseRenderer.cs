@@ -33,6 +33,7 @@ namespace CQRa.View
                 ProceduralMeshes.GunTower(),
                 ProceduralMeshes.Wall(),
                 ProceduralMeshes.OreCluster(17),
+                ProceduralMeshes.Crate(),
             };
 
             _materials = new Material[BuildingFactory.MaterialCount];
@@ -77,6 +78,12 @@ namespace CQRa.View
             ore.EnableKeyword("_EMISSION");
             ore.SetColor("_EmissionColor", new Color(0.16f, 0.10f, 0.01f));
             _materials[BuildingFactory.OreMaterialIndex] = ore;
+
+            var crate = new Material(shader) { name = "Crate" };
+            crate.SetColor("_BaseColor", new Color(0.46f, 0.38f, 0.22f));
+            crate.SetFloat("_Smoothness", 0.30f);
+            crate.SetFloat("_Metallic", 0.20f);
+            _materials[BuildingFactory.CrateMaterialIndex] = crate;
 
             var highlight = new Material(shader) { name = "Building_Highlight" };
             highlight.SetColor("_BaseColor", new Color(0.98f, 0.94f, 0.74f));
