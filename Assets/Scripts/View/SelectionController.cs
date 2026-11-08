@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using CQRa.Sim.Base;
+using CQRa.Sim.Fog;
 using CQRa.Sim.Navigation;
 using CQRa.Sim.Units;
 using Unity.Collections;
@@ -692,6 +693,11 @@ namespace CQRa.View
                     return;
                 }
 
+                if (!playerOnly && !IsVisibleToPlayer(unitPosition))
+                {
+                    return;
+                }
+
                 if (!TryProject(unitPosition, out var projected))
                 {
                     return;
@@ -707,6 +713,20 @@ namespace CQRa.View
 
             picked = best;
             return best != Entity.Null;
+        }
+
+        private static bool IsVisibleToPlayer(Vector3 position)
+        {
+            var world = World.DefaultGameObjectInjectionWorld;
+            if (world == null || !world.IsCreated)
+            {
+                return true;
+            }
+
+            return FogQuery.IsVisible(
+                world.EntityManager,
+                BuildCatalog.PlayerTeam,
+                position);
         }
 
         public static bool IsPlayerSelectable(EntityManager entityManager, Entity entity)

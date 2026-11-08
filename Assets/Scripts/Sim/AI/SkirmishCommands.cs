@@ -1,4 +1,5 @@
 using CQRa.Sim.Base;
+using CQRa.Sim.Fog;
 using CQRa.Sim.Navigation;
 using CQRa.Sim.Units;
 using Unity.Collections;
@@ -80,6 +81,7 @@ namespace CQRa.Sim.AI
             DestroyAll<EconomyState>(entityManager);
             DestroyAll<MatchState>(entityManager);
             DestroyAll<FlowFieldMeta>(entityManager);
+            DestroyAll<FogState>(entityManager);
         }
 
         private static void DestroyAll<T>(EntityManager entityManager)

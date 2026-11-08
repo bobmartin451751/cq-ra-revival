@@ -1,4 +1,5 @@
 using CQRa.Sim.Base;
+using CQRa.Sim.Fog;
 using CQRa.Sim.Units;
 using Unity.Collections;
 using Unity.Entities;
@@ -227,8 +228,14 @@ namespace CQRa.Sim.AI
             var army = CollectArmy(entityManager, commander.Team);
             try
             {
+                var hasFog = FogQuery.TryGet(entityManager, commander.Team, out var fog, out var fogInfo);
+                var fogCells = hasFog
+                    ? FogQuery.GetCells(entityManager, fog)
+                    : default;
+
                 var yardPosition = entityManager.GetComponentData<LocalTransform>(yard).Position;
-                var enemy = FindEnemyTarget(entityManager, commander.Team, yardPosition);
+                var enemy = FindEnemyTarget(
+                    entityManager, commander.Team, yardPosition, hasFog, fogInfo, fogCells);
 
                 if (enemy == Entity.Null)
                 {
@@ -265,7 +272,8 @@ namespace CQRa.Sim.AI
                     }
 
                     var position = entityManager.GetComponentData<LocalTransform>(unit).Position;
-                    var target = FindNearestEnemy(entityManager, commander.Team, position);
+                    var target = FindNearestEnemy(
+                        entityManager, commander.Team, position, hasFog, fogInfo, fogCells);
                     if (target == Entity.Null)
                     {
                         target = enemy;
@@ -309,7 +317,13 @@ namespace CQRa.Sim.AI
             return list;
         }
 
-        private static Entity FindEnemyTarget(EntityManager entityManager, int team, float3 position)
+        private static Entity FindEnemyTarget(
+            EntityManager entityManager,
+            int team,
+            float3 position,
+            bool hasFog,
+            in FogGridInfo fogInfo,
+            NativeArray<FogCell> fogCells)
         {
             using var query = entityManager.CreateEntityQuery(new EntityQueryDesc
             {
@@ -349,6 +363,11 @@ namespace CQRa.Sim.AI
                     }
 
                     var candidatePosition = entityManager.GetComponentData<LocalTransform>(candidate).Position;
+                    if (!IsVisibleTo(hasFog, fogInfo, fogCells, candidatePosition))
+                    {
+                        continue;
+                    }
+
                     var distanceSq = math.distancesq(position, candidatePosition);
                     if (distanceSq < bestDistanceSq ||
                         (distanceSq == bestDistanceSq && best != Entity.Null && candidate.Index < best.Index))
@@ -367,7 +386,13 @@ namespace CQRa.Sim.AI
             return Entity.Null;
         }
 
-        private static Entity FindNearestEnemy(EntityManager entityManager, int team, float3 position)
+        private static Entity FindNearestEnemy(
+            EntityManager entityManager,
+            int team,
+            float3 position,
+            bool hasFog,
+            in FogGridInfo fogInfo,
+            NativeArray<FogCell> fogCells)
         {
             using var query = entityManager.CreateEntityQuery(new EntityQueryDesc
             {
@@ -398,6 +423,11 @@ namespace CQRa.Sim.AI
                 }
 
                 var candidatePosition = entityManager.GetComponentData<LocalTransform>(candidate).Position;
+                if (!IsVisibleTo(hasFog, fogInfo, fogCells, candidatePosition))
+                {
+                    continue;
+                }
+
                 var distanceSq = math.distancesq(position, candidatePosition);
                 if (distanceSq < bestDistanceSq ||
                     (distanceSq == bestDistanceSq && best != Entity.Null && candidate.Index < best.Index))
@@ -408,6 +438,20 @@ namespace CQRa.Sim.AI
             }
 
             return best;
+        }
+
+        private static bool IsVisibleTo(
+            bool hasFog,
+            in FogGridInfo info,
+            NativeArray<FogCell> cells,
+            float3 position)
+        {
+            if (!hasFog)
+            {
+                return true;
+            }
+
+            return FogMath.IsVisible(cells, info, new float2(position.x, position.z));
         }
 
         private static bool TryGetTeam(EntityManager entityManager, Entity entity, out int team)

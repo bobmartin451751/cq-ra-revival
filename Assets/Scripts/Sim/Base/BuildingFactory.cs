@@ -1,3 +1,4 @@
+using CQRa.Sim.Fog;
 using CQRa.Sim.Units;
 using Unity.Entities;
 using Unity.Mathematics;
@@ -70,6 +71,10 @@ namespace CQRa.Sim.Base
             });
 
             entityManager.AddComponentData(entity, new RepairState { Active = 0 });
+            entityManager.AddComponentData(entity, new VisionSource
+            {
+                Radius = VisionCatalog.ForBuilding(kind),
+            });
 
             if (kind == BuildingKind.ConstructionYard)
             {

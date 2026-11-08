@@ -16,19 +16,20 @@ namespace CQRa.Sim.Units
         {
             public float3 From;
             public float3 To;
+            public int Team;
         }
 
         private const int Capacity = 256;
         private static readonly Queue<Tracer> Pending = new Queue<Tracer>(Capacity);
 
-        public static void AddTracer(float3 from, float3 to)
+        public static void AddTracer(float3 from, float3 to, int team)
         {
             if (Pending.Count >= Capacity)
             {
                 Pending.Dequeue();
             }
 
-            Pending.Enqueue(new Tracer { From = from, To = to });
+            Pending.Enqueue(new Tracer { From = from, To = to, Team = team });
         }
 
         public static bool TryTake(out Tracer tracer)

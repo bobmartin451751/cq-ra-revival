@@ -1,5 +1,7 @@
 using System.Collections.Generic;
+using CQRa.Sim.Fog;
 using CQRa.Sim.Units;
+using Unity.Mathematics;
 using UnityEngine;
 
 namespace CQRa.View
@@ -89,8 +91,34 @@ namespace CQRa.View
 
             // Admit new tracers into free slots.
             var next = 0;
+            var world = Unity.Entities.World.DefaultGameObjectInjectionWorld;
+            var hasFog = false;
+            Unity.Entities.Entity fog = Unity.Entities.Entity.Null;
+            FogGridInfo fogInfo = default;
+
+            if (world != null && world.IsCreated)
+            {
+                hasFog = FogQuery.TryGet(world.EntityManager, 0, out fog, out fogInfo);
+            }
+
+            var fogCells = hasFog ? FogQuery.GetCells(world.EntityManager, fog) : default;
+
             while (CombatFeed.TryTake(out var tracer))
             {
+                var visible = true;
+                if (hasFog && tracer.Team != 0)
+                {
+                    visible = FogMath.IsVisible(
+                        fogCells,
+                        fogInfo,
+                        new float2(tracer.From.x, tracer.From.z));
+                }
+
+                if (!visible)
+                {
+                    continue;
+                }
+
                 var index = FindFreeSlot(ref next);
                 if (index < 0)
                 {

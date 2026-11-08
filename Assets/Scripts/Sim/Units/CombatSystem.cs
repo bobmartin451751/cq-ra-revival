@@ -1,4 +1,5 @@
 using CQRa.Sim.Base;
+using CQRa.Sim.Fog;
 using Unity.Collections;
 using Unity.Entities;
 using Unity.Mathematics;
@@ -61,6 +62,12 @@ namespace CQRa.Sim.Units
                 return;
             }
 
+            var hasFog0 = FogQuery.TryGet(entityManager, 0, out var fog0, out var fogInfo);
+            var hasFog1 = FogQuery.TryGet(entityManager, 1, out var fog1, out _);
+            var hasFog = hasFog0 && hasFog1;
+            var fogTeam0 = hasFog0 ? FogQuery.GetCells(entityManager, fog0) : default;
+            var fogTeam1 = hasFog1 ? FogQuery.GetCells(entityManager, fog1) : default;
+
             var dt = SystemAPI.Time.DeltaTime;
             var dead = new NativeList<Entity>(Allocator.Temp);
 
@@ -88,8 +95,18 @@ namespace CQRa.Sim.Units
                 var moveTarget = entityManager.GetComponentData<MoveTarget>(entity);
                 var position = entityManager.GetComponentData<LocalTransform>(entity).Position;
 
-                // Drop targets that died, were removed, or switched sides.
-                if (state.Target != Entity.Null && !IsValidTarget(entityManager, state.Target, info.Team))
+                // Drop targets that died, were removed, or switched sides. Auto-acquired
+                // targets also require current vision; explicit orders may push into fog.
+                if (state.Target != Entity.Null &&
+                    !IsValidTarget(
+                        entityManager,
+                        state.Target,
+                        info.Team,
+                        state.Explicit == 0,
+                        hasFog,
+                        fogInfo,
+                        fogTeam0,
+                        fogTeam1))
                 {
                     state.Target = Entity.Null;
                     state.Explicit = 0;
@@ -121,7 +138,11 @@ namespace CQRa.Sim.Units
                         entity,
                         info.Team,
                         position,
-                        weapon.AcquireRange);
+                        weapon.AcquireRange,
+                        hasFog,
+                        fogInfo,
+                        fogTeam0,
+                        fogTeam1);
                     state.Explicit = 0;
                 }
 
@@ -192,7 +213,8 @@ namespace CQRa.Sim.Units
             entityManager.SetComponentData(target, health);
 
             var targetPosition = entityManager.GetComponentData<LocalTransform>(target).Position;
-            CombatFeed.AddTracer(position + MuzzleOffset, targetPosition + TargetOffset);
+            var team = entityManager.GetComponentData<UnitInfo>(attacker).Team;
+            CombatFeed.AddTracer(position + MuzzleOffset, targetPosition + TargetOffset, team);
 
             if (health.Current <= 0f)
             {
@@ -200,7 +222,15 @@ namespace CQRa.Sim.Units
             }
         }
 
-        private static bool IsValidTarget(EntityManager entityManager, Entity target, int team)
+        private static bool IsValidTarget(
+            EntityManager entityManager,
+            Entity target,
+            int team,
+            bool requireVisible,
+            bool hasFog,
+            in FogGridInfo fogInfo,
+            NativeArray<FogCell> fogTeam0,
+            NativeArray<FogCell> fogTeam1)
         {
             if (target == Entity.Null ||
                 !entityManager.Exists(target) ||
@@ -209,9 +239,37 @@ namespace CQRa.Sim.Units
                 return false;
             }
 
-            return entityManager.GetComponentData<Health>(target).Current > 0f &&
-                   TryGetTeam(entityManager, target, out var targetTeam) &&
-                   targetTeam != team;
+            if (entityManager.GetComponentData<Health>(target).Current <= 0f ||
+                !TryGetTeam(entityManager, target, out var targetTeam) ||
+                targetTeam == team)
+            {
+                return false;
+            }
+
+            if (!requireVisible)
+            {
+                return true;
+            }
+
+            var targetPosition = entityManager.GetComponentData<LocalTransform>(target).Position;
+            return IsVisibleTo(hasFog, fogInfo, fogTeam0, fogTeam1, team, targetPosition);
+        }
+
+        private static bool IsVisibleTo(
+            bool hasFog,
+            in FogGridInfo info,
+            NativeArray<FogCell> team0,
+            NativeArray<FogCell> team1,
+            int team,
+            float3 position)
+        {
+            if (!hasFog)
+            {
+                return true;
+            }
+
+            var cells = team == 0 ? team0 : team1;
+            return FogMath.IsVisible(cells, info, new float2(position.x, position.z));
         }
 
         private static bool TryGetTeam(EntityManager entityManager, Entity entity, out int team)
@@ -238,7 +296,11 @@ namespace CQRa.Sim.Units
             Entity self,
             int team,
             float3 position,
-            float acquireRange)
+            float acquireRange,
+            bool hasFog,
+            in FogGridInfo fogInfo,
+            NativeArray<FogCell> fogTeam0,
+            NativeArray<FogCell> fogTeam1)
         {
             var best = Entity.Null;
             var bestDistanceSq = acquireRange * acquireRange;
@@ -259,6 +321,11 @@ namespace CQRa.Sim.Units
                 }
 
                 var candidatePosition = entityManager.GetComponentData<LocalTransform>(candidate).Position;
+                if (!IsVisibleTo(hasFog, fogInfo, fogTeam0, fogTeam1, team, candidatePosition))
+                {
+                    continue;
+                }
+
                 var distanceSq = math.distancesq(position, candidatePosition);
 
                 // Tie-break on entity index so acquisition is deterministic.

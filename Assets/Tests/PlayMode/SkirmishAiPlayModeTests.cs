@@ -120,7 +120,7 @@ namespace CQRa.Tests.PlayMode
                     entityManager, 1, BuildingKind.ConstructionYard, new float3(-40f, 0f, 0f));
 
                 var enemy = BuildingFactory.SpawnBuilding(
-                    entityManager, 0, BuildingKind.Barracks, new float3(50f, 0f, 0f));
+                    entityManager, 0, BuildingKind.Barracks, float3.zero);
 
                 var tanks = new List<Entity>(5);
                 for (var i = 0; i < 5; i++)
@@ -128,7 +128,7 @@ namespace CQRa.Tests.PlayMode
                     tanks.Add(UnitFactory.Spawn(
                         entityManager, renderMeshArray, (int)UnitKind.Tank,
                         UnitMaterials.BaseIndex(1, UnitKind.Tank),
-                        new float3(-30f + i * 2f, 0f, -10f), 0f, UnitKind.Tank, 1));
+                        new float3(-35f + i * 2f, 0f, -10f), 0f, UnitKind.Tank, 1));
                 }
 
                 // Hardened attacks at 5 units; zero credits keeps the AI in the military

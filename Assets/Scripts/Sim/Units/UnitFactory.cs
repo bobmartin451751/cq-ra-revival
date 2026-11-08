@@ -1,3 +1,4 @@
+using CQRa.Sim.Fog;
 using Unity.Entities;
 using Unity.Mathematics;
 using Unity.Rendering;
@@ -153,6 +154,11 @@ namespace CQRa.Sim.Units
                 Velocity = float2.zero,
                 Yaw = yawRadians,
                 Speed = 0f,
+            });
+
+            entityManager.AddComponentData(entity, new VisionSource
+            {
+                Radius = VisionCatalog.ForUnit(kind),
             });
 
             return entity;
