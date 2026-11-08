@@ -36,7 +36,6 @@ namespace CQRa.View
         private int _movingCount;
 
         private GUIStyle _hintStyle;
-        private GUIStyle _bannerStyle;
         private GUIStyle _panelStyle;
 
         private int _armedBuild = -1;
@@ -950,11 +949,6 @@ namespace CQRa.View
                 GUI.DrawTexture(new Rect(12f, 12f, 220f, 30f), Texture2D.whiteTexture);
                 GUI.color = previousColor;
                 GUI.Label(new Rect(22f, 16f, 210f, 24f), teamText, _hintStyle);
-
-                if (state.GameOver != 0)
-                {
-                    DrawGameOverBanner(state.Winner);
-                }
             }
 
             if (ReadEconomy(out var economy))
@@ -1222,33 +1216,6 @@ namespace CQRa.View
 
             text = string.Join(" · ", parts);
             return true;
-        }
-
-        private void DrawGameOverBanner(byte winner)
-        {
-            if (_bannerStyle == null)
-            {
-                _bannerStyle = new GUIStyle(GUI.skin.label)
-                {
-                    fontSize = 42,
-                    alignment = TextAnchor.MiddleCenter,
-                    fontStyle = FontStyle.Bold,
-                    normal = { textColor = new Color(0.98f, 0.86f, 0.55f) },
-                };
-            }
-
-            var text = winner switch
-            {
-                0 => "RED TEAM WINS",
-                1 => "BLUE TEAM WINS",
-                _ => "DRAW",
-            };
-
-            var previous = GUI.color;
-            GUI.color = new Color(0.04f, 0.03f, 0.02f, 0.78f);
-            GUI.DrawTexture(new Rect(0f, Screen.height * 0.42f, Screen.width, 86f), Texture2D.whiteTexture);
-            GUI.color = previous;
-            GUI.Label(new Rect(0f, Screen.height * 0.42f + 18f, Screen.width, 50f), text, _bannerStyle);
         }
 
         private int CountMovingUnits()

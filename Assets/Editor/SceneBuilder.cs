@@ -41,10 +41,11 @@ namespace CQRa.EditorTools
                 CreateNavigation(terrain, scenery);
                 CreateUnits(terrain);
                 var marker = CreateMoveMarker(terrain);
-                CreateSelection(camera, terrain, marker);
+                var selection = CreateSelection(camera, terrain, marker);
                 CreateCombatFx();
                 CreateBaseVisuals();
                 CreateEconomy(terrain);
+                CreateSkirmish(selection, camera.GetComponent<RtsCameraRig>());
                 CreateBootstrap();
 
                 EditorSceneManager.MarkSceneDirty(scene);
@@ -232,11 +233,19 @@ namespace CQRa.EditorTools
             return marker;
         }
 
-        private static void CreateSelection(Camera camera, HeightmapTerrain terrain, MoveOrderMarker marker)
+        private static SelectionController CreateSelection(Camera camera, HeightmapTerrain terrain, MoveOrderMarker marker)
         {
             var go = new GameObject("Selection");
             var selection = go.AddComponent<SelectionController>();
             selection.Configure(camera, terrain, marker);
+            return selection;
+        }
+
+        private static void CreateSkirmish(SelectionController selection, RtsCameraRig rig)
+        {
+            var go = new GameObject("Skirmish");
+            var controller = go.AddComponent<CQRa.Core.SkirmishController>();
+            controller.Configure(selection, rig);
         }
 
         private static void CreateCombatFx()

@@ -361,10 +361,6 @@ namespace CQRa.Core
         }
 
         /// <summary>
-        /// Development helper for the Phase 5 base screenshot: deploy both MCVs and let
-        /// each team place a power plant and a refinery through the normal build rules.
-        /// </summary>
-        /// <summary>
         /// Development helper for the Phase 8 screenshot: give each team an AI commander
         /// and let them play the normal rules from the starting MCVs.
         /// </summary>
@@ -377,15 +373,15 @@ namespace CQRa.Core
             }
 
             var entityManager = world.EntityManager;
-            using var existing = entityManager.CreateEntityQuery(ComponentType.ReadOnly<AiCommander>());
-            if (!existing.IsEmptyIgnoreFilter)
-            {
-                return;
-            }
-
             var level = (AiDifficulty)math.clamp(_aiLevel, 0, 3);
+
             for (var team = 0; team < 2; team++)
             {
+                if (HasCommander(entityManager, team))
+                {
+                    continue;
+                }
+
                 var entity = entityManager.CreateEntity(typeof(AiCommander));
                 entityManager.SetComponentData(entity, new AiCommander
                 {
@@ -396,6 +392,22 @@ namespace CQRa.Core
             }
 
             Debug.Log($"[Capture] AI enabled for both teams ({level})");
+        }
+
+        private static bool HasCommander(EntityManager entityManager, int team)
+        {
+            using var query = entityManager.CreateEntityQuery(ComponentType.ReadOnly<AiCommander>());
+            using var commanders = query.ToEntityArray(Allocator.Temp);
+
+            for (var i = 0; i < commanders.Length; i++)
+            {
+                if (entityManager.GetComponentData<AiCommander>(commanders[i]).Team == team)
+                {
+                    return true;
+                }
+            }
+
+            return false;
         }
 
         private void BuildBases()

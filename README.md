@@ -26,11 +26,13 @@ alone. The replay browser's AI-vision overlay lets you verify it.
 .\tools\screenshot.ps1 -Out .temp/screens/phase6-army.png -Army -WaitFrames 2400
 .\tools\screenshot.ps1 -Out .temp/screens/phase7-siege.png -Siege -WaitFrames 900
 .\tools\screenshot.ps1 -Out .temp/screens/phase8-ai.png -Ai -AiLevel 3 -WaitFrames 6000
+.\tools\screenshot.ps1 -Out .temp/screens/phase9-skirmish.png -Ai -AiLevel 2 -WaitFrames 5000
 .\tools\run-tests.ps1                   # EditMode + PlayMode suites
 .\tools\build.ps1                       # Windows player -> Builds/Windows
 ```
 
 Open the project in Unity Hub and play `Assets/Scenes/Main.unity` to run it normally.
+The skirmish menu lets you pick a difficulty and start a match against the AI.
 
 **Controls:** WASD/arrows or middle-drag to pan, wheel to zoom, Q/E to rotate,
 edge scroll at the screen border, left-click to select, drag a box to multi-select,
@@ -73,5 +75,6 @@ tools/               headless scripts
 | 6 - production | OK - barracks/war factory, queues, unit construction, rally points |
 | 7 - building combat | OK - buildings targetable/destructible, repair, sell, nav freeing |
 | 8 - skirmish AI | OK - deterministic AI commander, build/produce/attack, 4 difficulty tiers |
+| 9 - first playable | OK - skirmish menu, difficulty select, AI match, result and restart |
 
 See `docs/spec.md` for the full roadmap and frozen scope.
