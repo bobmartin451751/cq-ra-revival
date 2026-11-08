@@ -1,3 +1,4 @@
+using CQRa.Sim.Factions;
 using CQRa.Sim.Navigation;
 using CQRa.Sim.Units;
 using Unity.Collections;
@@ -46,14 +47,15 @@ namespace CQRa.Sim.Base
             }
 
             var queue = entityManager.GetBuffer<ProductionOrder>(building);
+            var cost = FactionRuntime.CostFor(team, spec.Cost);
 
-            if (!BuildRules.CanAfford(Economy.GetCredits(economy, team), spec.Cost))
+            if (!BuildRules.CanAfford(Economy.GetCredits(economy, team), cost))
             {
                 failure = ProductionFailure.NotEnoughCredits;
                 return false;
             }
 
-            Economy.TrySpend(ref economy, team, spec.Cost);
+            Economy.TrySpend(ref economy, team, cost);
             entityManager.SetComponentData(economyEntity, economy);
 
             queue.Add(new ProductionOrder

@@ -14,6 +14,8 @@ namespace CQRa.Sim.Campaign
         public string objective;
         public string objectiveText;
         public float surviveSeconds;
+        public string playerFaction;
+        public string aiFaction;
     }
 
     [Serializable]
@@ -38,6 +40,8 @@ namespace CQRa.Sim.Campaign
                 objective = "destroyAll",
                 objectiveText = "Destroy every enemy unit and structure.",
                 briefing = "A hostile commander has dug in across the basin. Establish your base and wipe them out.",
+                playerFaction = "Ashfall",
+                aiFaction = "Verdant",
             },
             new MissionDto
             {
@@ -45,6 +49,8 @@ namespace CQRa.Sim.Campaign
                 objective = "survive", surviveSeconds = 300f,
                 objectiveText = "Survive for 5 minutes.",
                 briefing = "Enemy pressure is building. Fortify, keep your harvesters running, and outlast the assault.",
+                playerFaction = "Meridian",
+                aiFaction = "Verdant",
             },
             new MissionDto
             {
@@ -52,6 +58,8 @@ namespace CQRa.Sim.Campaign
                 objective = "destroyYard",
                 objectiveText = "Destroy the enemy Construction Yard.",
                 briefing = "Strike the heart of the enemy base. Kill their Construction Yard and they cannot rebuild.",
+                playerFaction = "Ashfall",
+                aiFaction = "Meridian",
             },
         };
 

@@ -1,3 +1,4 @@
+using CQRa.Sim.Factions;
 using CQRa.Sim.Navigation;
 using CQRa.Sim.Units;
 using Unity.Collections;
@@ -199,7 +200,8 @@ namespace CQRa.Sim.Base
             }
 
             var spec = BuildCatalog.Get(kind);
-            if (!BuildRules.CanAfford(Economy.GetCredits(economy, team), spec.Cost))
+            var cost = FactionRuntime.CostFor(team, spec.Cost);
+            if (!BuildRules.CanAfford(Economy.GetCredits(economy, team), cost))
             {
                 failure = BuildFailure.NotEnoughCredits;
                 return false;
@@ -229,7 +231,7 @@ namespace CQRa.Sim.Base
                 return false;
             }
 
-            Economy.TrySpend(ref economy, team, spec.Cost);
+            Economy.TrySpend(ref economy, team, cost);
             entityManager.SetComponentData(economyEntity, economy);
 
             BuildingFactory.SpawnBuilding(entityManager, team, kind, point);

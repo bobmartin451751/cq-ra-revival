@@ -7,7 +7,9 @@
       "difficulty": "Recruit",
       "objective": "destroyAll",
       "objectiveText": "Destroy every enemy unit and structure.",
-      "surviveSeconds": 0
+      "surviveSeconds": 0,
+      "playerFaction": "Ashfall",
+      "aiFaction": "Verdant"
     },
     {
       "id": "m2",
@@ -16,7 +18,9 @@
       "difficulty": "Veteran",
       "objective": "survive",
       "objectiveText": "Survive for 5 minutes.",
-      "surviveSeconds": 300
+      "surviveSeconds": 300,
+      "playerFaction": "Meridian",
+      "aiFaction": "Verdant"
     },
     {
       "id": "m3",
@@ -25,7 +29,9 @@
       "difficulty": "Hardened",
       "objective": "destroyYard",
       "objectiveText": "Destroy the enemy Construction Yard.",
-      "surviveSeconds": 0
+      "surviveSeconds": 0,
+      "playerFaction": "Ashfall",
+      "aiFaction": "Meridian"
     }
   ]
 }

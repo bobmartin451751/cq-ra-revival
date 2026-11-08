@@ -2,6 +2,7 @@ using System;
 using CQRa.Sim.AI;
 using CQRa.Sim.Base;
 using CQRa.Sim.Campaign;
+using CQRa.Sim.Factions;
 using CQRa.Sim.Units;
 using CQRa.View;
 using Unity.Entities;
@@ -22,8 +23,11 @@ namespace CQRa.Core
     {
         [SerializeField] private SelectionController _selection;
         [SerializeField] private RtsCameraRig _cameraRig;
+        [SerializeField] private UnitSpawner _unitSpawner;
 
         private AiDifficulty _difficulty = AiDifficulty.Veteran;
+        private FactionId _playerFaction = FactionId.Ashfall;
+        private FactionId _aiFaction = FactionId.Verdant;
         private bool _active;
         private bool _matchOver;
         private int _winner = 255;
@@ -51,6 +55,16 @@ namespace CQRa.Core
         {
             _selection = selection;
             _cameraRig = cameraRig;
+        }
+
+        public void Configure(
+            SelectionController selection,
+            RtsCameraRig cameraRig,
+            UnitSpawner spawner)
+        {
+            _selection = selection;
+            _cameraRig = cameraRig;
+            _unitSpawner = spawner;
         }
 
         private void Awake()
@@ -211,6 +225,10 @@ namespace CQRa.Core
             var mission = missions[index];
             _selectedMission = index;
             _difficulty = MissionCatalog.DifficultyFor(mission);
+            _playerFaction = FactionCatalog.Parse(mission.playerFaction);
+            _aiFaction = FactionCatalog.Parse(
+                mission.aiFaction,
+                FactionCatalog.DefaultOpponent(_playerFaction));
             _campaignActive = true;
             _missionWon = false;
             _enemyYardSeen = false;
@@ -235,6 +253,13 @@ namespace CQRa.Core
             if (_cameraRig != null)
             {
                 _cameraRig.enabled = true;
+            }
+
+            FactionRuntime.Set(_playerFaction, _aiFaction);
+
+            if (_unitSpawner != null && _unitSpawner.SpawnedCount == 0)
+            {
+                _unitSpawner.Spawn();
             }
 
             if (!withAi)
@@ -398,12 +423,41 @@ namespace CQRa.Core
             }
 
             GUI.Label(
-                new Rect(x + 30f, y + 234f, width - 60f, 46f),
+                new Rect(x + 30f, y + 234f, width - 60f, 40f),
                 Describe(_difficulty),
                 _label);
 
+            GUI.Label(new Rect(x + 30f, y + 278f, width - 60f, 22f), "FACTION", _label);
+
+            for (var i = 0; i < FactionCatalog.All.Length; i++)
+            {
+                var faction = FactionCatalog.All[i];
+                var selected = faction == _playerFaction;
+                var previousColor = GUI.backgroundColor;
+                GUI.backgroundColor = selected
+                    ? new Color(0.72f, 0.48f, 0.20f)
+                    : new Color(0.28f, 0.26f, 0.22f);
+
+                if (GUI.Button(
+                        new Rect(x + 30f + i * 162f, y + 302f, 152f, 30f),
+                        FactionCatalog.Name(faction),
+                        _button))
+                {
+                    _playerFaction = faction;
+                    _aiFaction = FactionCatalog.DefaultOpponent(faction);
+                }
+
+                GUI.backgroundColor = previousColor;
+            }
+
+            GUI.Label(
+                new Rect(x + 30f, y + 336f, width - 60f, 34f),
+                $"{FactionCatalog.Name(_playerFaction)} vs {FactionCatalog.Name(_aiFaction)}\n" +
+                FactionCatalog.Description(_playerFaction),
+                _label);
+
             if (GUI.Button(
-                    new Rect(x + 30f, y + 300f, width - 60f, 52f),
+                    new Rect(x + 30f, y + 374f, width - 60f, 44f),
                     "START MATCH",
                     _button))
             {
@@ -412,7 +466,7 @@ namespace CQRa.Core
             }
 
             GUI.Label(
-                new Rect(x + 30f, y + 372f, width - 60f, 24f),
+                new Rect(x + 30f, y + 426f, width - 60f, 24f),
                 "WASD/edges pan · wheel zoom · Q/E rotate",
                 _label);
         }
@@ -461,8 +515,13 @@ namespace CQRa.Core
             }
 
             var mission = missions[Mathf.Clamp(_selectedMission, 0, missions.Length - 1)];
+            var playerFaction = FactionCatalog.Parse(mission.playerFaction);
+            var aiFaction = FactionCatalog.Parse(
+                mission.aiFaction,
+                FactionCatalog.DefaultOpponent(playerFaction));
             GUI.Label(
-                new Rect(x + 30f, y + 330f, width - 60f, 76f),
+                new Rect(x + 30f, y + 326f, width - 60f, 80f),
+                $"{FactionCatalog.Name(playerFaction)} vs {FactionCatalog.Name(aiFaction)}\n" +
                 mission.briefing,
                 _label);
 

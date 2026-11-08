@@ -41,13 +41,13 @@ namespace CQRa.EditorTools
                 CreateNavigation(terrain, scenery);
                 CreateContent();
                 CreateFog(terrain);
-                CreateUnits(terrain);
+                var spawner = CreateUnits(terrain);
                 var marker = CreateMoveMarker(terrain);
                 var selection = CreateSelection(camera, terrain, marker);
                 CreateCombatFx();
                 CreateBaseVisuals();
                 CreateEconomy(terrain);
-                CreateSkirmish(selection, camera.GetComponent<RtsCameraRig>());
+                CreateSkirmish(selection, camera.GetComponent<RtsCameraRig>(), spawner);
                 CreateBootstrap();
 
                 EditorSceneManager.MarkSceneDirty(scene);
@@ -191,12 +191,14 @@ namespace CQRa.EditorTools
             light.shadows = LightShadows.None;
         }
 
-        private static void CreateUnits(HeightmapTerrain terrain)
+        private static UnitSpawner CreateUnits(HeightmapTerrain terrain)
         {
             var go = new GameObject("Units");
             var spawner = go.AddComponent<UnitSpawner>();
             var material = NewMaterial("Unit", Color.white, 0.32f, 0.18f);
             spawner.Configure(terrain, material);
+            spawner.SpawnOnStart = false;
+            return spawner;
         }
 
         private static void CreateFog(HeightmapTerrain terrain)
@@ -256,11 +258,14 @@ namespace CQRa.EditorTools
             return selection;
         }
 
-        private static void CreateSkirmish(SelectionController selection, RtsCameraRig rig)
+        private static void CreateSkirmish(
+            SelectionController selection,
+            RtsCameraRig rig,
+            UnitSpawner spawner)
         {
             var go = new GameObject("Skirmish");
             var controller = go.AddComponent<CQRa.Core.SkirmishController>();
-            controller.Configure(selection, rig);
+            controller.Configure(selection, rig, spawner);
         }
 
         private static void CreateCombatFx()

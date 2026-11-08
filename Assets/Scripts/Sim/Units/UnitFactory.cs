@@ -1,4 +1,5 @@
 using CQRa.Sim.Content;
+using CQRa.Sim.Factions;
 using CQRa.Sim.Fog;
 using Unity.Entities;
 using Unity.Mathematics;
@@ -97,7 +98,7 @@ namespace CQRa.Sim.Units
                 Team = team,
                 Kind = kind,
                 Radius = RadiusFor(kind),
-                MaxSpeed = SpeedFor(kind),
+                MaxSpeed = SpeedFor(kind) * FactionRuntime.StatsForTeam(team).Speed,
             });
 
             entityManager.AddComponentData(entity, new Selected());
@@ -117,16 +118,17 @@ namespace CQRa.Sim.Units
             });
 
             var combat = CombatStats.For(kind);
+            var faction = FactionRuntime.StatsForTeam(team);
             entityManager.AddComponentData(entity, new Health
             {
-                Max = combat.MaxHealth,
-                Current = combat.MaxHealth,
+                Max = combat.MaxHealth * faction.Health,
+                Current = combat.MaxHealth * faction.Health,
                 Armor = combat.Armor,
             });
 
             entityManager.AddComponentData(entity, new Weapon
             {
-                Damage = combat.Damage,
+                Damage = combat.Damage * faction.Damage,
                 Range = combat.Range,
                 Cooldown = combat.Cooldown,
                 CooldownRemaining = 0f,
@@ -164,7 +166,7 @@ namespace CQRa.Sim.Units
 
             entityManager.AddComponentData(entity, new VisionSource
             {
-                Radius = VisionCatalog.ForUnit(kind),
+                Radius = VisionCatalog.ForUnit(kind) * faction.Vision,
             });
 
             return entity;

@@ -1,4 +1,5 @@
 using CQRa.Sim.Content;
+using CQRa.Sim.Factions;
 using CQRa.Sim.Fog;
 using CQRa.Sim.Units;
 using Unity.Entities;
@@ -68,15 +69,15 @@ namespace CQRa.Sim.Base
 
             entityManager.AddComponentData(entity, new Health
             {
-                Max = HealthFor(kind),
-                Current = HealthFor(kind),
+                Max = HealthFor(kind) * FactionRuntime.StatsForTeam(team).Health,
+                Current = HealthFor(kind) * FactionRuntime.StatsForTeam(team).Health,
                 Armor = 0.5f,
             });
 
             entityManager.AddComponentData(entity, new RepairState { Active = 0 });
             entityManager.AddComponentData(entity, new VisionSource
             {
-                Radius = VisionCatalog.ForBuilding(kind),
+                Radius = VisionCatalog.ForBuilding(kind) * FactionRuntime.StatsForTeam(team).Vision,
             });
 
             if (kind == BuildingKind.ConstructionYard)
