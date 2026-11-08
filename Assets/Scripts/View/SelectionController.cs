@@ -27,6 +27,7 @@ namespace CQRa.View
             None = 0,
             DeployMcv = 1,
             SetRally = 2,
+            Capture = 3,
         }
 
         private const float SidebarWidth = 324f;
@@ -218,6 +219,11 @@ namespace CQRa.View
                     TryProduce(UnitKind.Gunship);
                 }
 
+                if (keyboard.gKey.wasPressedThisFrame)
+                {
+                    TryProduce(UnitKind.Engineer);
+                }
+
                 if (keyboard.rKey.wasPressedThisFrame)
                 {
                     ToggleRepairSelected();
@@ -242,6 +248,13 @@ namespace CQRa.View
                 else if (_armedCommand == ArmedCommand.SetRally)
                 {
                     if (TrySetRally(screenPosition))
+                    {
+                        _armedCommand = ArmedCommand.None;
+                    }
+                }
+                else if (_armedCommand == ArmedCommand.Capture)
+                {
+                    if (TryCaptureAtPoint(screenPosition))
                     {
                         _armedCommand = ArmedCommand.None;
                     }
@@ -778,7 +791,98 @@ namespace CQRa.View
                 return;
             }
 
+            if (command == ArmedCommand.Capture)
+            {
+                if (FindSelectedEngineer(entityManager) == Entity.Null)
+                {
+                    ShowMessage("Select an Engineer first");
+                    return;
+                }
+
+                _armedCommand = command;
+                ShowMessage("Right-click an enemy building within 10 m to capture it");
+                return;
+            }
+
             _armedCommand = ArmedCommand.None;
+        }
+
+        private Entity FindSelectedEngineer(EntityManager entityManager)
+        {
+            for (var i = 0; i < _selected.Count; i++)
+            {
+                var entity = _selected[i];
+                if (!entityManager.Exists(entity) ||
+                    !entityManager.HasComponent<UnitInfo>(entity))
+                {
+                    continue;
+                }
+
+                if (entityManager.GetComponentData<UnitInfo>(entity).Kind == UnitKind.Engineer)
+                {
+                    return entity;
+                }
+            }
+
+            return Entity.Null;
+        }
+
+        private bool TryCaptureAtPoint(Vector2 screenPosition)
+        {
+            if (!TryPickSelectable(screenPosition, false, out var target))
+            {
+                ShowMessage("Right-click an enemy building to capture");
+                return false;
+            }
+
+            var world = World.DefaultGameObjectInjectionWorld;
+            if (world == null || !world.IsCreated)
+            {
+                return false;
+            }
+
+            var entityManager = world.EntityManager;
+            if (!entityManager.HasComponent<BuildingInfo>(target) ||
+                !entityManager.HasComponent<BuildingTag>(target))
+            {
+                ShowMessage("Engineers can only capture buildings");
+                return false;
+            }
+
+            var engineer = FindSelectedEngineer(entityManager);
+            if (engineer == Entity.Null)
+            {
+                ShowMessage("Select an Engineer first");
+                return false;
+            }
+
+            if (BaseCommands.TryCaptureBuilding(
+                    entityManager, engineer, target, out var failure))
+            {
+                _selected.Remove(engineer);
+                ShowMessage("Building captured");
+                return true;
+            }
+
+            ShowMessage(CaptureFailureText(failure));
+            return false;
+        }
+
+        private static string CaptureFailureText(CaptureFailure failure)
+        {
+            switch (failure)
+            {
+                case CaptureFailure.NotAnEngineer:
+                    return "Select an Engineer first";
+                case CaptureFailure.NotABuilding:
+                    return "Engineers can only capture buildings";
+                case CaptureFailure.AlreadyOwned:
+                    return "That building is already yours";
+                case CaptureFailure.TooFar:
+                    return "Move the Engineer closer (10 m)";
+                default:
+                    return string.Empty;
+            }
         }
 
         private Entity FindSelectedMcv(EntityManager entityManager)
@@ -1298,6 +1402,7 @@ namespace CQRa.View
             var hasBuilding = false;
             var hasProducer = false;
             var hasRally = false;
+            var hasEngineer = false;
 
             for (var i = 0; i < _selected.Count; i++)
             {
@@ -1313,6 +1418,11 @@ namespace CQRa.View
                     if (entityManager.GetComponentData<UnitInfo>(entity).Kind == UnitKind.Mcv)
                     {
                         hasMcv = true;
+                    }
+
+                    if (entityManager.GetComponentData<UnitInfo>(entity).Kind == UnitKind.Engineer)
+                    {
+                        hasEngineer = true;
                     }
                 }
 
@@ -1334,7 +1444,8 @@ namespace CQRa.View
             var buttons = 0;
             if (hasMcv) buttons++;
             if (hasRally) buttons++;
-            if (hasUnit) buttons++;
+            if (hasEngineer) buttons++;
+            if (hasUnit && !hasEngineer) buttons++;
             if (hasBuilding) buttons += 2; // repair + sell
             if (buttons == 0)
             {
@@ -1367,7 +1478,17 @@ namespace CQRa.View
                 bx += width + gap;
             }
 
-            if (hasUnit)
+            if (hasEngineer)
+            {
+                DrawCommandButton(
+                    new Rect(bx, by, width, 32f),
+                    "CAPTURE",
+                    _armedCommand == ArmedCommand.Capture,
+                    () => ArmCommand(ArmedCommand.Capture));
+                bx += width + gap;
+            }
+
+            if (hasUnit && !hasEngineer)
             {
                 DrawCommandButton(
                     new Rect(bx, by, width, 32f),
@@ -1462,7 +1583,7 @@ namespace CQRa.View
 
             GUI.Label(
                 new Rect(x + 12f, Screen.height - 84f, SidebarWidth - 24f, 78f),
-                "RMB: move / attack / execute\nShift: add select · Esc: cancel\nR: repair · T: sell · D: camera only",
+                "RMB: move / attack / execute\nShift: add · Esc: cancel · R/T: repair/sell\nG: Engineer · CAPTURE: RMB enemy building",
                 _panelStyle);
         }
 

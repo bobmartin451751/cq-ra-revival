@@ -14,7 +14,7 @@ namespace CQRa.Tests.EditMode
             Assert.AreEqual(BuildingKind.WarFactory, ProductionCatalog.Get(UnitKind.Harvester).Producer);
             Assert.AreEqual(BuildingKind.WarFactory, ProductionCatalog.Get(UnitKind.Mcv).Producer);
 
-            Assert.AreEqual(5, ProductionCatalog.Buildable.Length);
+            Assert.AreEqual(6, ProductionCatalog.Buildable.Length);
             Assert.Greater(ProductionCatalog.QueueLimit, 0);
         }
 

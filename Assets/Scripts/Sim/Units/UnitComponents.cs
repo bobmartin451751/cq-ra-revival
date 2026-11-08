@@ -9,6 +9,7 @@ namespace CQRa.Sim.Units
         Harvester = 2,
         Mcv = 3,
         Gunship = 4,
+        Engineer = 5,
     }
 
     /// <summary>Marks an entity as a mobile unit.</summary>
@@ -46,7 +47,7 @@ namespace CQRa.Sim.Units
     public static class UnitMaterials
     {
         public const int TeamCount = 2;
-        public const int KindCount = 5;
+        public const int KindCount = 6;
         public const int HighlightIndex = TeamCount * KindCount;
         public const int Count = HighlightIndex + 1;
 

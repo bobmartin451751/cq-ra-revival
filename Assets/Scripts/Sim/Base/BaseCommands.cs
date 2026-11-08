@@ -30,6 +30,15 @@ namespace CQRa.Sim.Base
         CannotSell = 4,
     }
 
+    public enum CaptureFailure : byte
+    {
+        None = 0,
+        NotAnEngineer = 1,
+        NotABuilding = 2,
+        AlreadyOwned = 3,
+        TooFar = 4,
+    }
+
     /// <summary>
     /// Player-facing base commands shared by the input layer, tests and capture tools.
     /// Everything here goes through the same deterministic entity state the simulation
@@ -432,6 +441,91 @@ namespace CQRa.Sim.Base
             }
 
             return candidates;
+        }
+
+        /// <summary>
+        /// Engineers capture an enemy building within 10 m. The building changes team,
+        /// its production queue is cleared, and the engineer is consumed.
+        /// </summary>
+        public static bool TryCaptureBuilding(
+            EntityManager entityManager,
+            Entity engineer,
+            Entity building,
+            out CaptureFailure failure)
+        {
+            failure = CaptureFailure.None;
+
+            if (!entityManager.Exists(engineer) ||
+                !entityManager.HasComponent<UnitInfo>(engineer) ||
+                entityManager.GetComponentData<UnitInfo>(engineer).Kind != UnitKind.Engineer)
+            {
+                failure = CaptureFailure.NotAnEngineer;
+                return false;
+            }
+
+            if (!IsBuilding(entityManager, building))
+            {
+                failure = CaptureFailure.NotABuilding;
+                return false;
+            }
+
+            var engineerInfo = entityManager.GetComponentData<UnitInfo>(engineer);
+            var buildingInfo = entityManager.GetComponentData<BuildingInfo>(building);
+            if (engineerInfo.Team == buildingInfo.Team)
+            {
+                failure = CaptureFailure.AlreadyOwned;
+                return false;
+            }
+
+            var engineerPosition = entityManager.GetComponentData<LocalTransform>(engineer).Position;
+            var buildingPosition = entityManager.GetComponentData<LocalTransform>(building).Position;
+            if (math.distance(
+                    new float2(engineerPosition.x, engineerPosition.z),
+                    new float2(buildingPosition.x, buildingPosition.z)) > 10f)
+            {
+                failure = CaptureFailure.TooFar;
+                return false;
+            }
+
+            buildingInfo.Team = engineerInfo.Team;
+            entityManager.SetComponentData(building, buildingInfo);
+
+            if (entityManager.HasComponent<ProductionOrder>(building))
+            {
+                entityManager.GetBuffer<ProductionOrder>(building).Clear();
+            }
+
+            if (entityManager.HasComponent<RallyPoint>(building))
+            {
+                var direction = math.normalizesafe(
+                    new float2(-buildingPosition.x, -buildingPosition.z),
+                    new float2(0f, 1f));
+                entityManager.SetComponentData(building, new RallyPoint
+                {
+                    Value = new float3(
+                        buildingPosition.x + direction.x * 22f,
+                        buildingPosition.y,
+                        buildingPosition.z + direction.y * 22f),
+                    HasValue = 1,
+                });
+            }
+
+            if (entityManager.HasComponent<RepairState>(building))
+            {
+                entityManager.SetComponentData(building, new RepairState { Active = 0 });
+            }
+
+            if (entityManager.HasComponent<Unity.Rendering.MaterialMeshInfo>(building))
+            {
+                entityManager.SetComponentData(
+                    building,
+                    Unity.Rendering.MaterialMeshInfo.FromRenderMeshArrayIndices(
+                        engineerInfo.Team * BuildingFactory.BuildingKindCount + (int)buildingInfo.Kind,
+                        (int)buildingInfo.Kind));
+            }
+
+            entityManager.DestroyEntity(engineer);
+            return true;
         }
 
         /// <summary>

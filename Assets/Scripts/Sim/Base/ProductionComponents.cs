@@ -59,6 +59,7 @@ namespace CQRa.Sim.Base
             UnitKind.Harvester,
             UnitKind.Mcv,
             UnitKind.Gunship,
+            UnitKind.Engineer,
         };
 
         public static ProductionSpec Get(UnitKind kind)
@@ -80,7 +81,8 @@ namespace CQRa.Sim.Base
                 case 1: return "X";
                 case 2: return "C";
                 case 3: return "V";
-                default: return "B";
+                case 4: return "B";
+                default: return "G";
             }
         }
     }

@@ -100,6 +100,7 @@ namespace CQRa.Sim.Units
                 ProceduralMeshes.Harvester(),
                 ProceduralMeshes.Mcv(),
                 ProceduralMeshes.Gunship(),
+                ProceduralMeshes.Engineer(),
             };
 
             _renderMeshArray = UnitFactory.CreateRenderMeshArray(_materials, _meshes);
@@ -219,6 +220,7 @@ namespace CQRa.Sim.Units
                 UnitKind.Harvester => new Color(0.58f, 0.44f, 0.20f),
                 UnitKind.Mcv => new Color(0.42f, 0.42f, 0.28f),
                 UnitKind.Gunship => new Color(0.34f, 0.36f, 0.40f),
+                UnitKind.Engineer => new Color(0.55f, 0.50f, 0.28f),
                 _ => new Color(0.43f, 0.27f, 0.18f),
             };
 

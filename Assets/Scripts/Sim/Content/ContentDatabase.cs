@@ -121,6 +121,12 @@ namespace CQRa.Sim.Content
                 MaxHealth = 180f, Armor = 0.20f, Damage = 34f, Range = 22f, Cooldown = 1.1f,
                 AcquireRange = 26f, Speed = 16f, Radius = 2.6f, Vision = 44f, Label = "Gunship",
             },
+            new UnitDefinition
+            {
+                Kind = UnitKind.Engineer, Cost = 150, BuildSeconds = 4f, Producer = BuildingKind.Barracks,
+                MaxHealth = 40f, Armor = 0f, Speed = 5f, Radius = 0.6f, Vision = 30f,
+                Label = "Engineer",
+            },
         };
 
         private static readonly BuildingDefinition[] DefaultBuildings =

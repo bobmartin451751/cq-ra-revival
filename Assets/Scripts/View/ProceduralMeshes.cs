@@ -370,6 +370,18 @@ namespace CQRa.View
                 new MeshPart(Box(new Vector3(0.7f, 0.4f, 2.6f)), new Vector3(3.2f, 0.9f, 0.5f)));
         }
 
+        /// <summary>Engineer: infantry silhouette with a hard hat and tool pack.</summary>
+        public static Mesh Engineer()
+        {
+            return Merge(
+                new MeshPart(Box(new Vector3(0.55f, 0.55f, 0.38f)), new Vector3(0f, 0.275f, 0f)),
+                new MeshPart(Box(new Vector3(0.68f, 0.42f, 0.42f)), new Vector3(0f, 0.76f, 0f)),
+                new MeshPart(Box(new Vector3(0.44f, 0.18f, 0.46f)), new Vector3(0f, 1.08f, 0f)),
+                new MeshPart(Box(new Vector3(0.30f, 0.24f, 0.30f)), new Vector3(0f, 1.24f, 0f)),
+                new MeshPart(Box(new Vector3(0.5f, 0.45f, 0.3f)), new Vector3(0f, 0.78f, -0.36f)),
+                new MeshPart(Box(new Vector3(0.22f, 0.22f, 0.5f)), new Vector3(0.42f, 0.6f, 0.12f)));
+        }
+
         // ---- Buildings (metres) ------------------------------------------------------
 
         public static Mesh ConstructionYard()
