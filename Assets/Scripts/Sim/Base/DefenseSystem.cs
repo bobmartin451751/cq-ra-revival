@@ -73,10 +73,17 @@ namespace CQRa.Sim.Base
                 if (target != Entity.Null && weapon.CooldownRemaining <= 0f)
                 {
                     var targetHealth = entityManager.GetComponentData<Health>(target);
-                    targetHealth.Current -= CombatMath.DamageAfterArmor(weapon.Damage, targetHealth.Armor);
+                    var targetTransform = entityManager.GetComponentData<LocalTransform>(target);
+                    var directional = CombatMath.DirectionalMultiplier(
+                        position,
+                        targetTransform.Position,
+                        targetTransform.Rotation);
+                    targetHealth.Current -= CombatMath.DamageAfterArmor(
+                        weapon.Damage * directional,
+                        targetHealth.Armor);
                     entityManager.SetComponentData(target, targetHealth);
 
-                    var targetPosition = entityManager.GetComponentData<LocalTransform>(target).Position;
+                    var targetPosition = targetTransform.Position;
                     CombatFeed.AddTracer(
                         position + MuzzleOffset,
                         targetPosition + TargetOffset,

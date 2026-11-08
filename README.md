@@ -45,7 +45,7 @@ sell**, Esc to clear/cancel. Selected units and buildings expose their actions i
 right-hand **COMMAND** sidebar: MCVs show **DEPLOY** (click it, then right-click a
 site), production buildings show **RALLY** (click it, then right-click terrain),
 buildings show **REPAIR** and **SELL**, and units show **STOP**. See
-`docs/phase2.md` through `docs/phase17.md` for details.
+`docs/phase2.md` through `docs/phase18.md` for details.
 
 ## Layout
 
@@ -88,5 +88,6 @@ tools/               headless scripts
 | 15 - campaign | OK - mission select, briefings, objectives, progression, 3 missions |
 | 16 - crates | OK - deterministic credit/repair crates with fog-aware pickup |
 | 17 - engineers | OK - G trains engineers; CAPTURE then right-click an enemy building |
+| 18 - directional armour | OK - front/side/rear damage arcs for units and turrets |
 
 See `docs/spec.md` for the full roadmap and frozen scope.

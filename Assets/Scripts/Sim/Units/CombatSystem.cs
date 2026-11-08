@@ -209,10 +209,17 @@ namespace CQRa.Sim.Units
             ref NativeList<Entity> dead)
         {
             var health = entityManager.GetComponentData<Health>(target);
-            health.Current -= CombatMath.DamageAfterArmor(weapon.Damage, health.Armor);
+            var targetTransform = entityManager.GetComponentData<LocalTransform>(target);
+            var directional = CombatMath.DirectionalMultiplier(
+                position,
+                targetTransform.Position,
+                targetTransform.Rotation);
+            health.Current -= CombatMath.DamageAfterArmor(
+                weapon.Damage * directional,
+                health.Armor);
             entityManager.SetComponentData(target, health);
 
-            var targetPosition = entityManager.GetComponentData<LocalTransform>(target).Position;
+            var targetPosition = targetTransform.Position;
             var team = entityManager.GetComponentData<UnitInfo>(attacker).Team;
             CombatFeed.AddTracer(position + MuzzleOffset, targetPosition + TargetOffset, team);
 

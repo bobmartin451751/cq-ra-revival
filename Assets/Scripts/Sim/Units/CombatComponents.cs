@@ -88,10 +88,40 @@ namespace CQRa.Sim.Units
 
     public static class CombatMath
     {
+        public const float FrontalMultiplier = 0.75f;
+        public const float SideMultiplier = 0.85f;
+        public const float RearMultiplier = 1f;
+
         /// <summary>Armour reduces incoming damage linearly and is clamped to 0..0.9.</summary>
         public static float DamageAfterArmor(float damage, float armor)
         {
             return math.max(0f, damage) * (1f - math.clamp(armor, 0f, 0.9f));
+        }
+
+        /// <summary>
+        /// Directional armour: shots into the front arc are reduced most, side shots a
+        /// little, rear shots take full damage. The target's rotation defines its facing.
+        /// </summary>
+        public static float DirectionalMultiplier(
+            float3 attackerPosition,
+            float3 targetPosition,
+            quaternion targetRotation)
+        {
+            var forward = math.mul(targetRotation, new float3(0f, 0f, 1f));
+            forward.y = 0f;
+            forward = math.normalizesafe(forward, new float3(0f, 0f, 1f));
+
+            var incoming = attackerPosition - targetPosition;
+            incoming.y = 0f;
+            incoming = math.normalizesafe(incoming, new float3(0f, 0f, 1f));
+
+            var dot = math.dot(forward, incoming);
+            if (dot >= 0.5f)
+            {
+                return FrontalMultiplier;
+            }
+
+            return dot <= -0.5f ? RearMultiplier : SideMultiplier;
         }
 
         /// <summary>Shots needed to destroy a target; 0 when the weapon cannot hurt it.</summary>
