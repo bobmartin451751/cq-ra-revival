@@ -26,7 +26,7 @@ namespace CQRa.EditorTools
             {
                 EnsureDir("Assets/Scenes");
                 EnsureDir(SettingsDir);
-                EnsureDir("Assets/Materials");
+                EnsureDir("Assets/Art/Materials");
 
                 var scene = EditorSceneManager.NewScene(NewSceneSetup.EmptyScene, NewSceneMode.Single);
 
@@ -294,7 +294,7 @@ namespace CQRa.EditorTools
             mat.SetFloat("_Smoothness", smoothness);
             mat.SetFloat("_Metallic", metallic);
 
-            var path = $"Assets/Materials/{name}.mat";
+            var path = $"Assets/Art/Materials/{name}.mat";
             AssetDatabase.DeleteAsset(path);
             AssetDatabase.CreateAsset(mat, path);
             return AssetDatabase.LoadAssetAtPath<Material>(path);

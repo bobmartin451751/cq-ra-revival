@@ -18,6 +18,7 @@ namespace CQRa.Sim.Base
         Occupied = 6,
         NotAnMcv = 7,
         AlreadyDeployed = 8,
+        TooFar = 9,
     }
 
     public enum BuildingCommandFailure : byte
@@ -102,10 +103,31 @@ namespace CQRa.Sim.Base
         }
 
         /// <summary>
-        /// Deploys an MCV into a construction yard. The MCV is consumed; the yard blocks
-        /// the nav grid under its footprint and defines the team's build radius.
+        /// Deploys an MCV into a construction yard at its current position.
         /// </summary>
         public static bool TryDeployMcv(EntityManager entityManager, Entity mcv, out BuildFailure failure)
+        {
+            if (!entityManager.Exists(mcv) ||
+                !entityManager.HasComponent<LocalTransform>(mcv))
+            {
+                failure = BuildFailure.NotAnMcv;
+                return false;
+            }
+
+            var position = entityManager.GetComponentData<LocalTransform>(mcv).Position;
+            return TryDeployMcvAt(entityManager, mcv, position, out failure);
+        }
+
+        /// <summary>
+        /// Deploys an MCV at a chosen site. Uses the same terrain/overlap rules as building
+        /// placement, ignores the MCV itself, and limits the deploy distance so the yard
+        /// cannot be teleported across the map.
+        /// </summary>
+        public static bool TryDeployMcvAt(
+            EntityManager entityManager,
+            Entity mcv,
+            float3 site,
+            out BuildFailure failure)
         {
             failure = BuildFailure.None;
 
@@ -124,14 +146,25 @@ namespace CQRa.Sim.Base
                 return false;
             }
 
-            var position = entityManager.GetComponentData<LocalTransform>(mcv).Position;
+            var mcvPosition = entityManager.GetComponentData<LocalTransform>(mcv).Position;
+            if (math.distance(new float2(site.x, site.z), new float2(mcvPosition.x, mcvPosition.z)) > 50f)
+            {
+                failure = BuildFailure.TooFar;
+                return false;
+            }
+
             var spec = BuildCatalog.Get(BuildingKind.ConstructionYard);
+            var point = new float2(site.x, site.z);
+            if (IsOccupied(entityManager, team, point, spec, out failure, mcv))
+            {
+                return false;
+            }
 
             entityManager.DestroyEntity(mcv);
-            BuildingFactory.SpawnBuilding(entityManager, team, BuildingKind.ConstructionYard, position);
+            BuildingFactory.SpawnBuilding(entityManager, team, BuildingKind.ConstructionYard, site);
 
-            NavGridQuery.BlockCircle(entityManager, new float2(position.x, position.z), spec.NavRadius);
-            EvacuateUnits(entityManager, new float2(position.x, position.z), spec.NavRadius);
+            NavGridQuery.BlockCircle(entityManager, point, spec.NavRadius);
+            EvacuateUnits(entityManager, point, spec.NavRadius);
             NavGridQuery.InvalidateFlowFields(entityManager);
 
             return true;
@@ -232,7 +265,8 @@ namespace CQRa.Sim.Base
             int team,
             float2 point,
             in BuildingSpec spec,
-            out BuildFailure failure)
+            out BuildFailure failure,
+            Entity ignoreUnit = default)
         {
             failure = BuildFailure.None;
 
@@ -288,6 +322,11 @@ namespace CQRa.Sim.Base
             {
                 for (var i = 0; i < entities.Length; i++)
                 {
+                    if (entities[i] == ignoreUnit)
+                    {
+                        continue;
+                    }
+
                     var info = entityManager.GetComponentData<UnitInfo>(entities[i]);
                     var other = entityManager.GetComponentData<LocalTransform>(entities[i]).Position;
                     if (BuildRules.FootprintsOverlap(

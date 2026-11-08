@@ -22,6 +22,15 @@ namespace CQRa.View
     /// </summary>
     public sealed class SelectionController : MonoBehaviour
     {
+        private enum ArmedCommand : byte
+        {
+            None = 0,
+            DeployMcv = 1,
+            SetRally = 2,
+        }
+
+        private const float SidebarWidth = 324f;
+
         [SerializeField] private Camera _camera;
         [SerializeField] private HeightmapTerrain _terrain;
         [SerializeField] private MoveOrderMarker _moveMarker;
@@ -38,8 +47,12 @@ namespace CQRa.View
 
         private GUIStyle _hintStyle;
         private GUIStyle _panelStyle;
+        private GUIStyle _sidebarTitle;
+        private GUIStyle _sidebarButton;
 
         private int _armedBuild = -1;
+        private ArmedCommand _armedCommand = ArmedCommand.None;
+        private int _sidebarTab;
         private string _message;
         private float _messageUntil;
         private Entity _selectedProducer = Entity.Null;
@@ -84,18 +97,20 @@ namespace CQRa.View
             }
 
             var keyboard = Keyboard.current;
+            var pointer = mouse.position.ReadValue();
+            var overHud = IsPointerOverSidebar(pointer);
 
-            if (mouse.leftButton.wasPressedThisFrame)
+            if (mouse.leftButton.wasPressedThisFrame && !overHud)
             {
                 _dragging = true;
                 _boxSelecting = false;
-                _dragStart = mouse.position.ReadValue();
+                _dragStart = pointer;
                 _dragCurrent = _dragStart;
             }
 
             if (_dragging)
             {
-                _dragCurrent = mouse.position.ReadValue();
+                _dragCurrent = pointer;
 
                 if (!_boxSelecting &&
                     (_dragCurrent - _dragStart).sqrMagnitude > _dragThresholdPixels * _dragThresholdPixels)
@@ -127,7 +142,12 @@ namespace CQRa.View
 
             if (keyboard != null && keyboard.escapeKey.wasPressedThisFrame)
             {
-                if (_armedBuild >= 0)
+                if (_armedCommand != ArmedCommand.None)
+                {
+                    _armedCommand = ArmedCommand.None;
+                    ShowMessage("Command cancelled");
+                }
+                else if (_armedBuild >= 0)
                 {
                     _armedBuild = -1;
                 }
@@ -169,11 +189,6 @@ namespace CQRa.View
                     ArmBuild(5);
                 }
 
-                if (keyboard.dKey.wasPressedThisFrame)
-                {
-                    DeploySelectedMcvs();
-                }
-
                 if (keyboard.zKey.wasPressedThisFrame)
                 {
                     TryProduce(UnitKind.Infantry);
@@ -212,11 +227,23 @@ namespace CQRa.View
 
             _selectedProducer = FindSelectedProducer();
 
-            if (mouse.rightButton.wasPressedThisFrame && _selected.Count > 0)
+            if (mouse.rightButton.wasPressedThisFrame && !overHud && _selected.Count > 0)
             {
                 var screenPosition = mouse.position.ReadValue();
-                if (!TryIssueAttackOrder(screenPosition) &&
-                    !TrySetRally(screenPosition))
+
+                if (_armedCommand == ArmedCommand.DeployMcv)
+                {
+                    TryDeployMcvAtPoint(screenPosition);
+                }
+                else if (_armedCommand == ArmedCommand.SetRally)
+                {
+                    if (TrySetRally(screenPosition))
+                    {
+                        _armedCommand = ArmedCommand.None;
+                    }
+                }
+                else if (!TryIssueAttackOrder(screenPosition) &&
+                         !TrySetRally(screenPosition))
                 {
                     IssueMoveOrder(screenPosition);
                 }
@@ -365,6 +392,7 @@ namespace CQRa.View
             }
 
             _armedBuild = index;
+            _armedCommand = ArmedCommand.None;
             ShowMessage($"Placing {BuildCatalog.DisplayName(BuildCatalog.PlayerBuildable[index])} - left-click to place, Esc to cancel");
         }
 
@@ -690,6 +718,8 @@ namespace CQRa.View
                     return "Construction Yard already deployed";
                 case BuildFailure.NotAnMcv:
                     return "That is not an MCV";
+                case BuildFailure.TooFar:
+                    return "Too far from the MCV";
                 default:
                     return string.Empty;
             }
@@ -699,6 +729,152 @@ namespace CQRa.View
         {
             _message = message;
             _messageUntil = Time.unscaledTime + 2.5f;
+        }
+
+        private static bool IsPointerOverSidebar(Vector2 pointer)
+        {
+            return pointer.x >= Screen.width - SidebarWidth;
+        }
+
+        private void ArmCommand(ArmedCommand command)
+        {
+            _armedBuild = -1;
+
+            var world = World.DefaultGameObjectInjectionWorld;
+            if (world == null || !world.IsCreated)
+            {
+                return;
+            }
+
+            var entityManager = world.EntityManager;
+
+            if (command == ArmedCommand.DeployMcv)
+            {
+                if (FindSelectedMcv(entityManager) == Entity.Null)
+                {
+                    ShowMessage("Select an MCV first");
+                    return;
+                }
+
+                _armedCommand = command;
+                ShowMessage("Right-click a site to deploy the Construction Yard");
+                return;
+            }
+
+            if (command == ArmedCommand.SetRally)
+            {
+                if (_selectedProducer == Entity.Null)
+                {
+                    ShowMessage("Select a Barracks, War Factory or Refinery");
+                    return;
+                }
+
+                _armedCommand = command;
+                ShowMessage("Right-click to set the rally point");
+                return;
+            }
+
+            _armedCommand = ArmedCommand.None;
+        }
+
+        private Entity FindSelectedMcv(EntityManager entityManager)
+        {
+            for (var i = 0; i < _selected.Count; i++)
+            {
+                var entity = _selected[i];
+                if (!entityManager.Exists(entity) ||
+                    !entityManager.HasComponent<UnitInfo>(entity))
+                {
+                    continue;
+                }
+
+                if (entityManager.GetComponentData<UnitInfo>(entity).Kind == UnitKind.Mcv)
+                {
+                    return entity;
+                }
+            }
+
+            return Entity.Null;
+        }
+
+        private void TryDeployMcvAtPoint(Vector2 screenPosition)
+        {
+            if (!TerrainPicker.TryPick(_camera, screenPosition, _terrain, out var point))
+            {
+                ShowMessage("Cannot deploy there");
+                return;
+            }
+
+            var world = World.DefaultGameObjectInjectionWorld;
+            if (world == null || !world.IsCreated)
+            {
+                return;
+            }
+
+            var entityManager = world.EntityManager;
+            var mcv = FindSelectedMcv(entityManager);
+            if (mcv == Entity.Null)
+            {
+                _armedCommand = ArmedCommand.None;
+                ShowMessage("Select an MCV first");
+                return;
+            }
+
+            if (BaseCommands.TryDeployMcvAt(
+                    entityManager,
+                    mcv,
+                    new Unity.Mathematics.float3(point.x, point.y, point.z),
+                    out var failure))
+            {
+                _selected.Remove(mcv);
+                _armedCommand = ArmedCommand.None;
+                ShowMessage("Construction Yard deployed");
+            }
+            else
+            {
+                ShowMessage(FailureText(failure));
+            }
+        }
+
+        private void StopSelectedUnits()
+        {
+            var world = World.DefaultGameObjectInjectionWorld;
+            if (world == null || !world.IsCreated)
+            {
+                return;
+            }
+
+            var entityManager = world.EntityManager;
+            var stopped = 0;
+
+            for (var i = 0; i < _selected.Count; i++)
+            {
+                var entity = _selected[i];
+                if (!entityManager.Exists(entity) ||
+                    !entityManager.HasComponent<UnitTag>(entity) ||
+                    !entityManager.HasComponent<MoveTarget>(entity))
+                {
+                    continue;
+                }
+
+                var move = entityManager.GetComponentData<MoveTarget>(entity);
+                move.HasOrder = 0;
+                move.Field = Entity.Null;
+                entityManager.SetComponentData(entity, move);
+
+                if (entityManager.HasComponent<CombatState>(entity))
+                {
+                    entityManager.SetComponentData(entity, new CombatState
+                    {
+                        Target = Entity.Null,
+                        Explicit = 0,
+                    });
+                }
+
+                stopped++;
+            }
+
+            ShowMessage(stopped > 0 ? "Units stopped" : "No units selected");
         }
 
         private bool TryPickSelectable(Vector2 screenPosition, bool playerOnly, out Entity picked)
@@ -787,6 +963,7 @@ namespace CQRa.View
         private void SelectAtPoint(Vector2 screenPosition, bool additive)
         {
             PruneSelection();
+            _armedCommand = ArmedCommand.None;
 
             var hasPicked = TryPickSelectable(screenPosition, true, out var best);
 
@@ -813,6 +990,7 @@ namespace CQRa.View
         private void SelectInBox(Vector2 a, Vector2 b, bool additive)
         {
             PruneSelection();
+            _armedCommand = ArmedCommand.None;
 
             if (!additive)
             {
@@ -912,6 +1090,8 @@ namespace CQRa.View
 
         private void ClearSelection()
         {
+            _armedCommand = ArmedCommand.None;
+
             for (var i = 0; i < _selected.Count; i++)
             {
                 SetSelectedFlag(_selected[i], false);
@@ -958,14 +1138,7 @@ namespace CQRa.View
 
         private void OnGUI()
         {
-            if (_hintStyle == null)
-            {
-                _hintStyle = new GUIStyle(GUI.skin.label)
-                {
-                    fontSize = 15,
-                    normal = { textColor = new Color(0.95f, 0.92f, 0.82f) },
-                };
-            }
+            EnsureStyles();
 
             if (_boxSelecting)
             {
@@ -973,58 +1146,416 @@ namespace CQRa.View
             }
 
             DrawHealthBars();
-
-            var moving = _movingCount;
-            var healthText = SelectedHealthText();
-            var hint = $"Selected: {_selected.Count}   Moving: {moving}{healthText}    1-6 build · D deploy · Z/X/C/V/B produce · R repair · T sell · RMB rally/move/attack · Esc clear";
-
-            var match = ReadMatchState();
-            if (match.HasValue)
-            {
-                var state = match.Value;
-                var teamText = $"   R:{state.Team0Alive}  B:{state.Team1Alive}";
-                var previousColor = GUI.color;
-
-                GUI.color = new Color(0.05f, 0.04f, 0.03f, 0.72f);
-                GUI.DrawTexture(new Rect(12f, 12f, 220f, 30f), Texture2D.whiteTexture);
-                GUI.color = previousColor;
-                GUI.Label(new Rect(22f, 16f, 210f, 24f), teamText, _hintStyle);
-            }
-
-            if (ReadEconomy(out var economy))
-            {
-                var powerMade = Economy.GetPowerMade(economy, BuildCatalog.PlayerTeam);
-                var powerUsed = Economy.GetPowerUsed(economy, BuildCatalog.PlayerTeam);
-                var economyText =
-                    $"Credits: {Economy.GetCredits(economy, BuildCatalog.PlayerTeam)}" +
-                    $"    Power: {powerUsed}/{powerMade}";
-
-                var previousColor = GUI.color;
-                GUI.color = new Color(0.05f, 0.04f, 0.03f, 0.72f);
-                GUI.DrawTexture(new Rect(12f, 48f, 300f, 30f), Texture2D.whiteTexture);
-                GUI.color = previousColor;
-                GUI.Label(new Rect(22f, 52f, 290f, 24f), economyText, _hintStyle);
-            }
-
-            DrawBuildPanel();
-            DrawProductionPanel();
+            DrawSidebar();
 
             if (_message != null && Time.unscaledTime < _messageUntil)
             {
                 var previousColor = GUI.color;
-                GUI.color = new Color(0.05f, 0.04f, 0.03f, 0.78f);
-                GUI.DrawTexture(new Rect(Screen.width * 0.5f - 260f, Screen.height - 96f, 520f, 30f), Texture2D.whiteTexture);
+                GUI.color = new Color(0.05f, 0.04f, 0.03f, 0.8f);
+                GUI.DrawTexture(
+                    new Rect(12f, Screen.height - 96f, 560f, 30f),
+                    Texture2D.whiteTexture);
                 GUI.color = previousColor;
-                GUI.Label(new Rect(Screen.width * 0.5f - 250f, Screen.height - 92f, 500f, 24f), _message, _hintStyle);
+                GUI.Label(new Rect(22f, Screen.height - 92f, 540f, 24f), _message, _hintStyle);
+            }
+        }
+
+        private void EnsureStyles()
+        {
+            if (_hintStyle != null)
+            {
+                return;
             }
 
+            _hintStyle = new GUIStyle(GUI.skin.label)
+            {
+                fontSize = 14,
+                normal = { textColor = new Color(0.93f, 0.90f, 0.80f) },
+            };
+
+            _panelStyle = new GUIStyle(GUI.skin.label)
+            {
+                fontSize = 13,
+                normal = { textColor = new Color(0.88f, 0.85f, 0.76f) },
+            };
+
+            _sidebarTitle = new GUIStyle(GUI.skin.label)
+            {
+                fontSize = 20,
+                fontStyle = FontStyle.Bold,
+                alignment = TextAnchor.MiddleCenter,
+                normal = { textColor = new Color(0.98f, 0.86f, 0.55f) },
+            };
+
+            _sidebarButton = new GUIStyle(GUI.skin.button)
+            {
+                fontSize = 13,
+                normal = { textColor = new Color(0.95f, 0.92f, 0.82f) },
+                hover = { textColor = new Color(1f, 0.94f, 0.72f) },
+            };
+        }
+
+        private void DrawSidebar()
+        {
+            var x = Screen.width - SidebarWidth;
             var previous = GUI.color;
 
-            GUI.color = new Color(0.05f, 0.04f, 0.03f, 0.72f);
-            GUI.DrawTexture(new Rect(12f, Screen.height - 46f, 700f, 32f), Texture2D.whiteTexture);
+            GUI.color = new Color(0.055f, 0.05f, 0.045f, 0.96f);
+            GUI.DrawTexture(new Rect(x, 0f, SidebarWidth, Screen.height), Texture2D.whiteTexture);
+            GUI.color = previous;
+
+            GUI.Label(new Rect(x + 10f, 8f, SidebarWidth - 20f, 28f), "COMMAND", _sidebarTitle);
+
+            if (ReadEconomy(out var economy))
+            {
+                var credits = Economy.GetCredits(economy, BuildCatalog.PlayerTeam);
+                var made = Economy.GetPowerMade(economy, BuildCatalog.PlayerTeam);
+                var used = Economy.GetPowerUsed(economy, BuildCatalog.PlayerTeam);
+                GUI.Label(
+                    new Rect(x + 12f, 38f, SidebarWidth - 24f, 22f),
+                    $"Credits: {credits}",
+                    _hintStyle);
+                GUI.Label(
+                    new Rect(x + 12f, 58f, SidebarWidth - 24f, 22f),
+                    $"Power: {used}/{made}",
+                    _hintStyle);
+            }
+
+            if (ReadMatchState(out var match))
+            {
+                GUI.Label(
+                    new Rect(x + 12f, 78f, SidebarWidth - 24f, 22f),
+                    $"Red: {match.Team0Alive}   Blue: {match.Team1Alive}",
+                    _hintStyle);
+            }
+
+            var mapRect = new Rect(x + 10f, 104f, SidebarWidth - 20f, 168f);
+            DrawMinimap(mapRect);
+
+            DrawSelectionSummary(x);
+            DrawCommandButtons(x);
+            DrawSupplyTabs(x);
+        }
+
+        private void DrawSelectionSummary(float x)
+        {
+            var world = World.DefaultGameObjectInjectionWorld;
+            if (world == null || !world.IsCreated)
+            {
+                return;
+            }
+
+            var entityManager = world.EntityManager;
+
+            if (_selected.Count == 0)
+            {
+                GUI.Label(
+                    new Rect(x + 12f, 284f, SidebarWidth - 24f, 22f),
+                    "No selection",
+                    _hintStyle);
+                return;
+            }
+
+            var entity = _selected[0];
+            if (!entityManager.Exists(entity))
+            {
+                return;
+            }
+
+            string title = "Unknown";
+            if (entityManager.HasComponent<UnitInfo>(entity))
+            {
+                title = entityManager.GetComponentData<UnitInfo>(entity).Kind.ToString();
+            }
+            else if (entityManager.HasComponent<BuildingInfo>(entity))
+            {
+                title = BuildCatalog.DisplayName(
+                    entityManager.GetComponentData<BuildingInfo>(entity).Kind);
+            }
+
+            var healthText = SelectedHealthText();
+            GUI.Label(
+                new Rect(x + 12f, 284f, SidebarWidth - 24f, 22f),
+                $"{title}  {healthText}",
+                _hintStyle);
+        }
+
+        private void DrawCommandButtons(float x)
+        {
+            var world = World.DefaultGameObjectInjectionWorld;
+            if (world == null || !world.IsCreated || _selected.Count == 0)
+            {
+                return;
+            }
+
+            var entityManager = world.EntityManager;
+            var hasMcv = false;
+            var hasUnit = false;
+            var hasBuilding = false;
+            var hasProducer = false;
+            var hasRally = false;
+
+            for (var i = 0; i < _selected.Count; i++)
+            {
+                var entity = _selected[i];
+                if (!entityManager.Exists(entity))
+                {
+                    continue;
+                }
+
+                if (entityManager.HasComponent<UnitInfo>(entity))
+                {
+                    hasUnit = true;
+                    if (entityManager.GetComponentData<UnitInfo>(entity).Kind == UnitKind.Mcv)
+                    {
+                        hasMcv = true;
+                    }
+                }
+
+                if (entityManager.HasComponent<BuildingInfo>(entity))
+                {
+                    hasBuilding = true;
+                    if (entityManager.HasComponent<RallyPoint>(entity))
+                    {
+                        hasRally = true;
+                    }
+                }
+
+                if (entityManager.HasComponent<ProductionTag>(entity))
+                {
+                    hasProducer = true;
+                }
+            }
+
+            var buttons = 0;
+            if (hasMcv) buttons++;
+            if (hasRally) buttons++;
+            if (hasUnit) buttons++;
+            if (hasBuilding) buttons += 2; // repair + sell
+            if (buttons == 0)
+            {
+                return;
+            }
+
+            const float gap = 4f;
+            var totalWidth = SidebarWidth - 24f;
+            var width = (totalWidth - gap * (buttons - 1)) / buttons;
+            var bx = x + 12f;
+            const float by = 312f;
+
+            if (hasMcv)
+            {
+                DrawCommandButton(
+                    new Rect(bx, by, width, 32f),
+                    "DEPLOY",
+                    _armedCommand == ArmedCommand.DeployMcv,
+                    () => ArmCommand(ArmedCommand.DeployMcv));
+                bx += width + gap;
+            }
+
+            if (hasRally)
+            {
+                DrawCommandButton(
+                    new Rect(bx, by, width, 32f),
+                    "RALLY",
+                    _armedCommand == ArmedCommand.SetRally,
+                    () => ArmCommand(ArmedCommand.SetRally));
+                bx += width + gap;
+            }
+
+            if (hasUnit)
+            {
+                DrawCommandButton(
+                    new Rect(bx, by, width, 32f),
+                    "STOP",
+                    false,
+                    StopSelectedUnits);
+                bx += width + gap;
+            }
+
+            if (hasBuilding)
+            {
+                DrawCommandButton(
+                    new Rect(bx, by, width, 32f),
+                    "REPAIR",
+                    false,
+                    ToggleRepairSelected);
+                bx += width + gap;
+
+                DrawCommandButton(
+                    new Rect(bx, by, width, 32f),
+                    "SELL",
+                    false,
+                    SellSelectedBuildings);
+            }
+        }
+
+        private void DrawCommandButton(Rect rect, string label, bool armed, System.Action action)
+        {
+            var previous = GUI.backgroundColor;
+            if (armed)
+            {
+                GUI.backgroundColor = new Color(0.78f, 0.52f, 0.20f);
+            }
+
+            if (GUI.Button(rect, label, _sidebarButton))
+            {
+                action();
+            }
+
+            GUI.backgroundColor = previous;
+        }
+
+        private void DrawSupplyTabs(float x)
+        {
+            const float by = 354f;
+            var half = (SidebarWidth - 28f) * 0.5f;
+
+            var previous = GUI.backgroundColor;
+            GUI.backgroundColor = _sidebarTab == 0
+                ? new Color(0.62f, 0.44f, 0.20f)
+                : new Color(0.26f, 0.24f, 0.20f);
+            if (GUI.Button(new Rect(x + 12f, by, half, 28f), "STRUCTURES", _sidebarButton))
+            {
+                _sidebarTab = 0;
+            }
+
+            GUI.backgroundColor = _sidebarTab == 1
+                ? new Color(0.62f, 0.44f, 0.20f)
+                : new Color(0.26f, 0.24f, 0.20f);
+            if (GUI.Button(new Rect(x + 16f + half, by, half, 28f), "UNITS", _sidebarButton))
+            {
+                _sidebarTab = 1;
+            }
+
+            GUI.backgroundColor = previous;
+
+            var rowY = by + 34f;
+            if (_sidebarTab == 0)
+            {
+                DrawStructureRows(x, rowY);
+            }
+            else
+            {
+                DrawUnitRows(x, rowY);
+            }
+
+            var rows = _sidebarTab == 0
+                ? BuildCatalog.PlayerBuildable.Length
+                : ProductionCatalog.Buildable.Length;
+            var queueY = rowY + rows * 31f + 4f;
+
+            var queueText = "Queue: select a producer";
+            if (_selectedProducer != Entity.Null && ReadQueueText(_selectedProducer, out var text))
+            {
+                queueText = "Queue: " + text;
+            }
+
+            GUI.Label(
+                new Rect(x + 12f, queueY, SidebarWidth - 24f, 22f),
+                queueText,
+                _panelStyle);
+
+            GUI.Label(
+                new Rect(x + 12f, Screen.height - 84f, SidebarWidth - 24f, 78f),
+                "RMB: move / attack / execute\nShift: add select · Esc: cancel\nR: repair · T: sell · D: camera only",
+                _panelStyle);
+        }
+
+        private void DrawStructureRows(float x, float rowY)
+        {
+            for (var i = 0; i < BuildCatalog.PlayerBuildable.Length; i++)
+            {
+                var kind = BuildCatalog.PlayerBuildable[i];
+                var spec = BuildCatalog.Get(kind);
+                var label = $"[{i + 1}] {BuildCatalog.DisplayName(kind)}    {spec.Cost}";
+
+                var previous = GUI.backgroundColor;
+                if (_armedBuild == i)
+                {
+                    GUI.backgroundColor = new Color(0.78f, 0.52f, 0.20f);
+                }
+
+                if (GUI.Button(
+                        new Rect(x + 12f, rowY + i * 31f, SidebarWidth - 24f, 28f),
+                        label,
+                        _sidebarButton))
+                {
+                    ArmBuild(i);
+                }
+
+                GUI.backgroundColor = previous;
+            }
+        }
+
+        private void DrawUnitRows(float x, float rowY)
+        {
+            for (var i = 0; i < ProductionCatalog.Buildable.Length; i++)
+            {
+                var kind = ProductionCatalog.Buildable[i];
+                var spec = ProductionCatalog.Get(kind);
+                var label =
+                    $"[{ProductionCatalog.Hotkey(i)}] {spec.Label}    {spec.Cost}   {spec.Seconds:0}s";
+
+                if (GUI.Button(
+                        new Rect(x + 12f, rowY + i * 31f, SidebarWidth - 24f, 28f),
+                        label,
+                        _sidebarButton))
+                {
+                    TryProduce(kind);
+                }
+            }
+        }
+
+        private void DrawMinimap(Rect rect)
+        {
+            var previous = GUI.color;
+            GUI.color = new Color(0.02f, 0.03f, 0.02f, 0.95f);
+            GUI.DrawTexture(rect, Texture2D.whiteTexture);
+            GUI.color = previous;
+
+            var size = _terrain != null ? _terrain.Size : 360f;
+            var half = size * 0.5f;
+
+            ForEachSelectable((entity, position) =>
+            {
+                var world = World.DefaultGameObjectInjectionWorld;
+                if (world == null || !world.IsCreated)
+                {
+                    return;
+                }
+
+                var entityManager = world.EntityManager;
+                var team = entityManager.HasComponent<UnitInfo>(entity)
+                    ? entityManager.GetComponentData<UnitInfo>(entity).Team
+                    : entityManager.GetComponentData<BuildingInfo>(entity).Team;
+
+                if (team != 0 && !IsVisibleToPlayer(position))
+                {
+                    return;
+                }
+
+                var nx = (position.x + half) / size;
+                var nz = (position.z + half) / size;
+                if (nx < 0f || nx > 1f || nz < 0f || nz > 1f)
+                {
+                    return;
+                }
+
+                var dot = new Rect(
+                    rect.x + nx * rect.width - 2f,
+                    rect.y + (1f - nz) * rect.height - 2f,
+                    4f,
+                    4f);
+
+                GUI.color = team == 0
+                    ? new Color(0.85f, 0.22f, 0.16f)
+                    : new Color(0.28f, 0.55f, 0.78f);
+                GUI.DrawTexture(dot, Texture2D.whiteTexture);
+            });
 
             GUI.color = previous;
-            GUI.Label(new Rect(22f, Screen.height - 42f, 690f, 26f), hint, _hintStyle);
+            GUI.Label(new Rect(rect.x + 6f, rect.y + 4f, 120f, 20f), "RADAR", _panelStyle);
         }
 
         private string SelectedHealthText()
@@ -1047,6 +1578,19 @@ namespace CQRa.View
                             entityManager.GetComponentData<RepairState>(entity).Active != 0;
             var suffix = repairing ? "  [REPAIRING]" : string.Empty;
             return $"   HP: {Mathf.CeilToInt(health.Current)}/{Mathf.CeilToInt(health.Max)}{suffix}";
+        }
+
+        private static bool ReadMatchState(out MatchState state)
+        {
+            state = default;
+            var match = ReadMatchState();
+            if (!match.HasValue)
+            {
+                return false;
+            }
+
+            state = match.Value;
+            return true;
         }
 
         private static MatchState? ReadMatchState()

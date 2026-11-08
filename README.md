@@ -40,28 +40,29 @@ The skirmish menu lets you pick a difficulty and start a match against the AI.
 **Controls:** WASD/arrows or middle-drag to pan, wheel to zoom, Q/E to rotate,
 edge scroll at the screen border, left-click to select, drag a box to multi-select,
 Shift to add, **right-click to move**, **right-click an enemy unit or building to
-attack**, **1-6 to arm a building, D to deploy a selected MCV, Z/X/C/V/B to produce
-units, R to repair, T to sell**, Esc to clear/cancel. Right-click with production
-buildings selected sets their rally point. See `docs/phase2.md` through
-`docs/phase12.md` for details.
+attack**, **1-6 to arm a building, Z/X/C/V/B to produce units, R to repair, T to
+sell**, Esc to clear/cancel. Selected units and buildings expose their actions in the
+right-hand **COMMAND** sidebar: MCVs show **DEPLOY** (click it, then right-click a
+site), production buildings show **RALLY** (click it, then right-click terrain),
+buildings show **REPAIR** and **SELL**, and units show **STOP**. See
+`docs/phase2.md` through `docs/phase13.md` for details.
 
 ## Layout
 
 ```
 Assets/
+  Art/Materials/     generated URP materials
   Editor/            headless project setup, scene generation, capture, build
+  Resources/Data/    JSON content, missions and maps (content pipeline target)
   Scripts/
-    Core/            bootstrap, screenshot rig
-    Sim/             ECS simulation (movement, navigation, combat, economy, vision)
-    Content/         JSON -> BlobAsset content pipeline
-    View/            rendering, camera, selection visuals
-    UI/              UI Toolkit controllers
-    Mission/         trigger + objective system
-  Data/              factions, units, buildings, ai tunables, maps, missions, strings
-  Mods/              load-orderable content
+    Core/            bootstrap, skirmish shell, screenshot rig
+    Sim/             ECS simulation: AI, Base, Fog, Navigation, Units
+    View/            rendering, camera, selection visuals, command sidebar
+    UI/              UI Toolkit controllers (later)
+    Mission/         trigger + objective system (later)
   Tests/             EditMode + PlayMode suites
   Scenes/Main.unity  single bootstrap scene
-docs/spec.md         frozen v1 scope
+docs/phase*.md       phase notes and architecture
 tools/               headless scripts
 ```
 
@@ -82,5 +83,6 @@ tools/               headless scripts
 | 10 - fog of war | OK - per-team vision grids, shroud rendering, fog-aware combat and AI |
 | 11 - defences + walls | OK - gun towers, walls, fog-aware defensive fire |
 | 12 - air units | OK - gunships, altitude flight, air production and AI use |
+| 13 - command UI | OK - C&C sidebar, armed Deploy/Rally commands, right-click execution |
 
 See `docs/spec.md` for the full roadmap and frozen scope.

@@ -36,7 +36,8 @@ generated at scene start; there are no prefabs or imported assets.
 
 Flow:
 
-1. Select an MCV and press **D**. The MCV is consumed and a Construction Yard appears.
+1. Select an MCV, click **DEPLOY** in the command sidebar, then right-click a valid site.
+   The MCV is consumed and a Construction Yard appears there.
    Deploying a second yard for the same team is rejected.
 2. Press **1** for a Power Plant or **2** for a Refinery, then left-click the ground.
 3. Placement is rejected when the site is outside 45 m of the team's yard, unaffordable,
