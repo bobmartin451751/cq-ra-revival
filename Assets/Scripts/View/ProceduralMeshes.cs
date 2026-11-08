@@ -382,6 +382,39 @@ namespace CQRa.View
                 new MeshPart(Box(new Vector3(0.22f, 0.22f, 0.5f)), new Vector3(0.42f, 0.6f, 0.12f)));
         }
 
+        /// <summary>Ashfall mobile mortar: tracked chassis with a stubby siege tube.</summary>
+        public static Mesh Thumper()
+        {
+            return Merge(
+                new MeshPart(Box(new Vector3(3.6f, 1.2f, 5.4f)), new Vector3(0f, 0.8f, 0f)),
+                new MeshPart(Box(new Vector3(2.4f, 0.9f, 2.6f)), new Vector3(0f, 1.8f, -0.6f)),
+                new MeshPart(Cylinder(0.35f, 3.4f, 10), new Vector3(0f, 2.4f, 1.2f), Quaternion.Euler(58f, 0f, 0f)),
+                new MeshPart(Box(new Vector3(0.7f, 0.7f, 1.6f)), new Vector3(0f, 2.1f, -2.0f)));
+        }
+
+        /// <summary>Verdant raider: light frame with a long blade and sprint pack.</summary>
+        public static Mesh Mantis()
+        {
+            return Merge(
+                new MeshPart(Box(new Vector3(0.45f, 0.7f, 0.4f)), new Vector3(0f, 0.65f, 0f)),
+                new MeshPart(Box(new Vector3(0.55f, 0.4f, 0.5f)), new Vector3(0f, 1.1f, 0f)),
+                new MeshPart(Box(new Vector3(0.22f, 0.22f, 0.22f)), new Vector3(0f, 1.38f, 0f)),
+                new MeshPart(Box(new Vector3(0.18f, 0.18f, 1.5f)), new Vector3(0.42f, 1.0f, 0.4f)),
+                new MeshPart(Box(new Vector3(0.4f, 0.35f, 0.3f)), new Vector3(0f, 1.2f, -0.4f)));
+        }
+
+        /// <summary>Meridian air-superiority fighter.</summary>
+        public static Mesh Skyfall()
+        {
+            return Merge(
+                new MeshPart(Box(new Vector3(1.6f, 1.0f, 7.5f)), new Vector3(0f, 0.5f, 0f)),
+                new MeshPart(Box(new Vector3(8.5f, 0.25f, 1.4f)), new Vector3(0f, 0.8f, 0.2f)),
+                new MeshPart(Box(new Vector3(1.0f, 0.8f, 2.0f)), new Vector3(0f, 0.9f, -3.4f)),
+                new MeshPart(Box(new Vector3(0.2f, 1.8f, 1.2f)), new Vector3(0f, 1.7f, -3.8f)),
+                new MeshPart(Box(new Vector3(0.5f, 0.3f, 2.2f)), new Vector3(-3.4f, 0.7f, 0.2f)),
+                new MeshPart(Box(new Vector3(0.5f, 0.3f, 2.2f)), new Vector3(3.4f, 0.7f, 0.2f)));
+        }
+
         // ---- Buildings (metres) ------------------------------------------------------
 
         public static Mesh ConstructionYard()

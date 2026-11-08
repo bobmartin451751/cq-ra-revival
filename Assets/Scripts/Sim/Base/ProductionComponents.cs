@@ -1,4 +1,5 @@
 using CQRa.Sim.Content;
+using CQRa.Sim.Factions;
 using CQRa.Sim.Units;
 using Unity.Entities;
 
@@ -62,6 +63,71 @@ namespace CQRa.Sim.Base
             UnitKind.Engineer,
         };
 
+        private static readonly UnitKind[] AshfallRoster = WithUnique(UnitKind.Thumper);
+        private static readonly UnitKind[] VerdantRoster = WithUnique(UnitKind.Mantis);
+        private static readonly UnitKind[] MeridianRoster = WithUnique(UnitKind.Skyfall);
+
+        public static UnitKind UniqueFor(FactionId faction)
+        {
+            switch (faction)
+            {
+                case FactionId.Verdant: return UnitKind.Mantis;
+                case FactionId.Meridian: return UnitKind.Skyfall;
+                default: return UnitKind.Thumper;
+            }
+        }
+
+        public static UnitKind[] RosterFor(FactionId faction)
+        {
+            switch (faction)
+            {
+                case FactionId.Verdant: return VerdantRoster;
+                case FactionId.Meridian: return MeridianRoster;
+                default: return AshfallRoster;
+            }
+        }
+
+        public static UnitKind[] RosterForTeam(int team)
+        {
+            return RosterFor(FactionRuntime.ForTeam(team));
+        }
+
+        public static string UnitName(FactionId faction, UnitKind kind)
+        {
+            switch (faction)
+            {
+                case FactionId.Verdant:
+                    if (kind == UnitKind.Infantry) return "Thorn";
+                    if (kind == UnitKind.Tank) return "Stinger";
+                    if (kind == UnitKind.Gunship) return "Wasp";
+                    break;
+                case FactionId.Meridian:
+                    if (kind == UnitKind.Infantry) return "Aegis";
+                    if (kind == UnitKind.Tank) return "Lumen";
+                    if (kind == UnitKind.Gunship) return "Falcon";
+                    break;
+                default:
+                    if (kind == UnitKind.Infantry) return "Sapper";
+                    if (kind == UnitKind.Tank) return "Bulwark";
+                    if (kind == UnitKind.Gunship) return "Vulture";
+                    break;
+            }
+
+            return Get(kind).Label;
+        }
+
+        private static UnitKind[] WithUnique(UnitKind unique)
+        {
+            var roster = new UnitKind[Buildable.Length + 1];
+            for (var i = 0; i < Buildable.Length; i++)
+            {
+                roster[i] = Buildable[i];
+            }
+
+            roster[roster.Length - 1] = unique;
+            return roster;
+        }
+
         public static ProductionSpec Get(UnitKind kind)
         {
             var definition = ContentDatabase.Unit(kind);
@@ -82,7 +148,8 @@ namespace CQRa.Sim.Base
                 case 2: return "C";
                 case 3: return "V";
                 case 4: return "B";
-                default: return "G";
+                case 5: return "G";
+                default: return "Y";
             }
         }
     }

@@ -106,6 +106,9 @@ namespace CQRa.Sim.Units
                 ProceduralMeshes.Mcv(),
                 ProceduralMeshes.Gunship(),
                 ProceduralMeshes.Engineer(),
+                ProceduralMeshes.Thumper(),
+                ProceduralMeshes.Mantis(),
+                ProceduralMeshes.Skyfall(),
             };
 
             _renderMeshArray = UnitFactory.CreateRenderMeshArray(_materials, _meshes);
@@ -226,6 +229,9 @@ namespace CQRa.Sim.Units
                 UnitKind.Mcv => new Color(0.42f, 0.42f, 0.28f),
                 UnitKind.Gunship => new Color(0.34f, 0.36f, 0.40f),
                 UnitKind.Engineer => new Color(0.55f, 0.50f, 0.28f),
+                UnitKind.Thumper => new Color(0.46f, 0.36f, 0.24f),
+                UnitKind.Mantis => new Color(0.30f, 0.45f, 0.26f),
+                UnitKind.Skyfall => new Color(0.30f, 0.34f, 0.44f),
                 _ => new Color(0.43f, 0.27f, 0.18f),
             };
 

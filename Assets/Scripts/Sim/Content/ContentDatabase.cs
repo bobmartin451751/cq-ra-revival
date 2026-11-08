@@ -127,6 +127,24 @@ namespace CQRa.Sim.Content
                 MaxHealth = 40f, Armor = 0f, Speed = 5f, Radius = 0.6f, Vision = 30f,
                 Label = "Engineer",
             },
+            new UnitDefinition
+            {
+                Kind = UnitKind.Thumper, Cost = 600, BuildSeconds = 9f, Producer = BuildingKind.WarFactory,
+                MaxHealth = 200f, Armor = 0.30f, Damage = 70f, Range = 34f, Cooldown = 3f,
+                AcquireRange = 36f, Speed = 4f, Radius = 3.2f, Vision = 38f, Label = "Thumper",
+            },
+            new UnitDefinition
+            {
+                Kind = UnitKind.Mantis, Cost = 250, BuildSeconds = 6f, Producer = BuildingKind.Barracks,
+                MaxHealth = 45f, Armor = 0f, Damage = 7f, Range = 12f, Cooldown = 0.35f,
+                AcquireRange = 15f, Speed = 6.5f, Radius = 0.6f, Vision = 34f, Label = "Mantis",
+            },
+            new UnitDefinition
+            {
+                Kind = UnitKind.Skyfall, Cost = 1000, BuildSeconds = 11f, Producer = BuildingKind.WarFactory,
+                MaxHealth = 150f, Armor = 0.15f, Damage = 55f, Range = 26f, Cooldown = 1f,
+                AcquireRange = 30f, Speed = 20f, Radius = 2.4f, Vision = 50f, Label = "Skyfall",
+            },
         };
 
         private static readonly BuildingDefinition[] DefaultBuildings =

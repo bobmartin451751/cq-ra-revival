@@ -152,7 +152,7 @@ namespace CQRa.Sim.Units
                 });
             }
 
-            if (kind == UnitKind.Gunship)
+            if (kind == UnitKind.Gunship || kind == UnitKind.Skyfall)
             {
                 entityManager.AddComponentData(entity, new AirUnit { Altitude = 18f });
             }

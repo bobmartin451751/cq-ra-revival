@@ -467,7 +467,7 @@ namespace CQRa.Core
 
             GUI.Label(
                 new Rect(x + 30f, y + 426f, width - 60f, 24f),
-                "WASD/edges pan · wheel zoom · Q/E rotate",
+                "WASD/edges pan Â· wheel zoom Â· Q/E rotate",
                 _label);
         }
 

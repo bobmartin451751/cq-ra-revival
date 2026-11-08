@@ -1,4 +1,5 @@
 using CQRa.Sim.Base;
+using CQRa.Sim.Factions;
 using CQRa.Sim.Fog;
 using CQRa.Sim.Units;
 using Unity.Collections;
@@ -203,6 +204,17 @@ namespace CQRa.Sim.AI
 
             if (army >= profile.ArmyCap)
             {
+                return;
+            }
+
+            var faction = FactionRuntime.ForTeam(team);
+            var unique = ProductionCatalog.UniqueFor(faction);
+            var uniqueSpec = ProductionCatalog.Get(unique);
+            var uniques = CountUnits(entityManager, team, unique) +
+                          CountQueued(entityManager, team, unique);
+            if (uniques == 0 && army >= 3 && credits >= uniqueSpec.Cost + CreditsReserve)
+            {
+                ProductionCommands.TryEnqueue(entityManager, team, unique, Entity.Null, out _);
                 return;
             }
 

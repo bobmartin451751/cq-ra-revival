@@ -84,6 +84,45 @@ namespace CQRa.Tests.PlayMode
             }
         }
 
+        [UnityTest]
+        public IEnumerator Skyfall_SpawnsAsAirUnit()
+        {
+            yield return null;
+
+            var world = World.DefaultGameObjectInjectionWorld;
+            var entityManager = world.EntityManager;
+            var material = new Material(Shader.Find("Universal Render Pipeline/Lit"));
+            var meshes = Meshes();
+            var skyfall = Entity.Null;
+
+            try
+            {
+                var renderMeshArray = UnitFactory.CreateRenderMeshArray(Materials(material), meshes);
+                skyfall = UnitFactory.Spawn(
+                    entityManager, renderMeshArray, (int)UnitKind.Skyfall,
+                    UnitMaterials.BaseIndex(0, UnitKind.Skyfall),
+                    float3.zero, 0f, UnitKind.Skyfall, 0);
+
+                Assert.IsTrue(entityManager.HasComponent<AirUnit>(skyfall));
+                Assert.AreEqual(UnitKind.Skyfall, entityManager.GetComponentData<UnitInfo>(skyfall).Kind);
+            }
+            finally
+            {
+                FactionRuntime.Reset();
+                if (entityManager.Exists(skyfall))
+                {
+                    entityManager.DestroyEntity(skyfall);
+                }
+
+                foreach (var mesh in meshes)
+                {
+                    Object.DestroyImmediate(mesh);
+                }
+
+                Object.DestroyImmediate(material);
+            }
+        }
+
         private static Mesh[] Meshes()
         {
             return new[]
@@ -94,6 +133,9 @@ namespace CQRa.Tests.PlayMode
                 ProceduralMeshes.Box(new Vector3(5f, 3f, 8f)),
                 ProceduralMeshes.Box(new Vector3(4f, 1f, 8f)),
                 ProceduralMeshes.Box(new Vector3(0.9f, 1.2f, 0.9f)),
+                ProceduralMeshes.Box(new Vector3(4f, 2f, 6f)),
+                ProceduralMeshes.Box(new Vector3(0.6f, 1.4f, 0.6f)),
+                ProceduralMeshes.Box(new Vector3(4f, 1f, 8f)),
             };
         }
 

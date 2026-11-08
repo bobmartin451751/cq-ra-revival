@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using CQRa.Sim.Base;
+using CQRa.Sim.Factions;
 using CQRa.Sim.Fog;
 using CQRa.Sim.Navigation;
 using CQRa.Sim.Units;
@@ -222,6 +223,12 @@ namespace CQRa.View
                 if (keyboard.gKey.wasPressedThisFrame)
                 {
                     TryProduce(UnitKind.Engineer);
+                }
+
+                if (keyboard.yKey.wasPressedThisFrame)
+                {
+                    TryProduce(ProductionCatalog.UniqueFor(
+                        FactionRuntime.ForTeam(BuildCatalog.PlayerTeam)));
                 }
 
                 if (keyboard.rKey.wasPressedThisFrame)
@@ -1567,7 +1574,7 @@ namespace CQRa.View
 
             var rows = _sidebarTab == 0
                 ? BuildCatalog.PlayerBuildable.Length
-                : ProductionCatalog.Buildable.Length;
+                : ProductionCatalog.RosterFor(FactionRuntime.ForTeam(BuildCatalog.PlayerTeam)).Length;
             var queueY = rowY + rows * 31f + 4f;
 
             var queueText = "Queue: select a producer";
@@ -1583,7 +1590,7 @@ namespace CQRa.View
 
             GUI.Label(
                 new Rect(x + 12f, Screen.height - 84f, SidebarWidth - 24f, 78f),
-                "RMB: move / attack / execute\nShift: add · Esc: cancel · R/T: repair/sell\nG: Engineer · CAPTURE: RMB enemy building",
+                "RMB: move / attack / execute\nShift: add Â· Esc: cancel Â· R/T: repair/sell\nG: Engineer Â· CAPTURE: RMB enemy building",
                 _panelStyle);
         }
 
@@ -1615,12 +1622,16 @@ namespace CQRa.View
 
         private void DrawUnitRows(float x, float rowY)
         {
-            for (var i = 0; i < ProductionCatalog.Buildable.Length; i++)
+            var faction = FactionRuntime.ForTeam(BuildCatalog.PlayerTeam);
+            var roster = ProductionCatalog.RosterFor(faction);
+
+            for (var i = 0; i < roster.Length; i++)
             {
-                var kind = ProductionCatalog.Buildable[i];
+                var kind = roster[i];
                 var spec = ProductionCatalog.Get(kind);
+                var name = ProductionCatalog.UnitName(faction, kind);
                 var label =
-                    $"[{ProductionCatalog.Hotkey(i)}] {spec.Label}    {spec.Cost}   {spec.Seconds:0}s";
+                    $"[{ProductionCatalog.Hotkey(i)}] {name}    {spec.Cost}   {spec.Seconds:0}s";
 
                 if (GUI.Button(
                         new Rect(x + 12f, rowY + i * 31f, SidebarWidth - 24f, 28f),
@@ -1923,7 +1934,7 @@ namespace CQRa.View
                     : $"{label} {order.Total:0.0}s");
             }
 
-            text = string.Join(" · ", parts);
+            text = string.Join(" Â· ", parts);
             return true;
         }
 
