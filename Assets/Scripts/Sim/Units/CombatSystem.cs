@@ -218,10 +218,16 @@ namespace CQRa.Sim.Units
             var airBonus = CombatMath.AirSuperiorityMultiplier(
                 attackerKind,
                 entityManager.HasComponent<AirUnit>(target));
-            health.Current -= CombatMath.DamageAfterArmor(
+            var damage = CombatMath.DamageAfterArmor(
                 weapon.Damage * directional * airBonus,
                 health.Armor);
-            entityManager.SetComponentData(target, health);
+            damage = CombatMath.AbsorbWithShield(entityManager, target, damage);
+
+            if (damage > 0f)
+            {
+                health.Current -= damage;
+                entityManager.SetComponentData(target, health);
+            }
 
             var targetPosition = targetTransform.Position;
             var team = entityManager.GetComponentData<UnitInfo>(attacker).Team;

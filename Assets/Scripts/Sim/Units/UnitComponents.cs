@@ -36,6 +36,15 @@ namespace CQRa.Sim.Units
         public float DeployedCooldown;
     }
 
+    /// <summary>Regenerating energy shield (Meridian Aegis infantry).</summary>
+    public struct Shield : IComponentData
+    {
+        public float Max;
+        public float Current;
+        public float RegenDelay;
+        public float TimeSinceHit;
+    }
+
     /// <summary>Static gameplay identity. Grows as later phases add movement and combat.</summary>
     public struct UnitInfo : IComponentData
     {

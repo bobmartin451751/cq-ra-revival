@@ -131,6 +131,28 @@ namespace CQRa.Sim.Units
             return attackerKind == UnitKind.Skyfall && targetIsAir ? AirSuperiorityBonus : 1f;
         }
 
+        /// <summary>Applies a shield before health, resetting its regeneration delay.</summary>
+        public static float AbsorbWithShield(EntityManager entityManager, Entity target, float damage)
+        {
+            if (!entityManager.HasComponent<Shield>(target))
+            {
+                return damage;
+            }
+
+            var shield = entityManager.GetComponentData<Shield>(target);
+            shield.TimeSinceHit = 0f;
+
+            if (shield.Current > 0f && damage > 0f)
+            {
+                var absorbed = math.min(shield.Current, damage);
+                shield.Current -= absorbed;
+                damage -= absorbed;
+            }
+
+            entityManager.SetComponentData(target, shield);
+            return damage;
+        }
+
         /// <summary>Shots needed to destroy a target; 0 when the weapon cannot hurt it.</summary>
         public static int ShotsToKill(float damage, float armor, float health)
         {

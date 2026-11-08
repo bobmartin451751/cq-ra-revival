@@ -123,6 +123,67 @@ namespace CQRa.Tests.PlayMode
             }
         }
 
+        [UnityTest]
+        public IEnumerator Aegis_ShieldAbsorbsDamage_AndRegenerates()
+        {
+            yield return null;
+
+            var world = World.DefaultGameObjectInjectionWorld;
+            var entityManager = world.EntityManager;
+            var material = new Material(Shader.Find("Universal Render Pipeline/Lit"));
+            var meshes = Meshes();
+            var entity = Entity.Null;
+
+            try
+            {
+                FactionRuntime.Set(FactionId.Meridian, FactionId.Ashfall);
+                var renderMeshArray = UnitFactory.CreateRenderMeshArray(Materials(material), meshes);
+                entity = UnitFactory.Spawn(
+                    entityManager, renderMeshArray, (int)UnitKind.Infantry,
+                    UnitMaterials.BaseIndex(0, UnitKind.Infantry),
+                    float3.zero, 0f, UnitKind.Infantry, 0);
+
+                Assert.IsTrue(entityManager.HasComponent<Shield>(entity));
+
+                var shield = entityManager.GetComponentData<Shield>(entity);
+                shield.Current = 10f;
+                entityManager.SetComponentData(entity, shield);
+
+                var remaining = CombatMath.AbsorbWithShield(entityManager, entity, 25f);
+                Assert.AreEqual(15f, remaining, 0.01f);
+                Assert.AreEqual(
+                    0f,
+                    entityManager.GetComponentData<Shield>(entity).Current,
+                    0.01f);
+
+                shield = entityManager.GetComponentData<Shield>(entity);
+                shield.TimeSinceHit = 10f;
+                entityManager.SetComponentData(entity, shield);
+
+                yield return new WaitForSeconds(0.5f);
+
+                Assert.Greater(
+                    entityManager.GetComponentData<Shield>(entity).Current,
+                    0f,
+                    "shields should regenerate after the quiet period");
+            }
+            finally
+            {
+                FactionRuntime.Reset();
+                if (entityManager.Exists(entity))
+                {
+                    entityManager.DestroyEntity(entity);
+                }
+
+                foreach (var mesh in meshes)
+                {
+                    Object.DestroyImmediate(mesh);
+                }
+
+                Object.DestroyImmediate(material);
+            }
+        }
+
         private static Mesh[] Meshes()
         {
             return new[]

@@ -169,6 +169,18 @@ namespace CQRa.Sim.Units
                 });
             }
 
+            if (kind == UnitKind.Infantry &&
+                FactionRuntime.ForTeam(team) == FactionId.Meridian)
+            {
+                entityManager.AddComponentData(entity, new Shield
+                {
+                    Max = 40f,
+                    Current = 40f,
+                    RegenDelay = 4f,
+                    TimeSinceHit = 0f,
+                });
+            }
+
             entityManager.AddComponentData(entity, new UnitMotion
             {
                 Velocity = float2.zero,

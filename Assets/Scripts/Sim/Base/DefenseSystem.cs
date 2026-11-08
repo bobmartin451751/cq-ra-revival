@@ -78,10 +78,16 @@ namespace CQRa.Sim.Base
                         position,
                         targetTransform.Position,
                         targetTransform.Rotation);
-                    targetHealth.Current -= CombatMath.DamageAfterArmor(
+                    var damage = CombatMath.DamageAfterArmor(
                         weapon.Damage * directional,
                         targetHealth.Armor);
-                    entityManager.SetComponentData(target, targetHealth);
+                    damage = CombatMath.AbsorbWithShield(entityManager, target, damage);
+
+                    if (damage > 0f)
+                    {
+                        targetHealth.Current -= damage;
+                        entityManager.SetComponentData(target, targetHealth);
+                    }
 
                     var targetPosition = targetTransform.Position;
                     CombatFeed.AddTracer(
