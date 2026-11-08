@@ -28,6 +28,7 @@ alone. The replay browser's AI-vision overlay lets you verify it.
 .\tools\screenshot.ps1 -Out .temp/screens/phase8-ai.png -Ai -AiLevel 3 -WaitFrames 6000
 .\tools\screenshot.ps1 -Out .temp/screens/phase9-skirmish.png -Ai -AiLevel 2 -WaitFrames 5000
 .\tools\screenshot.ps1 -Out .temp/screens/phase10-fog.png -Ai -AiLevel 2 -WaitFrames 2500
+.\tools\screenshot.ps1 -Out .temp/screens/phase11-defenses.png -Defense -WaitFrames 2200
 .\tools\run-tests.ps1                   # EditMode + PlayMode suites
 .\tools\build.ps1                       # Windows player -> Builds/Windows
 ```
@@ -41,7 +42,7 @@ Shift to add, **right-click to move**, **right-click an enemy unit or building t
 attack**, **1-4 to arm a building, D to deploy a selected MCV, Z/X/C/V to produce
 units, R to repair, T to sell**, Esc to clear/cancel. Right-click with production
 buildings selected sets their rally point. See `docs/phase2.md` through
-`docs/phase10.md` for details.
+`docs/phase11.md` for details.
 
 ## Layout
 
@@ -78,5 +79,6 @@ tools/               headless scripts
 | 8 - skirmish AI | OK - deterministic AI commander, build/produce/attack, 4 difficulty tiers |
 | 9 - first playable | OK - skirmish menu, difficulty select, AI match, result and restart |
 | 10 - fog of war | OK - per-team vision grids, shroud rendering, fog-aware combat and AI |
+| 11 - defences + walls | OK - gun towers, walls, fog-aware defensive fire |
 
 See `docs/spec.md` for the full roadmap and frozen scope.

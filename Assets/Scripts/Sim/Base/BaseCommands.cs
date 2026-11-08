@@ -558,6 +558,29 @@ namespace CQRa.Sim.Base
             return placed;
         }
 
+        /// <summary>
+        /// Development helper: one gun tower and a short wall line in front of the yard.
+        /// Used by the Phase 11 capture rig.
+        /// </summary>
+        public static int AutoBuildDefenses(EntityManager entityManager, int team)
+        {
+            var placed = 0;
+            if (TryAutoPlace(entityManager, team, BuildingKind.GunTower))
+            {
+                placed++;
+            }
+
+            for (var i = 0; i < 3; i++)
+            {
+                if (TryAutoPlace(entityManager, team, BuildingKind.Wall))
+                {
+                    placed++;
+                }
+            }
+
+            return placed;
+        }
+
         private static Entity FindMcv(EntityManager entityManager, int team)
         {
             using var query = entityManager.CreateEntityQuery(

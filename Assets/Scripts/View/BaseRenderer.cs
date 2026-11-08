@@ -30,6 +30,8 @@ namespace CQRa.View
                 ProceduralMeshes.Refinery(),
                 ProceduralMeshes.Barracks(),
                 ProceduralMeshes.WarFactory(),
+                ProceduralMeshes.GunTower(),
+                ProceduralMeshes.Wall(),
                 ProceduralMeshes.OreCluster(17),
             };
 
@@ -55,6 +57,8 @@ namespace CQRa.View
                         (int)BuildingKind.PowerPlant => new Color(0.34f, 0.38f, 0.36f),
                         (int)BuildingKind.Barracks => new Color(0.40f, 0.36f, 0.28f),
                         (int)BuildingKind.WarFactory => new Color(0.30f, 0.32f, 0.33f),
+                        (int)BuildingKind.GunTower => new Color(0.28f, 0.30f, 0.31f),
+                        (int)BuildingKind.Wall => new Color(0.44f, 0.42f, 0.38f),
                         _ => structure,
                     };
 

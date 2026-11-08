@@ -31,12 +31,12 @@ Difficulty changes decision quality only.
 
 ## Difficulty profiles
 
-| Tier | Think | Attacks at | Army cap | Tanks | Harvesters | Barracks | Factories | Refineries | Power |
-|---|---:|---:|---:|---:|---:|---:|---:|---:|---:|
-| Recruit | 2.00 s | 8 | 8 | 25% | 2 | 1 | 1 | 1 | 1 |
-| Veteran | 1.50 s | 6 | 11 | 40% | 3 | 1 | 1 | 2 | 2 |
-| Hardened | 1.00 s | 5 | 14 | 55% | 3 | 2 | 2 | 2 | 2 |
-| Brutal | 0.75 s | 4 | 18 | 70% | 4 | 2 | 2 | 3 | 3 |
+| Tier | Think | Attacks at | Army cap | Tanks | Harvesters | Barracks | Factories | Refineries | Power | Turrets |
+|---|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|
+| Recruit | 2.00 s | 8 | 8 | 25% | 2 | 1 | 1 | 1 | 1 | 0 |
+| Veteran | 1.50 s | 6 | 11 | 40% | 3 | 1 | 1 | 2 | 2 | 1 |
+| Hardened | 1.00 s | 5 | 14 | 55% | 3 | 2 | 2 | 2 | 2 | 2 |
+| Brutal | 0.75 s | 4 | 18 | 70% | 4 | 2 | 2 | 3 | 3 | 2 |
 
 Higher tiers think more often, commit smaller armies, field more armour and expand
 production sooner.
@@ -51,7 +51,8 @@ Every think interval, per commander:
    units toward the cap using the tank ratio. This prevents the AI from spending every
    think on construction while its barracks sit idle.
 3. **Construction.** One building per think, in priority order: power shortage, refinery,
-   first barracks, first war factory, extra barracks, extra war factory, extra power.
+   first barracks, first war factory, first gun tower, extra barracks, extra war factory,
+   extra power.
 4. **Military.** Gather armed infantry and tanks. Once the army reaches the difficulty
    threshold, order every idle unit to attack the nearest enemy building (falling back
    to units). Units with no target or order are re-tasked each think.

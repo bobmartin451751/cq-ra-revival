@@ -159,6 +159,16 @@ namespace CQRa.View
                     ArmBuild(3);
                 }
 
+                if (keyboard.digit5Key.wasPressedThisFrame)
+                {
+                    ArmBuild(4);
+                }
+
+                if (keyboard.digit6Key.wasPressedThisFrame)
+                {
+                    ArmBuild(5);
+                }
+
                 if (keyboard.dKey.wasPressedThisFrame)
                 {
                     DeploySelectedMcvs();
@@ -594,7 +604,12 @@ namespace CQRa.View
                     new Unity.Mathematics.float3(point.x, point.y, point.z),
                     out var failure))
             {
-                _armedBuild = -1;
+                // Walls stay armed so the player can chain segments.
+                if (kind != BuildingKind.Wall)
+                {
+                    _armedBuild = -1;
+                }
+
                 ShowMessage($"{BuildCatalog.DisplayName(kind)} placed");
             }
             else
@@ -956,7 +971,7 @@ namespace CQRa.View
 
             var moving = _movingCount;
             var healthText = SelectedHealthText();
-            var hint = $"Selected: {_selected.Count}   Moving: {moving}{healthText}    1-4 build · D deploy · Z/X/C/V produce · R repair · T sell · RMB rally/move/attack · Esc clear";
+            var hint = $"Selected: {_selected.Count}   Moving: {moving}{healthText}    1-6 build · D deploy · Z/X/C/V produce · R repair · T sell · RMB rally/move/attack · Esc clear";
 
             var match = ReadMatchState();
             if (match.HasValue)

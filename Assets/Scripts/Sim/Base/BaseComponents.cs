@@ -10,6 +10,8 @@ namespace CQRa.Sim.Base
         Refinery = 2,
         Barracks = 3,
         WarFactory = 4,
+        GunTower = 5,
+        Wall = 6,
     }
 
     /// <summary>Marks a static player building.</summary>
@@ -41,6 +43,22 @@ namespace CQRa.Sim.Base
     public struct RepairState : IComponentData
     {
         public byte Active;
+    }
+
+    /// <summary>Hitscan defensive weapon mounted on a building.</summary>
+    public struct DefenseWeapon : IComponentData
+    {
+        public float Damage;
+        public float Range;
+        public float Cooldown;
+        public float CooldownRemaining;
+    }
+
+    public static class DefenseCatalog
+    {
+        public const float GunTowerDamage = 18f;
+        public const float GunTowerRange = 28f;
+        public const float GunTowerCooldown = 0.7f;
     }
 
     /// <summary>Repair and sell tuning shared by the systems and HUD.</summary>
@@ -128,6 +146,8 @@ namespace CQRa.Sim.Base
             BuildingKind.Refinery,
             BuildingKind.Barracks,
             BuildingKind.WarFactory,
+            BuildingKind.GunTower,
+            BuildingKind.Wall,
         };
 
         public static BuildingSpec Get(BuildingKind kind)
@@ -142,6 +162,10 @@ namespace CQRa.Sim.Base
                     return new BuildingSpec(7f, 7f, 400, 0, 20);
                 case BuildingKind.WarFactory:
                     return new BuildingSpec(11f, 11f, 900, 0, 60);
+                case BuildingKind.GunTower:
+                    return new BuildingSpec(4f, 4f, 500, 0, 20);
+                case BuildingKind.Wall:
+                    return new BuildingSpec(2.2f, 2.2f, 50, 0, 0);
                 default:
                     // The construction yard is deployed, not purchased.
                     return new BuildingSpec(9f, 9f, 0, 10, 0);
@@ -160,6 +184,10 @@ namespace CQRa.Sim.Base
                     return "Barracks";
                 case BuildingKind.WarFactory:
                     return "War Factory";
+                case BuildingKind.GunTower:
+                    return "Gun Tower";
+                case BuildingKind.Wall:
+                    return "Wall";
                 default:
                     return "Construction Yard";
             }

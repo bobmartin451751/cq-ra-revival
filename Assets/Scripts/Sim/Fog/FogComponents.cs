@@ -63,6 +63,8 @@ namespace CQRa.Sim.Fog
                 case CQRa.Sim.Base.BuildingKind.WarFactory: return 32f;
                 case CQRa.Sim.Base.BuildingKind.Refinery: return 28f;
                 case CQRa.Sim.Base.BuildingKind.Barracks: return 28f;
+                case CQRa.Sim.Base.BuildingKind.GunTower: return 24f;
+                case CQRa.Sim.Base.BuildingKind.Wall: return 6f;
                 default: return 24f;
             }
         }

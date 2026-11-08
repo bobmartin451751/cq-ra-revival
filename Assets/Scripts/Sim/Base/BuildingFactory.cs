@@ -15,7 +15,7 @@ namespace CQRa.Sim.Base
     /// </summary>
     public static class BuildingFactory
     {
-        public const int BuildingKindCount = 5;
+        public const int BuildingKindCount = 7;
         public const int OreMeshIndex = BuildingKindCount;
         public const int OreMaterialIndex = BuildingKindCount * 2;
         public const int HighlightMaterialIndex = OreMaterialIndex + 1;
@@ -100,6 +100,16 @@ namespace CQRa.Sim.Base
                     HasValue = 1,
                 });
             }
+            else if (kind == BuildingKind.GunTower)
+            {
+                entityManager.AddComponentData(entity, new DefenseWeapon
+                {
+                    Damage = DefenseCatalog.GunTowerDamage,
+                    Range = DefenseCatalog.GunTowerRange,
+                    Cooldown = DefenseCatalog.GunTowerCooldown,
+                    CooldownRemaining = 0f,
+                });
+            }
 
             entityManager.AddComponentData(entity, new Selected());
             entityManager.SetComponentEnabled<Selected>(entity, false);
@@ -168,6 +178,10 @@ namespace CQRa.Sim.Base
                     return 500f;
                 case BuildingKind.WarFactory:
                     return 800f;
+                case BuildingKind.GunTower:
+                    return 450f;
+                case BuildingKind.Wall:
+                    return 250f;
                 default:
                     return 600f;
             }

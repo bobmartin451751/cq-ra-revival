@@ -129,6 +129,12 @@ namespace CQRa.Sim.AI
                 return BaseCommands.TryAutoPlace(entityManager, team, BuildingKind.WarFactory);
             }
 
+            if (credits > 900 &&
+                CountBuildings(entityManager, team, BuildingKind.GunTower) < profile.MaxTurrets)
+            {
+                return BaseCommands.TryAutoPlace(entityManager, team, BuildingKind.GunTower);
+            }
+
             if (credits > 2200 &&
                 CountBuildings(entityManager, team, BuildingKind.Barracks) < profile.MaxBarracks)
             {

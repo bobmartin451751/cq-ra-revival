@@ -41,7 +41,7 @@ namespace CQRa.View
             }
 
             _unexploredMaterial = CreateFogMaterial("Fog_Never", 0.92f);
-            _exploredMaterial = CreateFogMaterial("Fog_Explored", 0.52f);
+            _exploredMaterial = CreateFogMaterial("Fog_Explored", 0.38f);
 
             _unexploredFilter = CreateLayer("FogNever", _unexploredMaterial);
             _exploredFilter = CreateLayer("FogExplored", _exploredMaterial);

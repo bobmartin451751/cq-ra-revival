@@ -413,6 +413,27 @@ namespace CQRa.View
                 new MeshPart(Box(new Vector3(3f, 2.4f, 3f)), new Vector3(6f, 9.1f, -4f)));
         }
 
+        /// <summary>Defensive gun tower: squat base with a rotating-looking turret head.</summary>
+        public static Mesh GunTower()
+        {
+            return Merge(
+                new MeshPart(Box(new Vector3(4.4f, 2.2f, 4.4f)), new Vector3(0f, 1.1f, 0f)),
+                new MeshPart(Box(new Vector3(3.2f, 1.4f, 3.2f)), new Vector3(0f, 2.9f, 0f)),
+                new MeshPart(Cylinder(1.1f, 1.6f, 10), new Vector3(0f, 4.2f, 0f)),
+                new MeshPart(Box(new Vector3(0.9f, 0.9f, 3.4f)), new Vector3(0f, 4.3f, 1.6f)),
+                new MeshPart(Cylinder(0.18f, 2.6f, 8), new Vector3(0f, 4.4f, 3.4f), Quaternion.Euler(90f, 0f, 0f)));
+        }
+
+        /// <summary>Wall segment, roughly 4 m long and 2.4 m tall.</summary>
+        public static Mesh Wall()
+        {
+            return Merge(
+                new MeshPart(Box(new Vector3(4.4f, 2.4f, 1.1f)), new Vector3(0f, 1.2f, 0f)),
+                new MeshPart(Box(new Vector3(5.0f, 0.4f, 1.4f)), new Vector3(0f, 2.5f, 0f)),
+                new MeshPart(Box(new Vector3(1.0f, 0.5f, 1.3f)), new Vector3(-1.5f, 2.75f, 0f)),
+                new MeshPart(Box(new Vector3(1.0f, 0.5f, 1.3f)), new Vector3(1.5f, 2.75f, 0f)));
+        }
+
         /// <summary>Low ore crystal pile, deterministic per seed.</summary>
         public static Mesh OreCluster(int seed)
         {

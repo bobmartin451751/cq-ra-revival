@@ -37,6 +37,7 @@ namespace CQRa.Sim.AI
         public readonly int HarvesterTarget;
         public readonly float TankRatio;
         public readonly int ArmyCap;
+        public readonly int MaxTurrets;
 
         private AiProfile(
             float thinkInterval,
@@ -47,7 +48,8 @@ namespace CQRa.Sim.AI
             int maxPowerPlants,
             int harvesterTarget,
             float tankRatio,
-            int armyCap)
+            int armyCap,
+            int maxTurrets)
         {
             ThinkInterval = thinkInterval;
             AttackArmySize = attackArmySize;
@@ -58,6 +60,7 @@ namespace CQRa.Sim.AI
             HarvesterTarget = harvesterTarget;
             TankRatio = tankRatio;
             ArmyCap = armyCap;
+            MaxTurrets = maxTurrets;
         }
 
         public static AiProfile For(AiDifficulty difficulty)
@@ -65,13 +68,13 @@ namespace CQRa.Sim.AI
             switch (difficulty)
             {
                 case AiDifficulty.Brutal:
-                    return new AiProfile(0.75f, 4, 2, 2, 3, 3, 4, 0.70f, 18);
+                    return new AiProfile(0.75f, 4, 2, 2, 3, 3, 4, 0.70f, 18, 2);
                 case AiDifficulty.Hardened:
-                    return new AiProfile(1.0f, 5, 2, 2, 2, 2, 3, 0.55f, 14);
+                    return new AiProfile(1.0f, 5, 2, 2, 2, 2, 3, 0.55f, 14, 2);
                 case AiDifficulty.Veteran:
-                    return new AiProfile(1.5f, 6, 1, 1, 2, 2, 3, 0.40f, 11);
+                    return new AiProfile(1.5f, 6, 1, 1, 2, 2, 3, 0.40f, 11, 1);
                 default:
-                    return new AiProfile(2.0f, 8, 1, 1, 1, 1, 2, 0.25f, 8);
+                    return new AiProfile(2.0f, 8, 1, 1, 1, 1, 2, 0.25f, 8, 0);
             }
         }
     }

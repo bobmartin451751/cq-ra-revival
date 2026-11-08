@@ -34,6 +34,7 @@ namespace CQRa.Core
         private bool _army;
         private bool _siege;
         private bool _ai;
+        private bool _defense;
         private int _aiLevel;
         private float2? _moveTo;
         private int _moveTeam;
@@ -73,6 +74,7 @@ namespace CQRa.Core
             _army = HasArg("-army");
             _siege = HasArg("-siege");
             _ai = HasArg("-ai");
+            _defense = HasArg("-defense");
             _aiLevel = ReadIntArg("-ailevel", (int)AiDifficulty.Veteran);
             _moveTo = ReadMoveTarget();
             _moveTeam = ReadIntArg("-moveteam", 0);
@@ -123,6 +125,11 @@ namespace CQRa.Core
                 if (_army || _siege)
                 {
                     BuildArmies();
+                }
+
+                if (_defense)
+                {
+                    BuildDefenseDemo();
                 }
 
                 if (_siege)
@@ -358,6 +365,28 @@ namespace CQRa.Core
             }
 
             Debug.Log($"[Capture] ordered {ordered} team-{team} units to attack");
+        }
+
+        private void BuildDefenseDemo()
+        {
+            var world = World.DefaultGameObjectInjectionWorld;
+            if (world == null || !world.IsCreated)
+            {
+                return;
+            }
+
+            var entityManager = world.EntityManager;
+            var built = 0;
+            var defenses = 0;
+
+            for (var team = 0; team < 2; team++)
+            {
+                built += BaseCommands.AutoBuildBase(entityManager, team);
+                built += BaseCommands.AutoBuildProduction(entityManager, team);
+                defenses += BaseCommands.AutoBuildDefenses(entityManager, team);
+            }
+
+            Debug.Log($"[Capture] built {built} structures and {defenses} defenses");
         }
 
         /// <summary>
