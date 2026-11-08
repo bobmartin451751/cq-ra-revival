@@ -33,6 +33,7 @@ namespace CQRa.Core
         private int _selectedMission;
         private bool _campaignActive;
         private bool _missionWon;
+        private bool _enemyYardSeen;
         private string _missionObjective = "destroyAll";
         private string _missionObjectiveText = string.Empty;
         private float _surviveSeconds;
@@ -157,11 +158,17 @@ namespace CQRa.Core
                     break;
 
                 case "destroyYard":
+                    var yard = BaseCommands.FindConstructionYard(entityManager, SkirmishCommands.AiTeam);
+                    if (yard != Entity.Null)
+                    {
+                        _enemyYardSeen = true;
+                    }
+
                     if (match.GameOver != 0 && match.Winner == SkirmishCommands.PlayerTeam)
                     {
                         EndMission(true);
                     }
-                    else if (BaseCommands.FindConstructionYard(entityManager, SkirmishCommands.AiTeam) == Entity.Null)
+                    else if (_enemyYardSeen && yard == Entity.Null)
                     {
                         EndMission(true);
                     }
@@ -206,6 +213,7 @@ namespace CQRa.Core
             _difficulty = MissionCatalog.DifficultyFor(mission);
             _campaignActive = true;
             _missionWon = false;
+            _enemyYardSeen = false;
             _missionObjective = mission.objective ?? "destroyAll";
             _missionObjectiveText = mission.objectiveText ?? string.Empty;
             _surviveSeconds = mission.surviveSeconds;
@@ -278,6 +286,14 @@ namespace CQRa.Core
 
         private void DrawObjectiveHud()
         {
+            var missions = MissionCatalog.Missions;
+            if (missions == null || missions.Length == 0)
+            {
+                return;
+            }
+
+            var index = Mathf.Clamp(_selectedMission, 0, missions.Length - 1);
+
             var previous = GUI.color;
             GUI.color = new Color(0.04f, 0.035f, 0.03f, 0.78f);
             GUI.DrawTexture(new Rect(12f, 12f, 430f, 62f), Texture2D.whiteTexture);
@@ -285,7 +301,7 @@ namespace CQRa.Core
 
             GUI.Label(
                 new Rect(22f, 16f, 410f, 22f),
-                MissionCatalog.Missions[_selectedMission].name,
+                missions[index].name,
                 _subtitle);
 
             var objective = _missionObjective == "survive"

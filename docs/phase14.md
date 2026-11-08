@@ -65,8 +65,9 @@ Change `Assets/Resources/Data/content.json` and relaunch; no gameplay code chang
 }
 ```
 
-Every entry is optional; missing fields fall back to defaults, unknown kinds are ignored
-with a warning.
+Entries for a given kind replace every field in that definition, so include all numeric
+fields for any unit/building you override. Kinds not present in the file keep their
+defaults; unknown kinds are ignored with a warning.
 
 ## Verification
 

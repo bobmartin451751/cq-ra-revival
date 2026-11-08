@@ -122,19 +122,23 @@ namespace CQRa.View
             if (_dragging && mouse.leftButton.wasReleasedThisFrame)
             {
                 _dragging = false;
-                var additive = keyboard != null && keyboard.shiftKey.isPressed;
 
-                if (_boxSelecting)
+                if (!overHud)
                 {
-                    SelectInBox(_dragStart, _dragCurrent, additive);
-                }
-                else if (_armedBuild >= 0)
-                {
-                    TryPlaceAtPoint(_dragCurrent);
-                }
-                else
-                {
-                    SelectAtPoint(_dragCurrent, additive);
+                    var additive = keyboard != null && keyboard.shiftKey.isPressed;
+
+                    if (_boxSelecting)
+                    {
+                        SelectInBox(_dragStart, _dragCurrent, additive);
+                    }
+                    else if (_armedBuild >= 0)
+                    {
+                        TryPlaceAtPoint(_dragCurrent);
+                    }
+                    else
+                    {
+                        SelectAtPoint(_dragCurrent, additive);
+                    }
                 }
 
                 _boxSelecting = false;
