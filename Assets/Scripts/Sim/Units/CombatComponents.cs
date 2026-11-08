@@ -91,6 +91,7 @@ namespace CQRa.Sim.Units
         public const float FrontalMultiplier = 0.75f;
         public const float SideMultiplier = 0.85f;
         public const float RearMultiplier = 1f;
+        public const float AirSuperiorityBonus = 2f;
 
         /// <summary>Armour reduces incoming damage linearly and is clamped to 0..0.9.</summary>
         public static float DamageAfterArmor(float damage, float armor)
@@ -122,6 +123,12 @@ namespace CQRa.Sim.Units
             }
 
             return dot <= -0.5f ? RearMultiplier : SideMultiplier;
+        }
+
+        /// <summary>Skyfall fighters deal double damage to other air units.</summary>
+        public static float AirSuperiorityMultiplier(UnitKind attackerKind, bool targetIsAir)
+        {
+            return attackerKind == UnitKind.Skyfall && targetIsAir ? AirSuperiorityBonus : 1f;
         }
 
         /// <summary>Shots needed to destroy a target; 0 when the weapon cannot hurt it.</summary>

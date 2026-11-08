@@ -214,8 +214,12 @@ namespace CQRa.Sim.Units
                 position,
                 targetTransform.Position,
                 targetTransform.Rotation);
+            var attackerKind = entityManager.GetComponentData<UnitInfo>(attacker).Kind;
+            var airBonus = CombatMath.AirSuperiorityMultiplier(
+                attackerKind,
+                entityManager.HasComponent<AirUnit>(target));
             health.Current -= CombatMath.DamageAfterArmor(
-                weapon.Damage * directional,
+                weapon.Damage * directional * airBonus,
                 health.Armor);
             entityManager.SetComponentData(target, health);
 

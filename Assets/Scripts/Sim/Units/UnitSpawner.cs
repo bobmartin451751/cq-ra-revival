@@ -2,6 +2,7 @@ using Unity.Entities;
 using Unity.Mathematics;
 using Unity.Rendering;
 using UnityEngine;
+using CQRa.Sim.Factions;
 using CQRa.View;
 
 namespace CQRa.Sim.Units
@@ -235,9 +236,13 @@ namespace CQRa.Sim.Units
                 _ => new Color(0.43f, 0.27f, 0.18f),
             };
 
-            var teamColor = team == 0
-                ? new Color(0.62f, 0.18f, 0.12f)
-                : new Color(0.24f, 0.40f, 0.52f);
+            var faction = FactionRuntime.ForTeam(team);
+            var teamColor = faction switch
+            {
+                FactionId.Verdant => new Color(0.28f, 0.50f, 0.24f),
+                FactionId.Meridian => new Color(0.20f, 0.42f, 0.55f),
+                _ => new Color(0.64f, 0.22f, 0.14f),
+            };
 
             return Color.Lerp(kindColor, teamColor, 0.60f);
         }

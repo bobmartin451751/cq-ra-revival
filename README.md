@@ -45,7 +45,7 @@ sell**, Esc to clear/cancel. Selected units and buildings expose their actions i
 right-hand **COMMAND** sidebar: MCVs show **DEPLOY** (click it, then right-click a
 site), production buildings show **RALLY** (click it, then right-click terrain),
 buildings show **REPAIR** and **SELL**, and units show **STOP**. See
-`docs/phase2.md` through `docs/phase20.md` for details.
+`docs/phase2.md` through `docs/phase21.md` for details.
 
 ## Layout
 
@@ -91,5 +91,6 @@ tools/               headless scripts
 | 18 - directional armour | OK - front/side/rear damage arcs for units and turrets |
 | 19 - factions | OK - 3 factions with modifiers, skirmish picker and mission assignment |
 | 20 - faction troops | OK - per-faction names, rosters and one unique unit each |
+| 21 - faction identity | OK - faction unit palettes and Skyfall air-superiority bonus |
 
 See `docs/spec.md` for the full roadmap and frozen scope.
