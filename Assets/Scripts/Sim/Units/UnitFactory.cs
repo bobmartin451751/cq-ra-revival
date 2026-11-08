@@ -149,6 +149,11 @@ namespace CQRa.Sim.Units
                 });
             }
 
+            if (kind == UnitKind.Gunship)
+            {
+                entityManager.AddComponentData(entity, new AirUnit { Altitude = 18f });
+            }
+
             entityManager.AddComponentData(entity, new UnitMotion
             {
                 Velocity = float2.zero,
@@ -183,6 +188,7 @@ namespace CQRa.Sim.Units
                 case UnitKind.Tank: return 3.4f;
                 case UnitKind.Harvester: return 3.8f;
                 case UnitKind.Mcv: return 4.2f;
+                case UnitKind.Gunship: return 2.6f;
                 default: return 0.6f;
             }
         }
@@ -194,6 +200,7 @@ namespace CQRa.Sim.Units
                 case UnitKind.Tank: return 9.0f;
                 case UnitKind.Harvester: return 6.0f;
                 case UnitKind.Mcv: return 4.5f;
+                case UnitKind.Gunship: return 16.0f;
                 default: return 4.0f;
             }
         }

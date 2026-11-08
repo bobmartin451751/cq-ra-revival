@@ -206,6 +206,19 @@ namespace CQRa.Sim.AI
                 return;
             }
 
+            if (profile.MaxTurrets >= 2 && army >= 4)
+            {
+                var gunships = CountUnits(entityManager, team, UnitKind.Gunship) +
+                               CountQueued(entityManager, team, UnitKind.Gunship);
+                var gunshipSpec = ProductionCatalog.Get(UnitKind.Gunship);
+                if (gunships == 0 && credits >= gunshipSpec.Cost + CreditsReserve)
+                {
+                    ProductionCommands.TryEnqueue(
+                        entityManager, team, UnitKind.Gunship, Entity.Null, out _);
+                    return;
+                }
+            }
+
             var desiredTanks = (int)math.round(army * profile.TankRatio);
             var kind = tanks < desiredTanks ? UnitKind.Tank : UnitKind.Infantry;
 

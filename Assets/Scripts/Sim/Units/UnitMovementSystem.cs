@@ -72,11 +72,13 @@ namespace CQRa.Sim.Units
 
             var positions = new NativeArray<float3>(count, Allocator.Temp);
             var radii = new NativeArray<float>(count, Allocator.Temp);
+            var air = new NativeArray<byte>(count, Allocator.Temp);
 
             for (var i = 0; i < count; i++)
             {
                 positions[i] = entityManager.GetComponentData<LocalTransform>(entities[i]).Position;
                 radii[i] = entityManager.GetComponentData<UnitInfo>(entities[i]).Radius;
+                air[i] = entityManager.HasComponent<AirUnit>(entities[i]) ? (byte)1 : (byte)0;
             }
 
             var spatialHash = new NativeParallelMultiHashMap<int, int>(
@@ -100,6 +102,8 @@ namespace CQRa.Sim.Units
                 var target = entityManager.GetComponentData<MoveTarget>(entity);
                 var info = entityManager.GetComponentData<UnitInfo>(entity);
                 var position = transform.Position;
+                var isAir = air[i] != 0;
+                var altitude = isAir ? entityManager.GetComponentData<AirUnit>(entity).Altitude : 0f;
 
                 if (target.HasOrder == 0)
                 {
@@ -133,7 +137,8 @@ namespace CQRa.Sim.Units
                 var desiredDirection = float2.zero;
                 var hasFieldDirection = false;
 
-                if (target.Field != Entity.Null &&
+                if (!isAir &&
+                    target.Field != Entity.Null &&
                     fieldLookup.TryGetBuffer(target.Field, out var field))
                 {
                     var cell = NavGridMath.WorldToCell(gridInfo, positionXZ);
@@ -177,12 +182,15 @@ namespace CQRa.Sim.Units
                         directDirection);
                 }
 
-                var separation = ComputeSeparation(
-                    spatialHash,
-                    positions,
-                    radii,
-                    i,
-                    positionXZ);
+                var separation = isAir
+                    ? float2.zero
+                    : ComputeSeparation(
+                        spatialHash,
+                        positions,
+                        radii,
+                        air,
+                        i,
+                        positionXZ);
 
                 // Near the arrival point, spacing must not prevent units from settling.
                 var separationScale = math.lerp(
@@ -212,7 +220,7 @@ namespace CQRa.Sim.Units
 
                 var next = positionXZ + motion.Velocity * dt;
 
-                if (!IsWalkable(nav, gridInfo, next))
+                if (!isAir && !IsWalkable(nav, gridInfo, next))
                 {
                     // Slide along whichever axis is still free.
                     var slideX = new float2(next.x, positionXZ.y);
@@ -250,7 +258,7 @@ namespace CQRa.Sim.Units
 
                 var ground = TerrainSampler.Sample(heights, terrainInfo, next.x, next.y);
 
-                transform.Position = new float3(next.x, ground, next.y);
+                transform.Position = new float3(next.x, ground + altitude, next.y);
                 transform.Rotation = quaternion.RotateY(motion.Yaw);
 
                 entityManager.SetComponentData(entity, transform);
@@ -259,6 +267,7 @@ namespace CQRa.Sim.Units
 
             positions.Dispose();
             radii.Dispose();
+            air.Dispose();
             spatialHash.Dispose();
         }
 
@@ -266,6 +275,7 @@ namespace CQRa.Sim.Units
             NativeParallelMultiHashMap<int, int> hash,
             NativeArray<float3> positions,
             NativeArray<float> radii,
+            NativeArray<byte> air,
             int self,
             float2 position)
         {
@@ -286,6 +296,11 @@ namespace CQRa.Sim.Units
                     do
                     {
                         if (other == self)
+                        {
+                            continue;
+                        }
+
+                        if (air[other] != air[self])
                         {
                             continue;
                         }

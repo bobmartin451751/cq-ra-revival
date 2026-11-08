@@ -71,7 +71,7 @@ namespace CQRa.Tests.EditMode
             Assert.Greater(mcv.MaxHealth, harvester.MaxHealth);
             Assert.Greater(mcv.Armor, 0f);
             Assert.Greater(UnitFactory.RadiusFor(UnitKind.Mcv), UnitFactory.RadiusFor(UnitKind.Harvester));
-            Assert.AreEqual(4, UnitMaterials.KindCount, "MCV is a fourth renderable unit kind");
+            Assert.AreEqual(5, UnitMaterials.KindCount, "MCV and gunship are additional renderable unit kinds");
         }
 
         [Test]

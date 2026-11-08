@@ -35,6 +35,7 @@ namespace CQRa.Core
         private bool _siege;
         private bool _ai;
         private bool _defense;
+        private bool _air;
         private int _aiLevel;
         private float2? _moveTo;
         private int _moveTeam;
@@ -75,6 +76,7 @@ namespace CQRa.Core
             _siege = HasArg("-siege");
             _ai = HasArg("-ai");
             _defense = HasArg("-defense");
+            _air = HasArg("-air");
             _aiLevel = ReadIntArg("-ailevel", (int)AiDifficulty.Veteran);
             _moveTo = ReadMoveTarget();
             _moveTeam = ReadIntArg("-moveteam", 0);
@@ -122,9 +124,14 @@ namespace CQRa.Core
                     BuildBases();
                 }
 
-                if (_army || _siege)
+                if (_army || _siege || _air)
                 {
                     BuildArmies();
+                }
+
+                if (_air)
+                {
+                    SpawnAirDemo();
                 }
 
                 if (_defense)
@@ -365,6 +372,44 @@ namespace CQRa.Core
             }
 
             Debug.Log($"[Capture] ordered {ordered} team-{team} units to attack");
+        }
+
+        private void SpawnAirDemo()
+        {
+            var world = World.DefaultGameObjectInjectionWorld;
+            if (world == null || !world.IsCreated)
+            {
+                return;
+            }
+
+            var entityManager = world.EntityManager;
+
+            for (var team = 0; team < 2; team++)
+            {
+                var startZ = team == 0 ? 30f : -30f;
+                var destinationZ = team == 0 ? -18f : 18f;
+                var yaw = team == 0 ? 0f : math.PI;
+
+                for (var i = 0; i < 3; i++)
+                {
+                    var x = -12f + i * 12f;
+                    var gunship = UnitFactory.SpawnDefault(
+                        entityManager,
+                        new float3(x, 0f, startZ),
+                        yaw,
+                        UnitKind.Gunship,
+                        team);
+
+                    var move = entityManager.GetComponentData<MoveTarget>(gunship);
+                    move.Destination = new float3(x, 0f, destinationZ);
+                    move.PathDestination = move.Destination;
+                    move.Field = Entity.Null;
+                    move.HasOrder = 1;
+                    entityManager.SetComponentData(gunship, move);
+                }
+            }
+
+            Debug.Log("[Capture] spawned gunship demo");
         }
 
         private void BuildDefenseDemo()

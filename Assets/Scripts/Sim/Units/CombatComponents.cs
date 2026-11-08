@@ -85,6 +85,9 @@ namespace CQRa.Sim.Units
                 case UnitKind.Mcv:
                     // Mobile construction vehicle: unarmed, but heavily built.
                     return new CombatStats(420f, 0.40f, 0f, 0f, 0f, 0f);
+                case UnitKind.Gunship:
+                    // Air superiority/ground attack; fast, fragile, hard-hitting.
+                    return new CombatStats(180f, 0.20f, 34f, 22f, 1.1f, 26f);
                 default:
                     // Infantry: cheap, fragile, quick-firing, short range.
                     return new CombatStats(50f, 0f, 5f, 13f, 0.45f, 16f);

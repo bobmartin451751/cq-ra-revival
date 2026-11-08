@@ -50,6 +50,7 @@ namespace CQRa.Sim.Base
             UnitKind.Tank,
             UnitKind.Harvester,
             UnitKind.Mcv,
+            UnitKind.Gunship,
         };
 
         public static ProductionSpec Get(UnitKind kind)
@@ -64,6 +65,8 @@ namespace CQRa.Sim.Base
                     return new ProductionSpec(500, 10f, BuildingKind.WarFactory, "Harvester");
                 case UnitKind.Mcv:
                     return new ProductionSpec(1000, 12f, BuildingKind.WarFactory, "MCV");
+                case UnitKind.Gunship:
+                    return new ProductionSpec(900, 10f, BuildingKind.WarFactory, "Gunship");
                 default:
                     return default;
             }
@@ -77,7 +80,8 @@ namespace CQRa.Sim.Base
                 case 0: return "Z";
                 case 1: return "X";
                 case 2: return "C";
-                default: return "V";
+                case 3: return "V";
+                default: return "B";
             }
         }
     }

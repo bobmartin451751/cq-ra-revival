@@ -356,6 +356,20 @@ namespace CQRa.View
                 new MeshPart(Box(new Vector3(0.5f, 0.5f, 5.0f)), new Vector3(0.6f, 5.6f, 4.4f)));
         }
 
+        /// <summary>Attack gunship: fuselage, stub wings, tail boom and rotor mast.</summary>
+        public static Mesh Gunship()
+        {
+            return Merge(
+                new MeshPart(Box(new Vector3(2.0f, 1.6f, 8.5f)), new Vector3(0f, 0.8f, 0f)),
+                new MeshPart(Box(new Vector3(9.5f, 0.35f, 2.0f)), new Vector3(0f, 1.0f, 0.5f)),
+                new MeshPart(Box(new Vector3(1.2f, 1.0f, 2.4f)), new Vector3(0f, 1.2f, -4.0f)),
+                new MeshPart(Box(new Vector3(0.3f, 2.4f, 1.6f)), new Vector3(0f, 2.2f, -4.4f)),
+                new MeshPart(Cylinder(0.12f, 6.0f, 8), new Vector3(0f, 2.6f, 0f)),
+                new MeshPart(Box(new Vector3(6.2f, 0.18f, 0.7f)), new Vector3(0f, 3.8f, 0f)),
+                new MeshPart(Box(new Vector3(0.7f, 0.4f, 2.6f)), new Vector3(-3.2f, 0.9f, 0.5f)),
+                new MeshPart(Box(new Vector3(0.7f, 0.4f, 2.6f)), new Vector3(3.2f, 0.9f, 0.5f)));
+        }
+
         // ---- Buildings (metres) ------------------------------------------------------
 
         public static Mesh ConstructionYard()

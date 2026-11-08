@@ -51,6 +51,7 @@ namespace CQRa.Sim.Fog
                 case UnitKind.Tank: return 40f;
                 case UnitKind.Harvester: return 22f;
                 case UnitKind.Mcv: return 26f;
+                case UnitKind.Gunship: return 44f;
                 default: return 32f;
             }
         }

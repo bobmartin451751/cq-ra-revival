@@ -194,6 +194,11 @@ namespace CQRa.View
                     TryProduce(UnitKind.Mcv);
                 }
 
+                if (keyboard.bKey.wasPressedThisFrame)
+                {
+                    TryProduce(UnitKind.Gunship);
+                }
+
                 if (keyboard.rKey.wasPressedThisFrame)
                 {
                     ToggleRepairSelected();
@@ -971,7 +976,7 @@ namespace CQRa.View
 
             var moving = _movingCount;
             var healthText = SelectedHealthText();
-            var hint = $"Selected: {_selected.Count}   Moving: {moving}{healthText}    1-6 build · D deploy · Z/X/C/V produce · R repair · T sell · RMB rally/move/attack · Esc clear";
+            var hint = $"Selected: {_selected.Count}   Moving: {moving}{healthText}    1-6 build · D deploy · Z/X/C/V/B produce · R repair · T sell · RMB rally/move/attack · Esc clear";
 
             var match = ReadMatchState();
             if (match.HasValue)
@@ -1188,7 +1193,7 @@ namespace CQRa.View
         private void DrawProductionPanel()
         {
             var width = 400f;
-            var height = 92f;
+            var height = 112f;
             var x = 12f;
             var y = Screen.height - height - 54f;
 
@@ -1203,7 +1208,7 @@ namespace CQRa.View
                 _panelStyle);
             GUI.Label(
                 new Rect(x + 10f, y + 30f, width - 20f, 22f),
-                $"             [C] Harvester 500   [V] MCV 1000",
+                $"             [C] Harvester 500   [V] MCV 1000   [B] Gunship 900",
                 _panelStyle);
 
             var queueText = "Select a Barracks or War Factory to see its queue";
@@ -1212,7 +1217,7 @@ namespace CQRa.View
                 queueText = "Queue: " + text;
             }
 
-            GUI.Label(new Rect(x + 10f, y + 56f, width - 20f, 22f), queueText, _panelStyle);
+            GUI.Label(new Rect(x + 10f, y + 58f, width - 20f, 22f), queueText, _panelStyle);
         }
 
         private static bool ReadQueueText(Entity producer, out string text)

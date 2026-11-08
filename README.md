@@ -29,6 +29,7 @@ alone. The replay browser's AI-vision overlay lets you verify it.
 .\tools\screenshot.ps1 -Out .temp/screens/phase9-skirmish.png -Ai -AiLevel 2 -WaitFrames 5000
 .\tools\screenshot.ps1 -Out .temp/screens/phase10-fog.png -Ai -AiLevel 2 -WaitFrames 2500
 .\tools\screenshot.ps1 -Out .temp/screens/phase11-defenses.png -Defense -WaitFrames 2200
+.\tools\screenshot.ps1 -Out .temp/screens/phase12-air.png -Air -WaitFrames 1600
 .\tools\run-tests.ps1                   # EditMode + PlayMode suites
 .\tools\build.ps1                       # Windows player -> Builds/Windows
 ```
@@ -39,10 +40,10 @@ The skirmish menu lets you pick a difficulty and start a match against the AI.
 **Controls:** WASD/arrows or middle-drag to pan, wheel to zoom, Q/E to rotate,
 edge scroll at the screen border, left-click to select, drag a box to multi-select,
 Shift to add, **right-click to move**, **right-click an enemy unit or building to
-attack**, **1-4 to arm a building, D to deploy a selected MCV, Z/X/C/V to produce
+attack**, **1-6 to arm a building, D to deploy a selected MCV, Z/X/C/V/B to produce
 units, R to repair, T to sell**, Esc to clear/cancel. Right-click with production
 buildings selected sets their rally point. See `docs/phase2.md` through
-`docs/phase11.md` for details.
+`docs/phase12.md` for details.
 
 ## Layout
 
@@ -80,5 +81,6 @@ tools/               headless scripts
 | 9 - first playable | OK - skirmish menu, difficulty select, AI match, result and restart |
 | 10 - fog of war | OK - per-team vision grids, shroud rendering, fog-aware combat and AI |
 | 11 - defences + walls | OK - gun towers, walls, fog-aware defensive fire |
+| 12 - air units | OK - gunships, altitude flight, air production and AI use |
 
 See `docs/spec.md` for the full roadmap and frozen scope.

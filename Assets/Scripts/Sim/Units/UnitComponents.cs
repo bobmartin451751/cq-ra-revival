@@ -8,11 +8,18 @@ namespace CQRa.Sim.Units
         Tank = 1,
         Harvester = 2,
         Mcv = 3,
+        Gunship = 4,
     }
 
     /// <summary>Marks an entity as a mobile unit.</summary>
     public struct UnitTag : IComponentData
     {
+    }
+
+    /// <summary>Air units ignore nav blockers and fly at a fixed altitude.</summary>
+    public struct AirUnit : IComponentData
+    {
+        public float Altitude;
     }
 
     /// <summary>Static gameplay identity. Grows as later phases add movement and combat.</summary>
@@ -39,7 +46,7 @@ namespace CQRa.Sim.Units
     public static class UnitMaterials
     {
         public const int TeamCount = 2;
-        public const int KindCount = 4;
+        public const int KindCount = 5;
         public const int HighlightIndex = TeamCount * KindCount;
         public const int Count = HighlightIndex + 1;
 
