@@ -105,6 +105,19 @@ namespace CQRa.Sim.Units
                 var isAir = air[i] != 0;
                 var altitude = isAir ? entityManager.GetComponentData<AirUnit>(entity).Altitude : 0f;
 
+                if (entityManager.HasComponent<DeployState>(entity) &&
+                    entityManager.GetComponentData<DeployState>(entity).Deployed != 0)
+                {
+                    if (motion.Speed != 0f)
+                    {
+                        motion.Velocity = float2.zero;
+                        motion.Speed = 0f;
+                        entityManager.SetComponentData(entity, motion);
+                    }
+
+                    continue;
+                }
+
                 if (target.HasOrder == 0)
                 {
                     if (motion.Speed != 0f)

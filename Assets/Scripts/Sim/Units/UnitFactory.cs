@@ -157,6 +157,18 @@ namespace CQRa.Sim.Units
                 entityManager.AddComponentData(entity, new AirUnit { Altitude = 18f });
             }
 
+            if (kind == UnitKind.Thumper)
+            {
+                entityManager.AddComponentData(entity, new DeployState
+                {
+                    Deployed = 0,
+                    NormalRange = combat.Range,
+                    DeployedRange = combat.Range * 1.4f,
+                    NormalCooldown = combat.Cooldown,
+                    DeployedCooldown = combat.Cooldown * 1.5f,
+                });
+            }
+
             entityManager.AddComponentData(entity, new UnitMotion
             {
                 Velocity = float2.zero,

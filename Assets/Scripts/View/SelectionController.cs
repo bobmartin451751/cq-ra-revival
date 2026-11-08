@@ -951,6 +951,35 @@ namespace CQRa.View
             }
         }
 
+        private void ToggleDeploySelectedThumpers()
+        {
+            var world = World.DefaultGameObjectInjectionWorld;
+            if (world == null || !world.IsCreated)
+            {
+                return;
+            }
+
+            var entityManager = world.EntityManager;
+            var toggled = 0;
+
+            for (var i = 0; i < _selected.Count; i++)
+            {
+                var entity = _selected[i];
+                if (!entityManager.Exists(entity) ||
+                    !entityManager.HasComponent<DeployState>(entity))
+                {
+                    continue;
+                }
+
+                if (BaseCommands.TryToggleDeploy(entityManager, entity))
+                {
+                    toggled++;
+                }
+            }
+
+            ShowMessage(toggled > 0 ? "Thumper deployment toggled" : "No Thumper selected");
+        }
+
         private void StopSelectedUnits()
         {
             var world = World.DefaultGameObjectInjectionWorld;
@@ -1410,6 +1439,8 @@ namespace CQRa.View
             var hasProducer = false;
             var hasRally = false;
             var hasEngineer = false;
+            var hasThumper = false;
+            var thumperDeployed = false;
 
             for (var i = 0; i < _selected.Count; i++)
             {
@@ -1430,6 +1461,16 @@ namespace CQRa.View
                     if (entityManager.GetComponentData<UnitInfo>(entity).Kind == UnitKind.Engineer)
                     {
                         hasEngineer = true;
+                    }
+
+                    if (entityManager.GetComponentData<UnitInfo>(entity).Kind == UnitKind.Thumper)
+                    {
+                        hasThumper = true;
+                        if (entityManager.HasComponent<DeployState>(entity) &&
+                            entityManager.GetComponentData<DeployState>(entity).Deployed != 0)
+                        {
+                            thumperDeployed = true;
+                        }
                     }
                 }
 
@@ -1452,7 +1493,8 @@ namespace CQRa.View
             if (hasMcv) buttons++;
             if (hasRally) buttons++;
             if (hasEngineer) buttons++;
-            if (hasUnit && !hasEngineer) buttons++;
+            if (hasThumper) buttons++;
+            if (hasUnit && !hasEngineer && !hasThumper) buttons++;
             if (hasBuilding) buttons += 2; // repair + sell
             if (buttons == 0)
             {
@@ -1495,7 +1537,17 @@ namespace CQRa.View
                 bx += width + gap;
             }
 
-            if (hasUnit && !hasEngineer)
+            if (hasThumper)
+            {
+                DrawCommandButton(
+                    new Rect(bx, by, width, 32f),
+                    thumperDeployed ? "UNDEPLOY" : "DEPLOY",
+                    false,
+                    ToggleDeploySelectedThumpers);
+                bx += width + gap;
+            }
+
+            if (hasUnit && !hasEngineer && !hasThumper)
             {
                 DrawCommandButton(
                     new Rect(bx, by, width, 32f),

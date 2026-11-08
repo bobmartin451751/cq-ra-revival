@@ -26,6 +26,16 @@ namespace CQRa.Sim.Units
         public float Altitude;
     }
 
+    /// <summary>Deployable artillery state (Thumper).</summary>
+    public struct DeployState : IComponentData
+    {
+        public byte Deployed;
+        public float NormalRange;
+        public float DeployedRange;
+        public float NormalCooldown;
+        public float DeployedCooldown;
+    }
+
     /// <summary>Static gameplay identity. Grows as later phases add movement and combat.</summary>
     public struct UnitInfo : IComponentData
     {

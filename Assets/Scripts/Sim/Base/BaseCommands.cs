@@ -531,6 +531,44 @@ namespace CQRa.Sim.Base
         }
 
         /// <summary>
+        /// Toggles deployable artillery between mobile and emplaced modes. Deployed mode
+        /// trades movement for longer range and a slower reload.
+        /// </summary>
+        public static bool TryToggleDeploy(EntityManager entityManager, Entity unit)
+        {
+            if (!entityManager.Exists(unit) ||
+                !entityManager.HasComponent<DeployState>(unit))
+            {
+                return false;
+            }
+
+            var state = entityManager.GetComponentData<DeployState>(unit);
+            var weapon = entityManager.GetComponentData<Weapon>(unit);
+
+            if (state.Deployed == 0)
+            {
+                state.Deployed = 1;
+                weapon.Range = state.DeployedRange;
+                weapon.Cooldown = state.DeployedCooldown;
+
+                var move = entityManager.GetComponentData<MoveTarget>(unit);
+                move.HasOrder = 0;
+                move.Field = Entity.Null;
+                entityManager.SetComponentData(unit, move);
+            }
+            else
+            {
+                state.Deployed = 0;
+                weapon.Range = state.NormalRange;
+                weapon.Cooldown = state.NormalCooldown;
+            }
+
+            entityManager.SetComponentData(unit, state);
+            entityManager.SetComponentData(unit, weapon);
+            return true;
+        }
+
+        /// <summary>
         /// Toggles continuous repair. Cancelling is always free; starting requires damaged
         /// health and an economy singleton.
         /// </summary>
