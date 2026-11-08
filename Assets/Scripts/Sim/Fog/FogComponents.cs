@@ -1,3 +1,4 @@
+using CQRa.Sim.Content;
 using CQRa.Sim.Units;
 using Unity.Entities;
 using Unity.Mathematics;
@@ -46,28 +47,12 @@ namespace CQRa.Sim.Fog
     {
         public static float ForUnit(UnitKind kind)
         {
-            switch (kind)
-            {
-                case UnitKind.Tank: return 40f;
-                case UnitKind.Harvester: return 22f;
-                case UnitKind.Mcv: return 26f;
-                case UnitKind.Gunship: return 44f;
-                default: return 32f;
-            }
+            return ContentDatabase.Unit(kind).Vision;
         }
 
         public static float ForBuilding(CQRa.Sim.Base.BuildingKind kind)
         {
-            switch (kind)
-            {
-                case CQRa.Sim.Base.BuildingKind.ConstructionYard: return 38f;
-                case CQRa.Sim.Base.BuildingKind.WarFactory: return 32f;
-                case CQRa.Sim.Base.BuildingKind.Refinery: return 28f;
-                case CQRa.Sim.Base.BuildingKind.Barracks: return 28f;
-                case CQRa.Sim.Base.BuildingKind.GunTower: return 24f;
-                case CQRa.Sim.Base.BuildingKind.Wall: return 6f;
-                default: return 24f;
-            }
+            return ContentDatabase.Building(kind).Vision;
         }
     }
 

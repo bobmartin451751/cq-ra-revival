@@ -1,3 +1,4 @@
+using CQRa.Sim.Content;
 using CQRa.Sim.Units;
 using Unity.Entities;
 
@@ -55,21 +56,12 @@ namespace CQRa.Sim.Base
 
         public static ProductionSpec Get(UnitKind kind)
         {
-            switch (kind)
-            {
-                case UnitKind.Infantry:
-                    return new ProductionSpec(100, 4f, BuildingKind.Barracks, "Infantry");
-                case UnitKind.Tank:
-                    return new ProductionSpec(350, 8f, BuildingKind.WarFactory, "Tank");
-                case UnitKind.Harvester:
-                    return new ProductionSpec(500, 10f, BuildingKind.WarFactory, "Harvester");
-                case UnitKind.Mcv:
-                    return new ProductionSpec(1000, 12f, BuildingKind.WarFactory, "MCV");
-                case UnitKind.Gunship:
-                    return new ProductionSpec(900, 10f, BuildingKind.WarFactory, "Gunship");
-                default:
-                    return default;
-            }
+            var definition = ContentDatabase.Unit(kind);
+            return new ProductionSpec(
+                definition.Cost,
+                definition.BuildSeconds,
+                definition.Producer,
+                definition.Label.ToString());
         }
 
         /// <summary>Hotkeys shown in the production panel, in display order.</summary>

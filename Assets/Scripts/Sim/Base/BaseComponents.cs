@@ -1,3 +1,4 @@
+using CQRa.Sim.Content;
 using Unity.Entities;
 using Unity.Mathematics;
 
@@ -152,24 +153,13 @@ namespace CQRa.Sim.Base
 
         public static BuildingSpec Get(BuildingKind kind)
         {
-            switch (kind)
-            {
-                case BuildingKind.PowerPlant:
-                    return new BuildingSpec(6f, 6f, 300, 100, 0);
-                case BuildingKind.Refinery:
-                    return new BuildingSpec(9f, 9f, 600, 0, 40);
-                case BuildingKind.Barracks:
-                    return new BuildingSpec(7f, 7f, 400, 0, 20);
-                case BuildingKind.WarFactory:
-                    return new BuildingSpec(11f, 11f, 900, 0, 60);
-                case BuildingKind.GunTower:
-                    return new BuildingSpec(4f, 4f, 500, 0, 20);
-                case BuildingKind.Wall:
-                    return new BuildingSpec(2.2f, 2.2f, 50, 0, 0);
-                default:
-                    // The construction yard is deployed, not purchased.
-                    return new BuildingSpec(9f, 9f, 0, 10, 0);
-            }
+            var definition = ContentDatabase.Building(kind);
+            return new BuildingSpec(
+                definition.Radius,
+                definition.NavRadius,
+                definition.Cost,
+                definition.PowerProduced,
+                definition.PowerUsed);
         }
 
         public static string DisplayName(BuildingKind kind)

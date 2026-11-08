@@ -1,3 +1,4 @@
+using CQRa.Sim.Content;
 using CQRa.Sim.Fog;
 using CQRa.Sim.Units;
 using Unity.Entities;
@@ -168,23 +169,7 @@ namespace CQRa.Sim.Base
 
         private static float HealthFor(BuildingKind kind)
         {
-            switch (kind)
-            {
-                case BuildingKind.ConstructionYard:
-                    return 1200f;
-                case BuildingKind.Refinery:
-                    return 900f;
-                case BuildingKind.Barracks:
-                    return 500f;
-                case BuildingKind.WarFactory:
-                    return 800f;
-                case BuildingKind.GunTower:
-                    return 450f;
-                case BuildingKind.Wall:
-                    return 250f;
-                default:
-                    return 600f;
-            }
+            return ContentDatabase.Building(kind).Health;
         }
     }
 }

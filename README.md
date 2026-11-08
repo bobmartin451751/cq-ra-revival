@@ -45,7 +45,7 @@ sell**, Esc to clear/cancel. Selected units and buildings expose their actions i
 right-hand **COMMAND** sidebar: MCVs show **DEPLOY** (click it, then right-click a
 site), production buildings show **RALLY** (click it, then right-click terrain),
 buildings show **REPAIR** and **SELL**, and units show **STOP**. See
-`docs/phase2.md` through `docs/phase13.md` for details.
+`docs/phase2.md` through `docs/phase14.md` for details.
 
 ## Layout
 
@@ -84,5 +84,6 @@ tools/               headless scripts
 | 11 - defences + walls | OK - gun towers, walls, fog-aware defensive fire |
 | 12 - air units | OK - gunships, altitude flight, air production and AI use |
 | 13 - command UI | OK - C&C sidebar, armed Deploy/Rally commands, right-click execution |
+| 14 - content pipeline | OK - JSON unit/building table compiled into a BlobAsset |
 
 See `docs/spec.md` for the full roadmap and frozen scope.

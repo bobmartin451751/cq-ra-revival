@@ -1,3 +1,4 @@
+using CQRa.Sim.Content;
 using Unity.Entities;
 using Unity.Mathematics;
 
@@ -74,24 +75,14 @@ namespace CQRa.Sim.Units
 
         public static CombatStats For(UnitKind kind)
         {
-            switch (kind)
-            {
-                case UnitKind.Tank:
-                    // Heavy armour, slow reload, outranges infantry.
-                    return new CombatStats(260f, 0.35f, 45f, 24f, 1.6f, 28f);
-                case UnitKind.Harvester:
-                    // Unarmed civilian vehicle: tough enough to survive a short raid.
-                    return new CombatStats(220f, 0.25f, 0f, 0f, 0f, 0f);
-                case UnitKind.Mcv:
-                    // Mobile construction vehicle: unarmed, but heavily built.
-                    return new CombatStats(420f, 0.40f, 0f, 0f, 0f, 0f);
-                case UnitKind.Gunship:
-                    // Air superiority/ground attack; fast, fragile, hard-hitting.
-                    return new CombatStats(180f, 0.20f, 34f, 22f, 1.1f, 26f);
-                default:
-                    // Infantry: cheap, fragile, quick-firing, short range.
-                    return new CombatStats(50f, 0f, 5f, 13f, 0.45f, 16f);
-            }
+            var definition = ContentDatabase.Unit(kind);
+            return new CombatStats(
+                definition.MaxHealth,
+                definition.Armor,
+                definition.Damage,
+                definition.Range,
+                definition.Cooldown,
+                definition.AcquireRange);
         }
     }
 

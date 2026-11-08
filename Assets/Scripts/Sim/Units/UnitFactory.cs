@@ -1,3 +1,4 @@
+using CQRa.Sim.Content;
 using CQRa.Sim.Fog;
 using Unity.Entities;
 using Unity.Mathematics;
@@ -183,26 +184,12 @@ namespace CQRa.Sim.Units
 
         public static float RadiusFor(UnitKind kind)
         {
-            switch (kind)
-            {
-                case UnitKind.Tank: return 3.4f;
-                case UnitKind.Harvester: return 3.8f;
-                case UnitKind.Mcv: return 4.2f;
-                case UnitKind.Gunship: return 2.6f;
-                default: return 0.6f;
-            }
+            return ContentDatabase.Unit(kind).Radius;
         }
 
         public static float SpeedFor(UnitKind kind)
         {
-            switch (kind)
-            {
-                case UnitKind.Tank: return 9.0f;
-                case UnitKind.Harvester: return 6.0f;
-                case UnitKind.Mcv: return 4.5f;
-                case UnitKind.Gunship: return 16.0f;
-                default: return 4.0f;
-            }
+            return ContentDatabase.Unit(kind).Speed;
         }
     }
 }

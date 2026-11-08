@@ -39,6 +39,7 @@ namespace CQRa.EditorTools
 
                 var scenery = CreateScenery(terrain);
                 CreateNavigation(terrain, scenery);
+                CreateContent();
                 CreateFog(terrain);
                 CreateUnits(terrain);
                 var marker = CreateMoveMarker(terrain);
@@ -203,6 +204,12 @@ namespace CQRa.EditorTools
             var go = new GameObject("Fog");
             var fog = go.AddComponent<FogRenderer>();
             fog.Configure(terrain);
+        }
+
+        private static void CreateContent()
+        {
+            var go = new GameObject("Content");
+            go.AddComponent<CQRa.Sim.Content.ContentLoader>();
         }
 
         private static Scenery CreateScenery(HeightmapTerrain terrain)
