@@ -191,6 +191,15 @@ namespace CQRa.Sim.Units
                 });
             }
 
+            if (combat.Damage > 0f)
+            {
+                entityManager.AddComponentData(entity, new Veterancy
+                {
+                    Kills = 0,
+                    Rank = 0,
+                });
+            }
+
             entityManager.AddComponentData(entity, new UnitMotion
             {
                 Velocity = float2.zero,

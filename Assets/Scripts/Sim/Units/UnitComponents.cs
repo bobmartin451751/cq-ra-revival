@@ -53,6 +53,24 @@ namespace CQRa.Sim.Units
         public float Timer;
     }
 
+    /// <summary>Kill-based veterancy rank (0..3).</summary>
+    public struct Veterancy : IComponentData
+    {
+        public int Kills;
+        public int Rank;
+    }
+
+    public static class VeterancyMath
+    {
+        public static int RankForKills(int kills)
+        {
+            if (kills >= 9) return 3;
+            if (kills >= 5) return 2;
+            if (kills >= 2) return 1;
+            return 0;
+        }
+    }
+
     /// <summary>Static gameplay identity. Grows as later phases add movement and combat.</summary>
     public struct UnitInfo : IComponentData
     {

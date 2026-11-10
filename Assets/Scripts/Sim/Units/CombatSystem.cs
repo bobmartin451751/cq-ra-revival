@@ -236,6 +236,13 @@ namespace CQRa.Sim.Units
             if (health.Current <= 0f)
             {
                 dead.Add(target);
+
+                if (entityManager.HasComponent<Veterancy>(attacker))
+                {
+                    var veterancy = entityManager.GetComponentData<Veterancy>(attacker);
+                    veterancy.Kills++;
+                    entityManager.SetComponentData(attacker, veterancy);
+                }
             }
         }
 

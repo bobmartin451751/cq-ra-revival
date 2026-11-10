@@ -1437,9 +1437,12 @@ namespace CQRa.View
             }
 
             var healthText = SelectedHealthText();
+            var rankText = entityManager.HasComponent<Veterancy>(entity)
+                ? $"  Rank {entityManager.GetComponentData<Veterancy>(entity).Rank}"
+                : string.Empty;
             GUI.Label(
                 new Rect(x + 12f, 284f, SidebarWidth - 24f, 22f),
-                $"{title}  {healthText}",
+                $"{title}{rankText}  {healthText}",
                 _hintStyle);
         }
 
