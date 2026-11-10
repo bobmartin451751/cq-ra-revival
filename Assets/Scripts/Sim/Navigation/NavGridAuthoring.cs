@@ -78,20 +78,28 @@ namespace CQRa.Sim.Navigation
                 MaxSlope = _maxSlope,
             };
 
-            NavBlocker[] blockers = System.Array.Empty<NavBlocker>();
+            NavBlocker[] sceneryBlockers = System.Array.Empty<NavBlocker>();
             if (_scenery != null && _scenery.Obstacles != null)
             {
                 var specs = _scenery.Obstacles;
-                blockers = new NavBlocker[specs.Length];
+                sceneryBlockers = new NavBlocker[specs.Length];
                 for (var i = 0; i < specs.Length; i++)
                 {
-                    blockers[i] = new NavBlocker
+                    sceneryBlockers[i] = new NavBlocker
                     {
                         Centre = new float2(specs[i].Centre.x, specs[i].Centre.y),
                         Radius = specs[i].Radius,
                     };
                 }
             }
+
+            var blockers = new NavBlocker[sceneryBlockers.Length + 1];
+            System.Array.Copy(sceneryBlockers, blockers, sceneryBlockers.Length);
+            blockers[blockers.Length - 1] = new NavBlocker
+            {
+                Centre = new float2(-100f, 0f),
+                Radius = 28f,
+            };
 
             var walkable = NavGridBuilder.Build(
                 cellCount,

@@ -175,6 +175,38 @@
       "radius": 3.0,
       "vision": 28,
       "label": "Sower"
+    },
+    {
+      "kind": "PatrolBoat",
+      "cost": 600,
+      "buildSeconds": 8.0,
+      "producer": "NavalYard",
+      "maxHealth": 320,
+      "armor": 0.3,
+      "damage": 40,
+      "range": 26,
+      "cooldown": 1.2,
+      "acquireRange": 28,
+      "speed": 9,
+      "radius": 4,
+      "vision": 36,
+      "label": "Patrol Boat"
+    },
+    {
+      "kind": "Battleship",
+      "cost": 1400,
+      "buildSeconds": 14.0,
+      "producer": "NavalYard",
+      "maxHealth": 800,
+      "armor": 0.45,
+      "damage": 90,
+      "range": 38,
+      "cooldown": 3.0,
+      "acquireRange": 40,
+      "speed": 5,
+      "radius": 6,
+      "vision": 45,
+      "label": "Battleship"
     }
   ],
   "buildings": [
@@ -184,6 +216,7 @@
     { "kind": "Barracks", "cost": 400, "powerProduced": 0, "powerUsed": 20, "radius": 7, "navRadius": 7, "health": 500, "vision": 28 },
     { "kind": "WarFactory", "cost": 900, "powerProduced": 0, "powerUsed": 60, "radius": 11, "navRadius": 11, "health": 800, "vision": 32 },
     { "kind": "GunTower", "cost": 500, "powerProduced": 0, "powerUsed": 20, "radius": 4, "navRadius": 4, "health": 450, "vision": 24 },
-    { "kind": "Wall", "cost": 50, "powerProduced": 0, "powerUsed": 0, "radius": 2.2, "navRadius": 2.2, "health": 250, "vision": 6 }
+    { "kind": "Wall", "cost": 50, "powerProduced": 0, "powerUsed": 0, "radius": 2.2, "navRadius": 2.2, "health": 250, "vision": 6 },
+    { "kind": "NavalYard", "cost": 800, "powerProduced": 0, "powerUsed": 40, "radius": 9, "navRadius": 9, "health": 700, "vision": 30 }
   ]
 }

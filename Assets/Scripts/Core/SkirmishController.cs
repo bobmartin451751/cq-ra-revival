@@ -257,6 +257,12 @@ namespace CQRa.Core
 
             FactionRuntime.Set(_playerFaction, _aiFaction);
 
+            var baseRenderer = UnityEngine.Object.FindFirstObjectByType<BaseRenderer>();
+            if (baseRenderer != null)
+            {
+                baseRenderer.ApplyFactionColors();
+            }
+
             if (_unitSpawner != null && _unitSpawner.SpawnedCount == 0)
             {
                 _unitSpawner.Spawn();

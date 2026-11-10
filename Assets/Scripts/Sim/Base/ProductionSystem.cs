@@ -236,6 +236,12 @@ namespace CQRa.Sim.Base
                 spawnPoint = safe;
             }
 
+            if (WaterLake.IsNaval(kind))
+            {
+                spawnPoint = WaterLake.ClampToLake(spawnPoint);
+                rallyPoint = WaterLake.ClampToLake(rallyPoint);
+            }
+
             var yaw = math.atan2(direction.x, direction.y);
             var unit = UnitFactory.SpawnDefault(entityManager, spawnPoint, yaw, kind, info.Team);
 

@@ -32,6 +32,7 @@ namespace CQRa.View
                 ProceduralMeshes.WarFactory(),
                 ProceduralMeshes.GunTower(),
                 ProceduralMeshes.Wall(),
+                ProceduralMeshes.NavalYard(),
                 ProceduralMeshes.OreCluster(17),
                 ProceduralMeshes.Crate(),
                 ProceduralMeshes.Mine(),
@@ -104,6 +105,58 @@ namespace CQRa.View
 
             BuildingFactory.Initialize(_materials, _meshes);
             Debug.Log($"[BaseRenderer] ready ({BuildingFactory.MaterialCount} materials, {_meshes.Length} meshes)");
+        }
+
+        public void ApplyFactionColors()
+        {
+            if (_materials == null)
+            {
+                return;
+            }
+
+            for (var team = 0; team < 2; team++)
+            {
+                var faction = CQRa.Sim.Factions.FactionRuntime.ForTeam(team);
+                var color = FactionColor(faction);
+
+                for (var kind = 0; kind < BuildingFactory.BuildingKindCount; kind++)
+                {
+                    var material = _materials[team * BuildingFactory.BuildingKindCount + kind];
+                    if (material == null)
+                    {
+                        continue;
+                    }
+
+                    material.SetColor("_BaseColor", Color.Lerp(TintFor(kind), color, 0.45f));
+                }
+            }
+        }
+
+        private static Color TintFor(int kind)
+        {
+            switch (kind)
+            {
+                case (int)BuildingKind.PowerPlant: return new Color(0.34f, 0.38f, 0.36f);
+                case (int)BuildingKind.Barracks: return new Color(0.40f, 0.36f, 0.28f);
+                case (int)BuildingKind.WarFactory: return new Color(0.30f, 0.32f, 0.33f);
+                case (int)BuildingKind.GunTower: return new Color(0.28f, 0.30f, 0.31f);
+                case (int)BuildingKind.Wall: return new Color(0.44f, 0.42f, 0.38f);
+                case (int)BuildingKind.NavalYard: return new Color(0.28f, 0.30f, 0.32f);
+                default: return new Color(0.36f, 0.35f, 0.31f);
+            }
+        }
+
+        private static Color FactionColor(CQRa.Sim.Factions.FactionId faction)
+        {
+            switch (faction)
+            {
+                case CQRa.Sim.Factions.FactionId.Verdant:
+                    return new Color(0.28f, 0.50f, 0.24f);
+                case CQRa.Sim.Factions.FactionId.Meridian:
+                    return new Color(0.20f, 0.42f, 0.55f);
+                default:
+                    return new Color(0.64f, 0.22f, 0.14f);
+            }
         }
 
         private void OnDestroy()

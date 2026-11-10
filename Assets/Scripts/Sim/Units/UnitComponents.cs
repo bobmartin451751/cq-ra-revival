@@ -1,4 +1,5 @@
 using Unity.Entities;
+using Unity.Mathematics;
 
 namespace CQRa.Sim.Units
 {
@@ -15,6 +16,8 @@ namespace CQRa.Sim.Units
         Skyfall = 8,
         Rig = 9,
         Sower = 10,
+        PatrolBoat = 11,
+        Battleship = 12,
     }
 
     /// <summary>Marks an entity as a mobile unit.</summary>
@@ -85,6 +88,38 @@ namespace CQRa.Sim.Units
         public float Damage;
     }
 
+    /// <summary>Naval unit constrained to the lake circle.</summary>
+    public struct NavalUnit : IComponentData
+    {
+        public float2 Centre;
+        public float Radius;
+        public float Level;
+    }
+
+    public static class WaterLake
+    {
+        public static readonly float2 Centre = new float2(-100f, 0f);
+        public const float Radius = 28f;
+        public const float Level = 0.55f;
+
+        public static bool IsNaval(UnitKind kind)
+        {
+            return kind == UnitKind.PatrolBoat || kind == UnitKind.Battleship;
+        }
+
+        public static float3 ClampToLake(float3 point)
+        {
+            var offset = new float2(point.x, point.z) - Centre;
+            var distance = math.length(offset);
+            if (distance > Radius - 3f)
+            {
+                offset = math.normalizesafe(offset, new float2(1f, 0f)) * (Radius - 3f);
+            }
+
+            return new float3(Centre.x + offset.x, Level, Centre.y + offset.y);
+        }
+    }
+
     public static class VeterancyMath
     {
         public static int RankForKills(int kills)
@@ -120,7 +155,7 @@ namespace CQRa.Sim.Units
     public static class UnitMaterials
     {
         public const int TeamCount = 2;
-        public const int KindCount = 11;
+        public const int KindCount = 13;
         public const int HighlightIndex = TeamCount * KindCount;
         public const int Count = HighlightIndex + 1;
 

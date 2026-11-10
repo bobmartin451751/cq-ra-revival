@@ -534,6 +534,39 @@ namespace CQRa.View
                 new MeshPart(Box(new Vector3(0.4f, 0.5f, 0.4f)), new Vector3(0.5f, 1.55f, 0.5f)));
         }
 
+        /// <summary>Naval yard: dry dock with a slipway and crane.</summary>
+        public static Mesh NavalYard()
+        {
+            return Merge(
+                new MeshPart(Box(new Vector3(14f, 4f, 10f)), new Vector3(0f, 2f, 0f)),
+                new MeshPart(Box(new Vector3(10f, 1.2f, 8f)), new Vector3(0f, 0.6f, 6f)),
+                new MeshPart(Box(new Vector3(1.2f, 8f, 1.2f)), new Vector3(-6f, 6f, 2f)),
+                new MeshPart(Box(new Vector3(0.8f, 0.8f, 9f)), new Vector3(-6f, 10f, -2f)),
+                new MeshPart(Box(new Vector3(4f, 2f, 3f)), new Vector3(4f, 5f, -1f)));
+        }
+
+        /// <summary>Fast patrol boat with a small gun turret.</summary>
+        public static Mesh PatrolBoat()
+        {
+            return Merge(
+                new MeshPart(Box(new Vector3(3.2f, 1.4f, 8f)), new Vector3(0f, 0.7f, 0f)),
+                new MeshPart(Box(new Vector3(2.2f, 1f, 2.4f)), new Vector3(0f, 1.6f, -1.4f)),
+                new MeshPart(Cylinder(1.0f, 1.2f, 8), new Vector3(0f, 1.5f, 1.6f)),
+                new MeshPart(Box(new Vector3(0.3f, 0.3f, 3f)), new Vector3(0f, 2.1f, 2.6f)));
+        }
+
+        /// <summary>Battleship: long hull, superstructure and twin gun turrets.</summary>
+        public static Mesh Battleship()
+        {
+            return Merge(
+                new MeshPart(Box(new Vector3(6f, 2.2f, 16f)), new Vector3(0f, 1.1f, 0f)),
+                new MeshPart(Box(new Vector3(3.4f, 3f, 5f)), new Vector3(0f, 3.7f, -1f)),
+                new MeshPart(Cylinder(1.2f, 1.4f, 10), new Vector3(0f, 2.4f, 4.5f)),
+                new MeshPart(Box(new Vector3(0.5f, 0.5f, 5f)), new Vector3(-0.8f, 2.9f, 6.4f)),
+                new MeshPart(Box(new Vector3(0.5f, 0.5f, 5f)), new Vector3(0.8f, 2.9f, 6.4f)),
+                new MeshPart(Cylinder(0.9f, 1.2f, 8), new Vector3(0f, 2.2f, -5.6f)));
+        }
+
         /// <summary>Low ore crystal pile, deterministic per seed.</summary>
         public static Mesh OreCluster(int seed)
         {

@@ -13,6 +13,7 @@ namespace CQRa.Sim.Base
         WarFactory = 4,
         GunTower = 5,
         Wall = 6,
+        NavalYard = 7,
     }
 
     /// <summary>Marks a static player building.</summary>
@@ -149,6 +150,7 @@ namespace CQRa.Sim.Base
             BuildingKind.WarFactory,
             BuildingKind.GunTower,
             BuildingKind.Wall,
+            BuildingKind.NavalYard,
         };
 
         public static BuildingSpec Get(BuildingKind kind)
@@ -178,6 +180,8 @@ namespace CQRa.Sim.Base
                     return "Gun Tower";
                 case BuildingKind.Wall:
                     return "Wall";
+                case BuildingKind.NavalYard:
+                    return "Naval Yard";
                 default:
                     return "Construction Yard";
             }

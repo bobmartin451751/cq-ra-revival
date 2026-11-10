@@ -195,6 +195,11 @@ namespace CQRa.View
                     ArmBuild(5);
                 }
 
+                if (keyboard.digit7Key.wasPressedThisFrame)
+                {
+                    ArmBuild(6);
+                }
+
                 if (keyboard.zKey.wasPressedThisFrame)
                 {
                     TryProduce(UnitKind.Infantry);

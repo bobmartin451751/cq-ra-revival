@@ -40,12 +40,12 @@ The skirmish menu lets you pick a difficulty and start a match against the AI.
 **Controls:** WASD/arrows or middle-drag to pan, wheel to zoom, Q/E to rotate,
 edge scroll at the screen border, left-click to select, drag a box to multi-select,
 Shift to add, **right-click to move**, **right-click an enemy unit or building to
-attack**, **1-6 to arm a building, Z/X/C/V/B to produce units, R to repair, T to
+attack**, **1-7 to arm a building, Z/X/C/V/B/G/Y/U to produce units, R to repair, T to
 sell**, Esc to clear/cancel. Selected units and buildings expose their actions in the
 right-hand **COMMAND** sidebar: MCVs show **DEPLOY** (click it, then right-click a
 site), production buildings show **RALLY** (click it, then right-click terrain),
 buildings show **REPAIR** and **SELL**, and units show **STOP**. See
-`docs/phase2.md` through `docs/phase28.md` for details.
+`docs/phase2.md` through `docs/phase29.md` for details.
 
 ## Layout
 
@@ -99,5 +99,6 @@ tools/               headless scripts
 | 26 - veterancy | OK - kill ranks grant damage and max-health bonuses, shown in the sidebar |
 | 27 - Rig repair | OK - Ashfall repair vehicle with a stacking mechanical repair aura |
 | 28 - Sower mines | OK - Verdant mine-layer with cooldown and blast mines |
+| 29 - naval | OK - lake, naval yard, patrol boats/battleships, faction building colours |
 
 See `docs/spec.md` for the full roadmap and frozen scope.

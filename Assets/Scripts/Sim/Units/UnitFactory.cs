@@ -218,6 +218,16 @@ namespace CQRa.Sim.Units
                 });
             }
 
+            if (WaterLake.IsNaval(kind))
+            {
+                entityManager.AddComponentData(entity, new NavalUnit
+                {
+                    Centre = WaterLake.Centre,
+                    Radius = WaterLake.Radius,
+                    Level = WaterLake.Level,
+                });
+            }
+
             entityManager.AddComponentData(entity, new UnitMotion
             {
                 Velocity = float2.zero,

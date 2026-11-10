@@ -17,7 +17,7 @@ namespace CQRa.Sim.Base
     /// </summary>
     public static class BuildingFactory
     {
-        public const int BuildingKindCount = 7;
+        public const int BuildingKindCount = 8;
         public const int OreMeshIndex = BuildingKindCount;
         public const int CrateMeshIndex = OreMeshIndex + 1;
         public const int MineMeshIndex = CrateMeshIndex + 1;

@@ -118,15 +118,23 @@ namespace CQRa.Sim.Base
 
         private static UnitKind[] WithUnique(params UnitKind[] uniques)
         {
-            var roster = new UnitKind[Buildable.Length + uniques.Length];
+            var naval = new[] { UnitKind.PatrolBoat, UnitKind.Battleship };
+            var roster = new UnitKind[Buildable.Length + uniques.Length + naval.Length];
+            var index = 0;
+
             for (var i = 0; i < Buildable.Length; i++)
             {
-                roster[i] = Buildable[i];
+                roster[index++] = Buildable[i];
             }
 
             for (var i = 0; i < uniques.Length; i++)
             {
-                roster[Buildable.Length + i] = uniques[i];
+                roster[index++] = uniques[i];
+            }
+
+            for (var i = 0; i < naval.Length; i++)
+            {
+                roster[index++] = naval[i];
             }
 
             return roster;
@@ -154,7 +162,8 @@ namespace CQRa.Sim.Base
                 case 4: return "B";
                 case 5: return "G";
                 case 6: return "Y";
-                default: return "U";
+                case 7: return "U";
+                default: return "";
             }
         }
     }

@@ -78,7 +78,9 @@ namespace CQRa.Sim.Units
             {
                 positions[i] = entityManager.GetComponentData<LocalTransform>(entities[i]).Position;
                 radii[i] = entityManager.GetComponentData<UnitInfo>(entities[i]).Radius;
-                air[i] = entityManager.HasComponent<AirUnit>(entities[i]) ? (byte)1 : (byte)0;
+                air[i] = entityManager.HasComponent<AirUnit>(entities[i])
+                    ? (byte)1
+                    : entityManager.HasComponent<NavalUnit>(entities[i]) ? (byte)2 : (byte)0;
             }
 
             var spatialHash = new NativeParallelMultiHashMap<int, int>(
@@ -102,7 +104,8 @@ namespace CQRa.Sim.Units
                 var target = entityManager.GetComponentData<MoveTarget>(entity);
                 var info = entityManager.GetComponentData<UnitInfo>(entity);
                 var position = transform.Position;
-                var isAir = air[i] != 0;
+                var isAir = air[i] == 1;
+                var isNaval = air[i] == 2;
                 var altitude = isAir ? entityManager.GetComponentData<AirUnit>(entity).Altitude : 0f;
 
                 if (entityManager.HasComponent<DeployState>(entity) &&
@@ -151,6 +154,7 @@ namespace CQRa.Sim.Units
                 var hasFieldDirection = false;
 
                 if (!isAir &&
+                    !isNaval &&
                     target.Field != Entity.Null &&
                     fieldLookup.TryGetBuffer(target.Field, out var field))
                 {
@@ -233,7 +237,18 @@ namespace CQRa.Sim.Units
 
                 var next = positionXZ + motion.Velocity * dt;
 
-                if (!isAir && !IsWalkable(nav, gridInfo, next))
+                if (isNaval)
+                {
+                    var offset = next - WaterLake.Centre;
+                    var distanceFromCentre = math.length(offset);
+                    var maxRadius = WaterLake.Radius - 2f;
+                    if (distanceFromCentre > maxRadius)
+                    {
+                        next = WaterLake.Centre + math.normalizesafe(offset, new float2(1f, 0f)) * maxRadius;
+                    }
+                }
+
+                if (!isAir && !isNaval && !IsWalkable(nav, gridInfo, next))
                 {
                     // Slide along whichever axis is still free.
                     var slideX = new float2(next.x, positionXZ.y);
@@ -269,9 +284,11 @@ namespace CQRa.Sim.Units
                     motion.Yaw += math.clamp(delta, -maxTurn, maxTurn);
                 }
 
-                var ground = TerrainSampler.Sample(heights, terrainInfo, next.x, next.y);
+                var height = isNaval
+                    ? WaterLake.Level
+                    : TerrainSampler.Sample(heights, terrainInfo, next.x, next.y) + altitude;
 
-                transform.Position = new float3(next.x, ground + altitude, next.y);
+                transform.Position = new float3(next.x, height, next.y);
                 transform.Rotation = quaternion.RotateY(motion.Yaw);
 
                 entityManager.SetComponentData(entity, transform);

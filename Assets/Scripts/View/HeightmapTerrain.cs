@@ -187,6 +187,18 @@ namespace CQRa.View
                         h += undulation * (1f - blend);
                     }
 
+                    // Carve the naval lake on the western edge of the basin.
+                    var lakeDistance = Mathf.Sqrt(
+                        (wx + 100f) * (wx + 100f) + wz * wz);
+                    if (lakeDistance < 36f)
+                    {
+                        var lakeBlend = Mathf.SmoothStep(
+                            0f,
+                            1f,
+                            Mathf.Clamp01((lakeDistance - 26f) / 10f));
+                        h = Mathf.Lerp(-3f, h, lakeBlend);
+                    }
+
                     _heights[z * _res + x] = h;
                 }
             }

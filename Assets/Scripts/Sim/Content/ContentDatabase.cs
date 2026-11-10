@@ -157,6 +157,18 @@ namespace CQRa.Sim.Content
                 MaxHealth = 180f, Armor = 0.25f, Speed = 7f, Radius = 3f, Vision = 28f,
                 Label = "Sower",
             },
+            new UnitDefinition
+            {
+                Kind = UnitKind.PatrolBoat, Cost = 600, BuildSeconds = 8f, Producer = BuildingKind.NavalYard,
+                MaxHealth = 320f, Armor = 0.30f, Damage = 40f, Range = 26f, Cooldown = 1.2f,
+                AcquireRange = 28f, Speed = 9f, Radius = 4f, Vision = 36f, Label = "Patrol Boat",
+            },
+            new UnitDefinition
+            {
+                Kind = UnitKind.Battleship, Cost = 1400, BuildSeconds = 14f, Producer = BuildingKind.NavalYard,
+                MaxHealth = 800f, Armor = 0.45f, Damage = 90f, Range = 38f, Cooldown = 3f,
+                AcquireRange = 40f, Speed = 5f, Radius = 6f, Vision = 45f, Label = "Battleship",
+            },
         };
 
         private static readonly BuildingDefinition[] DefaultBuildings =
@@ -168,6 +180,7 @@ namespace CQRa.Sim.Content
             new BuildingDefinition { Kind = BuildingKind.WarFactory, Cost = 900, PowerUsed = 60, Radius = 11f, NavRadius = 11f, Health = 800f, Vision = 32f },
             new BuildingDefinition { Kind = BuildingKind.GunTower, Cost = 500, PowerUsed = 20, Radius = 4f, NavRadius = 4f, Health = 450f, Vision = 24f },
             new BuildingDefinition { Kind = BuildingKind.Wall, Cost = 50, Radius = 2.2f, NavRadius = 2.2f, Health = 250f, Vision = 6f },
+            new BuildingDefinition { Kind = BuildingKind.NavalYard, Cost = 800, PowerUsed = 40, Radius = 9f, NavRadius = 9f, Health = 700f, Vision = 30f },
         };
 
         private static UnitDefinition[] _units = (UnitDefinition[])DefaultUnits.Clone();
