@@ -123,6 +123,53 @@ namespace CQRa.Tests.PlayMode
             }
         }
 
+        [UnityTest]
+        public IEnumerator DeployInPlace_IgnoresFriendlyCrowd_AndEvacuates()
+        {
+            yield return null;
+
+            var world = World.DefaultGameObjectInjectionWorld;
+            var entityManager = world.EntityManager;
+            var data = CreateFlatWorld(entityManager, 160f, 81, 1f);
+            var material = new Material(Shader.Find("Universal Render Pipeline/Lit"));
+            var meshes = Meshes();
+
+            try
+            {
+                var renderMeshArray = UnitFactory.CreateRenderMeshArray(Materials(material), meshes);
+                var mcv = UnitFactory.Spawn(
+                    entityManager, renderMeshArray, 3,
+                    UnitMaterials.BaseIndex(1, UnitKind.Mcv),
+                    new float3(-20f, 0f, 0f), 0f, UnitKind.Mcv, 1);
+
+                var neighbour = UnitFactory.Spawn(
+                    entityManager, renderMeshArray, 0,
+                    UnitMaterials.BaseIndex(1, UnitKind.Infantry),
+                    new float3(-16f, 0f, 0f), 0f, UnitKind.Infantry, 1);
+
+                var before = entityManager.GetComponentData<LocalTransform>(neighbour).Position;
+
+                Assert.IsTrue(
+                    BaseCommands.TryDeployMcv(entityManager, mcv, out var failure),
+                    $"in-place deploy must ignore the friendly crowd ({failure})");
+
+                Assert.AreNotEqual(
+                    Entity.Null,
+                    BaseCommands.FindConstructionYard(entityManager, 1));
+                Assert.IsTrue(entityManager.Exists(neighbour), "nearby units are evacuated, not deleted");
+
+                var after = entityManager.GetComponentData<LocalTransform>(neighbour).Position;
+                Assert.Greater(
+                    math.distance(new float2(before.x, before.z), new float2(after.x, after.z)),
+                    0.1f,
+                    "units under the new yard must be pushed out");
+            }
+            finally
+            {
+                Cleanup(entityManager, data, material, meshes);
+            }
+        }
+
         private static Mesh[] Meshes()
         {
             return new[]

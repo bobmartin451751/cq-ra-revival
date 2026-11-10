@@ -125,7 +125,7 @@ namespace CQRa.Sim.Base
             }
 
             var position = entityManager.GetComponentData<LocalTransform>(mcv).Position;
-            return TryDeployMcvAt(entityManager, mcv, position, out failure);
+            return TryDeployMcvAt(entityManager, mcv, position, out failure, ignoreUnits: true);
         }
 
         /// <summary>
@@ -137,7 +137,8 @@ namespace CQRa.Sim.Base
             EntityManager entityManager,
             Entity mcv,
             float3 site,
-            out BuildFailure failure)
+            out BuildFailure failure,
+            bool ignoreUnits = false)
         {
             failure = BuildFailure.None;
 
@@ -165,7 +166,7 @@ namespace CQRa.Sim.Base
 
             var spec = BuildCatalog.Get(BuildingKind.ConstructionYard);
             var point = new float2(site.x, site.z);
-            if (IsOccupied(entityManager, team, point, spec, out failure, mcv))
+            if (IsOccupied(entityManager, team, point, spec, out failure, mcv, ignoreUnits))
             {
                 return false;
             }
@@ -277,7 +278,8 @@ namespace CQRa.Sim.Base
             float2 point,
             in BuildingSpec spec,
             out BuildFailure failure,
-            Entity ignoreUnit = default)
+            Entity ignoreUnit = default,
+            bool ignoreUnits = false)
         {
             failure = BuildFailure.None;
 
@@ -325,29 +327,32 @@ namespace CQRa.Sim.Base
                 }
             }
 
-            using (var units = entityManager.CreateEntityQuery(
-                ComponentType.ReadOnly<UnitTag>(),
-                ComponentType.ReadOnly<UnitInfo>(),
-                ComponentType.ReadOnly<LocalTransform>()))
-            using (var entities = units.ToEntityArray(Allocator.Temp))
+            if (!ignoreUnits)
             {
-                for (var i = 0; i < entities.Length; i++)
+                using (var units = entityManager.CreateEntityQuery(
+                    ComponentType.ReadOnly<UnitTag>(),
+                    ComponentType.ReadOnly<UnitInfo>(),
+                    ComponentType.ReadOnly<LocalTransform>()))
+                using (var entities = units.ToEntityArray(Allocator.Temp))
                 {
-                    if (entities[i] == ignoreUnit)
+                    for (var i = 0; i < entities.Length; i++)
                     {
-                        continue;
-                    }
+                        if (entities[i] == ignoreUnit)
+                        {
+                            continue;
+                        }
 
-                    var info = entityManager.GetComponentData<UnitInfo>(entities[i]);
-                    var other = entityManager.GetComponentData<LocalTransform>(entities[i]).Position;
-                    if (BuildRules.FootprintsOverlap(
-                            point,
-                            spec.Radius,
-                            new float2(other.x, other.z),
-                            info.Radius))
-                    {
-                        failure = BuildFailure.Occupied;
-                        return true;
+                        var info = entityManager.GetComponentData<UnitInfo>(entities[i]);
+                        var other = entityManager.GetComponentData<LocalTransform>(entities[i]).Position;
+                        if (BuildRules.FootprintsOverlap(
+                                point,
+                                spec.Radius,
+                                new float2(other.x, other.z),
+                                info.Radius))
+                        {
+                            failure = BuildFailure.Occupied;
+                            return true;
+                        }
                     }
                 }
             }
