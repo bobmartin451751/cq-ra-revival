@@ -415,6 +415,18 @@ namespace CQRa.View
                 new MeshPart(Box(new Vector3(0.5f, 0.3f, 2.2f)), new Vector3(3.4f, 0.7f, 0.2f)));
         }
 
+        /// <summary>Ashfall field repair rig: flatbed truck with a crane and tool pods.</summary>
+        public static Mesh Rig()
+        {
+            return Merge(
+                new MeshPart(Box(new Vector3(4.0f, 1.6f, 7.0f)), new Vector3(0f, 1.1f, 0f)),
+                new MeshPart(Box(new Vector3(2.2f, 1.8f, 2.2f)), new Vector3(0f, 2.6f, -2.2f)),
+                new MeshPart(Box(new Vector3(0.5f, 4.2f, 0.5f)), new Vector3(-1.4f, 3.0f, 1.2f)),
+                new MeshPart(Box(new Vector3(3.2f, 0.4f, 0.4f)), new Vector3(-0.2f, 5.0f, 1.2f)),
+                new MeshPart(Box(new Vector3(0.4f, 1.2f, 0.4f)), new Vector3(1.2f, 4.5f, 1.2f)),
+                new MeshPart(Cylinder(0.7f, 1.6f, 8), new Vector3(1.4f, 1.6f, 2.8f), Quaternion.Euler(0f, 0f, 90f)));
+        }
+
         // ---- Buildings (metres) ------------------------------------------------------
 
         public static Mesh ConstructionYard()

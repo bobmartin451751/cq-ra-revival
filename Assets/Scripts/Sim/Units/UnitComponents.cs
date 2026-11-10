@@ -13,6 +13,7 @@ namespace CQRa.Sim.Units
         Thumper = 6,
         Mantis = 7,
         Skyfall = 8,
+        Rig = 9,
     }
 
     /// <summary>Marks an entity as a mobile unit.</summary>
@@ -60,6 +61,13 @@ namespace CQRa.Sim.Units
         public int Rank;
     }
 
+    /// <summary>Heals nearby friendly mechanical units (Ashfall Rig).</summary>
+    public struct RepairAura : IComponentData
+    {
+        public float Radius;
+        public float HealPerSecond;
+    }
+
     public static class VeterancyMath
     {
         public static int RankForKills(int kills)
@@ -95,7 +103,7 @@ namespace CQRa.Sim.Units
     public static class UnitMaterials
     {
         public const int TeamCount = 2;
-        public const int KindCount = 9;
+        public const int KindCount = 10;
         public const int HighlightIndex = TeamCount * KindCount;
         public const int Count = HighlightIndex + 1;
 

@@ -200,6 +200,15 @@ namespace CQRa.Sim.Units
                 });
             }
 
+            if (kind == UnitKind.Rig)
+            {
+                entityManager.AddComponentData(entity, new RepairAura
+                {
+                    Radius = 10f,
+                    HealPerSecond = 10f,
+                });
+            }
+
             entityManager.AddComponentData(entity, new UnitMotion
             {
                 Velocity = float2.zero,

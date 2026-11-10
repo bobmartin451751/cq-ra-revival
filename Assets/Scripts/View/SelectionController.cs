@@ -231,6 +231,15 @@ namespace CQRa.View
                         FactionRuntime.ForTeam(BuildCatalog.PlayerTeam)));
                 }
 
+                if (keyboard.uKey.wasPressedThisFrame)
+                {
+                    var roster = ProductionCatalog.RosterForTeam(BuildCatalog.PlayerTeam);
+                    if (roster.Length > 7)
+                    {
+                        TryProduce(roster[7]);
+                    }
+                }
+
                 if (keyboard.rKey.wasPressedThisFrame)
                 {
                     ToggleRepairSelected();

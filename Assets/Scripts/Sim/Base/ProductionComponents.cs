@@ -63,7 +63,7 @@ namespace CQRa.Sim.Base
             UnitKind.Engineer,
         };
 
-        private static readonly UnitKind[] AshfallRoster = WithUnique(UnitKind.Thumper);
+        private static readonly UnitKind[] AshfallRoster = WithUnique(UnitKind.Thumper, UnitKind.Rig);
         private static readonly UnitKind[] VerdantRoster = WithUnique(UnitKind.Mantis);
         private static readonly UnitKind[] MeridianRoster = WithUnique(UnitKind.Skyfall);
 
@@ -116,15 +116,19 @@ namespace CQRa.Sim.Base
             return Get(kind).Label;
         }
 
-        private static UnitKind[] WithUnique(UnitKind unique)
+        private static UnitKind[] WithUnique(params UnitKind[] uniques)
         {
-            var roster = new UnitKind[Buildable.Length + 1];
+            var roster = new UnitKind[Buildable.Length + uniques.Length];
             for (var i = 0; i < Buildable.Length; i++)
             {
                 roster[i] = Buildable[i];
             }
 
-            roster[roster.Length - 1] = unique;
+            for (var i = 0; i < uniques.Length; i++)
+            {
+                roster[Buildable.Length + i] = uniques[i];
+            }
+
             return roster;
         }
 
@@ -149,7 +153,8 @@ namespace CQRa.Sim.Base
                 case 3: return "V";
                 case 4: return "B";
                 case 5: return "G";
-                default: return "Y";
+                case 6: return "Y";
+                default: return "U";
             }
         }
     }

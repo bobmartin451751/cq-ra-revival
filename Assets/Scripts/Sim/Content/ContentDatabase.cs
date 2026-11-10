@@ -145,6 +145,12 @@ namespace CQRa.Sim.Content
                 MaxHealth = 150f, Armor = 0.15f, Damage = 55f, Range = 26f, Cooldown = 1f,
                 AcquireRange = 30f, Speed = 20f, Radius = 2.4f, Vision = 50f, Label = "Skyfall",
             },
+            new UnitDefinition
+            {
+                Kind = UnitKind.Rig, Cost = 350, BuildSeconds = 7f, Producer = BuildingKind.WarFactory,
+                MaxHealth = 260f, Armor = 0.30f, Speed = 6f, Radius = 3.2f, Vision = 26f,
+                Label = "Rig",
+            },
         };
 
         private static readonly BuildingDefinition[] DefaultBuildings =

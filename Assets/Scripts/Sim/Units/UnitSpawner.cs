@@ -110,6 +110,7 @@ namespace CQRa.Sim.Units
                 ProceduralMeshes.Thumper(),
                 ProceduralMeshes.Mantis(),
                 ProceduralMeshes.Skyfall(),
+                ProceduralMeshes.Rig(),
             };
 
             _renderMeshArray = UnitFactory.CreateRenderMeshArray(_materials, _meshes);
@@ -233,6 +234,7 @@ namespace CQRa.Sim.Units
                 UnitKind.Thumper => new Color(0.46f, 0.36f, 0.24f),
                 UnitKind.Mantis => new Color(0.30f, 0.45f, 0.26f),
                 UnitKind.Skyfall => new Color(0.30f, 0.34f, 0.44f),
+                UnitKind.Rig => new Color(0.50f, 0.44f, 0.24f),
                 _ => new Color(0.43f, 0.27f, 0.18f),
             };
 
