@@ -45,7 +45,7 @@ sell**, Esc to clear/cancel. Selected units and buildings expose their actions i
 right-hand **COMMAND** sidebar: MCVs show **DEPLOY** (click it, then right-click a
 site), production buildings show **RALLY** (click it, then right-click terrain),
 buildings show **REPAIR** and **SELL**, and units show **STOP**. See
-`docs/phase2.md` through `docs/phase27.md` for details.
+`docs/phase2.md` through `docs/phase28.md` for details.
 
 ## Layout
 
@@ -98,5 +98,6 @@ tools/               headless scripts
 | 25 - AI startup fix | OK - AI deploys through friendly crowds and builds on all difficulties |
 | 26 - veterancy | OK - kill ranks grant damage and max-health bonuses, shown in the sidebar |
 | 27 - Rig repair | OK - Ashfall repair vehicle with a stacking mechanical repair aura |
+| 28 - Sower mines | OK - Verdant mine-layer with cooldown and blast mines |
 
 See `docs/spec.md` for the full roadmap and frozen scope.

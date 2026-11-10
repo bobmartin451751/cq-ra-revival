@@ -209,6 +209,15 @@ namespace CQRa.Sim.Units
                 });
             }
 
+            if (kind == UnitKind.Sower)
+            {
+                entityManager.AddComponentData(entity, new MineLayer
+                {
+                    Cooldown = 4f,
+                    CooldownRemaining = 0f,
+                });
+            }
+
             entityManager.AddComponentData(entity, new UnitMotion
             {
                 Velocity = float2.zero,

@@ -574,6 +574,33 @@ namespace CQRa.Sim.Base
         }
 
         /// <summary>
+        /// Lays a mine at the Sower's position if its cooldown is ready.
+        /// </summary>
+        public static bool TryLayMine(EntityManager entityManager, Entity sower)
+        {
+            if (!entityManager.Exists(sower) ||
+                !entityManager.HasComponent<MineLayer>(sower) ||
+                !entityManager.HasComponent<UnitInfo>(sower))
+            {
+                return false;
+            }
+
+            var layer = entityManager.GetComponentData<MineLayer>(sower);
+            if (layer.CooldownRemaining > 0f)
+            {
+                return false;
+            }
+
+            var team = entityManager.GetComponentData<UnitInfo>(sower).Team;
+            var position = entityManager.GetComponentData<LocalTransform>(sower).Position;
+            BuildingFactory.SpawnMine(entityManager, position, team);
+
+            layer.CooldownRemaining = layer.Cooldown;
+            entityManager.SetComponentData(sower, layer);
+            return true;
+        }
+
+        /// <summary>
         /// Toggles continuous repair. Cancelling is always free; starting requires damaged
         /// health and an economy singleton.
         /// </summary>

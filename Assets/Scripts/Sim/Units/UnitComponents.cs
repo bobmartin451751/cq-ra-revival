@@ -14,6 +14,7 @@ namespace CQRa.Sim.Units
         Mantis = 7,
         Skyfall = 8,
         Rig = 9,
+        Sower = 10,
     }
 
     /// <summary>Marks an entity as a mobile unit.</summary>
@@ -68,6 +69,22 @@ namespace CQRa.Sim.Units
         public float HealPerSecond;
     }
 
+    /// <summary>Mine-laying cooldown (Verdant Sower).</summary>
+    public struct MineLayer : IComponentData
+    {
+        public float Cooldown;
+        public float CooldownRemaining;
+    }
+
+    /// <summary>A deployed mine. Team 0/1, trigger radius and blast damage.</summary>
+    public struct Mine : IComponentData
+    {
+        public int Team;
+        public float TriggerRadius;
+        public float BlastRadius;
+        public float Damage;
+    }
+
     public static class VeterancyMath
     {
         public static int RankForKills(int kills)
@@ -103,7 +120,7 @@ namespace CQRa.Sim.Units
     public static class UnitMaterials
     {
         public const int TeamCount = 2;
-        public const int KindCount = 10;
+        public const int KindCount = 11;
         public const int HighlightIndex = TeamCount * KindCount;
         public const int Count = HighlightIndex + 1;
 

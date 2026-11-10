@@ -151,6 +151,12 @@ namespace CQRa.Sim.Content
                 MaxHealth = 260f, Armor = 0.30f, Speed = 6f, Radius = 3.2f, Vision = 26f,
                 Label = "Rig",
             },
+            new UnitDefinition
+            {
+                Kind = UnitKind.Sower, Cost = 300, BuildSeconds = 6f, Producer = BuildingKind.WarFactory,
+                MaxHealth = 180f, Armor = 0.25f, Speed = 7f, Radius = 3f, Vision = 28f,
+                Label = "Sower",
+            },
         };
 
         private static readonly BuildingDefinition[] DefaultBuildings =

@@ -20,9 +20,11 @@ namespace CQRa.Sim.Base
         public const int BuildingKindCount = 7;
         public const int OreMeshIndex = BuildingKindCount;
         public const int CrateMeshIndex = OreMeshIndex + 1;
+        public const int MineMeshIndex = CrateMeshIndex + 1;
         public const int OreMaterialIndex = BuildingKindCount * 2;
         public const int CrateMaterialIndex = OreMaterialIndex + 1;
-        public const int HighlightMaterialIndex = CrateMaterialIndex + 1;
+        public const int MineMaterialIndex = CrateMaterialIndex + 1;
+        public const int HighlightMaterialIndex = MineMaterialIndex + 1;
         public const int MaterialCount = HighlightMaterialIndex + 1;
 
         private static RenderMeshArray _renderMeshArray;
@@ -181,6 +183,34 @@ namespace CQRa.Sim.Base
             if (_initialized)
             {
                 AddRenderComponents(entityManager, entity, CrateMeshIndex, CrateMaterialIndex);
+            }
+
+            return entity;
+        }
+
+        public static Entity SpawnMine(
+            EntityManager entityManager,
+            float3 position,
+            int team)
+        {
+            var entity = entityManager.CreateEntity();
+
+            entityManager.AddComponentData(entity, LocalTransform.FromPositionRotationScale(
+                position,
+                quaternion.identity,
+                1f));
+
+            entityManager.AddComponentData(entity, new Mine
+            {
+                Team = team,
+                TriggerRadius = 3f,
+                BlastRadius = 5f,
+                Damage = 80f,
+            });
+
+            if (_initialized)
+            {
+                AddRenderComponents(entityManager, entity, MineMeshIndex, MineMaterialIndex);
             }
 
             return entity;

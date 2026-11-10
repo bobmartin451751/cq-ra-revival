@@ -427,6 +427,25 @@ namespace CQRa.View
                 new MeshPart(Cylinder(0.7f, 1.6f, 8), new Vector3(1.4f, 1.6f, 2.8f), Quaternion.Euler(0f, 0f, 90f)));
         }
 
+        /// <summary>Verdant mine-layer: low tracked chassis with a rack of canisters.</summary>
+        public static Mesh Sower()
+        {
+            return Merge(
+                new MeshPart(Box(new Vector3(3.4f, 1.2f, 5.8f)), new Vector3(0f, 0.8f, 0f)),
+                new MeshPart(Box(new Vector3(1.6f, 1.0f, 1.8f)), new Vector3(0f, 2.0f, -1.6f)),
+                new MeshPart(Box(new Vector3(0.6f, 0.6f, 1.2f)), new Vector3(-1.0f, 1.8f, 1.0f)),
+                new MeshPart(Box(new Vector3(0.6f, 0.6f, 1.2f)), new Vector3(0f, 1.8f, 1.0f)),
+                new MeshPart(Box(new Vector3(0.6f, 0.6f, 1.2f)), new Vector3(1.0f, 1.8f, 1.0f)));
+        }
+
+        /// <summary>Deployed mine disc.</summary>
+        public static Mesh Mine()
+        {
+            return Merge(
+                new MeshPart(Cylinder(1.1f, 0.28f, 12), new Vector3(0f, 0.14f, 0f)),
+                new MeshPart(Cylinder(0.28f, 0.22f, 8), new Vector3(0f, 0.38f, 0f)));
+        }
+
         // ---- Buildings (metres) ------------------------------------------------------
 
         public static Mesh ConstructionYard()

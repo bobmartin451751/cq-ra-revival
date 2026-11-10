@@ -34,6 +34,7 @@ namespace CQRa.View
                 ProceduralMeshes.Wall(),
                 ProceduralMeshes.OreCluster(17),
                 ProceduralMeshes.Crate(),
+                ProceduralMeshes.Mine(),
             };
 
             _materials = new Material[BuildingFactory.MaterialCount];
@@ -84,6 +85,14 @@ namespace CQRa.View
             crate.SetFloat("_Smoothness", 0.30f);
             crate.SetFloat("_Metallic", 0.20f);
             _materials[BuildingFactory.CrateMaterialIndex] = crate;
+
+            var mine = new Material(shader) { name = "Mine" };
+            mine.SetColor("_BaseColor", new Color(0.20f, 0.24f, 0.18f));
+            mine.SetFloat("_Smoothness", 0.45f);
+            mine.SetFloat("_Metallic", 0.30f);
+            mine.EnableKeyword("_EMISSION");
+            mine.SetColor("_EmissionColor", new Color(0.10f, 0.16f, 0.04f));
+            _materials[BuildingFactory.MineMaterialIndex] = mine;
 
             var highlight = new Material(shader) { name = "Building_Highlight" };
             highlight.SetColor("_BaseColor", new Color(0.98f, 0.94f, 0.74f));

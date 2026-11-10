@@ -960,6 +960,37 @@ namespace CQRa.View
             }
         }
 
+        private void LayMineSelected()
+        {
+            var world = World.DefaultGameObjectInjectionWorld;
+            if (world == null || !world.IsCreated)
+            {
+                return;
+            }
+
+            var entityManager = world.EntityManager;
+            var laid = 0;
+
+            for (var i = 0; i < _selected.Count; i++)
+            {
+                var entity = _selected[i];
+                if (!entityManager.Exists(entity) ||
+                    !entityManager.HasComponent<MineLayer>(entity))
+                {
+                    continue;
+                }
+
+                if (BaseCommands.TryLayMine(entityManager, entity))
+                {
+                    laid++;
+                }
+            }
+
+            ShowMessage(laid > 0
+                ? $"{laid} mine(s) laid"
+                : "No Sower ready (select a Sower, 4 s cooldown)");
+        }
+
         private void ToggleDeploySelectedThumpers()
         {
             var world = World.DefaultGameObjectInjectionWorld;
@@ -1471,6 +1502,7 @@ namespace CQRa.View
             var hasRally = false;
             var hasEngineer = false;
             var hasThumper = false;
+            var hasSower = false;
             var thumperDeployed = false;
 
             for (var i = 0; i < _selected.Count; i++)
@@ -1503,6 +1535,11 @@ namespace CQRa.View
                             thumperDeployed = true;
                         }
                     }
+
+                    if (entityManager.GetComponentData<UnitInfo>(entity).Kind == UnitKind.Sower)
+                    {
+                        hasSower = true;
+                    }
                 }
 
                 if (entityManager.HasComponent<BuildingInfo>(entity))
@@ -1525,7 +1562,8 @@ namespace CQRa.View
             if (hasRally) buttons++;
             if (hasEngineer) buttons++;
             if (hasThumper) buttons++;
-            if (hasUnit && !hasEngineer && !hasThumper) buttons++;
+            if (hasSower) buttons++;
+            if (hasUnit && !hasEngineer && !hasThumper && !hasSower) buttons++;
             if (hasBuilding) buttons += 2; // repair + sell
             if (buttons == 0)
             {
@@ -1578,7 +1616,17 @@ namespace CQRa.View
                 bx += width + gap;
             }
 
-            if (hasUnit && !hasEngineer && !hasThumper)
+            if (hasSower)
+            {
+                DrawCommandButton(
+                    new Rect(bx, by, width, 32f),
+                    "LAY MINE",
+                    false,
+                    LayMineSelected);
+                bx += width + gap;
+            }
+
+            if (hasUnit && !hasEngineer && !hasThumper && !hasSower)
             {
                 DrawCommandButton(
                     new Rect(bx, by, width, 32f),

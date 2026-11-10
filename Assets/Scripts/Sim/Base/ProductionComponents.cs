@@ -64,7 +64,7 @@ namespace CQRa.Sim.Base
         };
 
         private static readonly UnitKind[] AshfallRoster = WithUnique(UnitKind.Thumper, UnitKind.Rig);
-        private static readonly UnitKind[] VerdantRoster = WithUnique(UnitKind.Mantis);
+        private static readonly UnitKind[] VerdantRoster = WithUnique(UnitKind.Mantis, UnitKind.Sower);
         private static readonly UnitKind[] MeridianRoster = WithUnique(UnitKind.Skyfall);
 
         public static UnitKind UniqueFor(FactionId faction)

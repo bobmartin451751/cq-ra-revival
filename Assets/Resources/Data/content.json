@@ -159,6 +159,22 @@
       "radius": 3.2,
       "vision": 26,
       "label": "Rig"
+    },
+    {
+      "kind": "Sower",
+      "cost": 300,
+      "buildSeconds": 6.0,
+      "producer": "WarFactory",
+      "maxHealth": 180,
+      "armor": 0.25,
+      "damage": 0,
+      "range": 0,
+      "cooldown": 0,
+      "acquireRange": 0,
+      "speed": 7,
+      "radius": 3.0,
+      "vision": 28,
+      "label": "Sower"
     }
   ],
   "buildings": [
