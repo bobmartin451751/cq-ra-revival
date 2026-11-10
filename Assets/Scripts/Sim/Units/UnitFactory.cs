@@ -86,11 +86,15 @@ namespace CQRa.Sim.Units
             int team)
         {
             var entity = entityManager.CreateEntity();
+            var factionId = FactionRuntime.ForTeam(team);
+            var visualScale = factionId == FactionId.Verdant
+                ? 0.92f
+                : factionId == FactionId.Meridian ? 1.08f : 1f;
 
             entityManager.AddComponentData(entity, LocalTransform.FromPositionRotationScale(
                 position,
                 quaternion.RotateY(yawRadians),
-                1f));
+                visualScale));
 
             entityManager.AddComponent<UnitTag>(entity);
             entityManager.AddComponentData(entity, new UnitInfo

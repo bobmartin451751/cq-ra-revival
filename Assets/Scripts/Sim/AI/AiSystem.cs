@@ -73,6 +73,7 @@ namespace CQRa.Sim.AI
 
             MaintainHarvesters(entityManager, team, profile, credits);
             MaintainArmy(entityManager, team, profile, credits);
+            MaintainNavy(entityManager, team, profile, credits);
 
             if (TryBuild(entityManager, team, profile, credits, economy))
             {
@@ -128,6 +129,12 @@ namespace CQRa.Sim.AI
             if (CountBuildings(entityManager, team, BuildingKind.WarFactory) == 0)
             {
                 return BaseCommands.TryAutoPlace(entityManager, team, BuildingKind.WarFactory);
+            }
+
+            if (credits > 1200 &&
+                CountBuildings(entityManager, team, BuildingKind.NavalYard) == 0)
+            {
+                return BaseCommands.TryAutoPlace(entityManager, team, BuildingKind.NavalYard);
             }
 
             if (credits > 900 &&
@@ -250,6 +257,35 @@ namespace CQRa.Sim.AI
             }
         }
 
+        private static void MaintainNavy(
+            EntityManager entityManager,
+            int team,
+            in AiProfile profile,
+            int credits)
+        {
+            if (CountBuildings(entityManager, team, BuildingKind.NavalYard) == 0)
+            {
+                return;
+            }
+
+            var target = profile.MaxFactories >= 2 ? 2 : 1;
+            var navy = CountUnits(entityManager, team, UnitKind.PatrolBoat) +
+                       CountUnits(entityManager, team, UnitKind.Battleship) +
+                       CountQueued(entityManager, team, UnitKind.PatrolBoat) +
+                       CountQueued(entityManager, team, UnitKind.Battleship);
+
+            if (navy >= target)
+            {
+                return;
+            }
+
+            var spec = ProductionCatalog.Get(UnitKind.PatrolBoat);
+            if (credits >= spec.Cost + CreditsReserve)
+            {
+                ProductionCommands.TryEnqueue(entityManager, team, UnitKind.PatrolBoat, Entity.Null, out _);
+            }
+        }
+
         private static void UpdateMilitary(
             EntityManager entityManager,
             ref AiCommander commander,
@@ -335,7 +371,6 @@ namespace CQRa.Sim.AI
             {
                 var info = entityManager.GetComponentData<UnitInfo>(units[i]);
                 if (info.Team != team ||
-                    (info.Kind != UnitKind.Infantry && info.Kind != UnitKind.Tank) ||
                     entityManager.GetComponentData<Health>(units[i]).Current <= 0f ||
                     entityManager.GetComponentData<Weapon>(units[i]).Damage <= 0f)
                 {

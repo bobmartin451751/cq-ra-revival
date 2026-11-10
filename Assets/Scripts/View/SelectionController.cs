@@ -1766,8 +1766,9 @@ namespace CQRa.View
                 var kind = roster[i];
                 var spec = ProductionCatalog.Get(kind);
                 var name = ProductionCatalog.UnitName(faction, kind);
-                var label =
-                    $"[{ProductionCatalog.Hotkey(i)}] {name}    {spec.Cost}   {spec.Seconds:0}s";
+                var key = ProductionCatalog.Hotkey(i);
+                var prefix = string.IsNullOrEmpty(key) ? "    " : $"[{key}] ";
+                var label = $"{prefix}{name}    {spec.Cost}   {spec.Seconds:0}s";
 
                 if (GUI.Button(
                         new Rect(x + 12f, rowY + i * 31f, SidebarWidth - 24f, 28f),
