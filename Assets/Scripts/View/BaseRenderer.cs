@@ -23,20 +23,19 @@ namespace CQRa.View
                 return;
             }
 
-            _meshes = new[]
+            _meshes = new Mesh[BuildingFactory.BuildingMeshCount + 3];
+            for (var faction = 0; faction < BuildingFactory.FactionVariantCount; faction++)
             {
-                ProceduralMeshes.ConstructionYard(),
-                ProceduralMeshes.PowerPlant(),
-                ProceduralMeshes.Refinery(),
-                ProceduralMeshes.Barracks(),
-                ProceduralMeshes.WarFactory(),
-                ProceduralMeshes.GunTower(),
-                ProceduralMeshes.Wall(),
-                ProceduralMeshes.NavalYard(),
-                ProceduralMeshes.OreCluster(17),
-                ProceduralMeshes.Crate(),
-                ProceduralMeshes.Mine(),
-            };
+                for (var kind = 0; kind < BuildingFactory.BuildingKindCount; kind++)
+                {
+                    _meshes[faction * BuildingFactory.BuildingKindCount + kind] =
+                        ProceduralMeshes.FactionBuilding((BuildingKind)kind, (CQRa.Sim.Factions.FactionId)faction);
+                }
+            }
+
+            _meshes[BuildingFactory.OreMeshIndex] = ProceduralMeshes.OreCluster(17);
+            _meshes[BuildingFactory.CrateMeshIndex] = ProceduralMeshes.Crate();
+            _meshes[BuildingFactory.MineMeshIndex] = ProceduralMeshes.Mine();
 
             _materials = new Material[BuildingFactory.MaterialCount];
             var structure = new Color(0.36f, 0.35f, 0.31f);

@@ -45,7 +45,7 @@ sell**, Esc to clear/cancel. Selected units and buildings expose their actions i
 right-hand **COMMAND** sidebar: MCVs show **DEPLOY** (click it, then right-click a
 site), production buildings show **RALLY** (click it, then right-click terrain),
 buildings show **REPAIR** and **SELL**, and units show **STOP**. See
-`docs/phase2.md` through `docs/phase32.md` for details.
+`docs/phase2.md` through `docs/phase33.md` for details.
 
 ## Layout
 
@@ -103,5 +103,6 @@ tools/               headless scripts
 | 30 - naval AI + polish | OK - AI builds naval yards and ships; faction unit scale |
 | 31 - naval yard shore placement | OK - naval yards require lake proximity; AI places on the shore |
 | 32 - terrain line of sight | OK - ridges block fog, auto-acquisition and AI vision |
+| 33 - faction base silhouettes | OK - unique roof modules per faction on every building |
 
 See `docs/spec.md` for the full roadmap and frozen scope.

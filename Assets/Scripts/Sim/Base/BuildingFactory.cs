@@ -18,7 +18,9 @@ namespace CQRa.Sim.Base
     public static class BuildingFactory
     {
         public const int BuildingKindCount = 8;
-        public const int OreMeshIndex = BuildingKindCount;
+        public const int FactionVariantCount = 3;
+        public const int BuildingMeshCount = BuildingKindCount * FactionVariantCount;
+        public const int OreMeshIndex = BuildingMeshCount;
         public const int CrateMeshIndex = OreMeshIndex + 1;
         public const int MineMeshIndex = CrateMeshIndex + 1;
         public const int OreMaterialIndex = BuildingKindCount * 2;
@@ -31,6 +33,12 @@ namespace CQRa.Sim.Base
         private static bool _initialized;
 
         public static bool IsInitialized => _initialized;
+
+        /// <summary>Flat render-mesh index for a team's faction variant of a building.</summary>
+        public static int MeshIndex(int team, BuildingKind kind)
+        {
+            return (int)FactionRuntime.ForTeam(team) * BuildingKindCount + (int)kind;
+        }
 
         public static void Initialize(Material[] materials, Mesh[] meshes)
         {
@@ -126,7 +134,7 @@ namespace CQRa.Sim.Base
                 AddRenderComponents(
                     entityManager,
                     entity,
-                    (int)kind,
+                    MeshIndex(team, kind),
                     team * BuildingKindCount + (int)kind);
             }
 

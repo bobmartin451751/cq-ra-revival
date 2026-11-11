@@ -1,4 +1,6 @@
 using System.Collections.Generic;
+using CQRa.Sim.Base;
+using CQRa.Sim.Factions;
 using UnityEngine;
 
 namespace CQRa.View
@@ -543,6 +545,110 @@ namespace CQRa.View
                 new MeshPart(Box(new Vector3(1.2f, 8f, 1.2f)), new Vector3(-6f, 6f, 2f)),
                 new MeshPart(Box(new Vector3(0.8f, 0.8f, 9f)), new Vector3(-6f, 10f, -2f)),
                 new MeshPart(Box(new Vector3(4f, 2f, 3f)), new Vector3(4f, 5f, -1f)));
+        }
+
+        /// <summary>Base mesh for a building kind, before faction trim.</summary>
+        public static Mesh Building(BuildingKind kind)
+        {
+            switch (kind)
+            {
+                case BuildingKind.ConstructionYard: return ConstructionYard();
+                case BuildingKind.PowerPlant: return PowerPlant();
+                case BuildingKind.Refinery: return Refinery();
+                case BuildingKind.Barracks: return Barracks();
+                case BuildingKind.WarFactory: return WarFactory();
+                case BuildingKind.GunTower: return GunTower();
+                case BuildingKind.Wall: return Wall();
+                case BuildingKind.NavalYard: return NavalYard();
+                default: return ConstructionYard();
+            }
+        }
+
+        /// <summary>
+        /// Faction-specific building silhouette. The shared base is kept so gameplay
+        /// readability and footprints stay stable, then each faction adds a distinctive
+        /// roof module: Ashfall exhaust stacks, Verdant canopies/tanks, Meridian masts.
+        /// </summary>
+        public static Mesh FactionBuilding(BuildingKind kind, FactionId faction)
+        {
+            var baseMesh = Building(kind);
+            var roof = RoofHeight(kind);
+            var radius = BuildingRadius(kind);
+
+            switch (faction)
+            {
+                case FactionId.Verdant:
+                    return Merge(
+                        new MeshPart(baseMesh, Vector3.zero),
+                        new MeshPart(
+                            Cylinder(radius * 0.52f, 0.6f, 12),
+                            new Vector3(0f, roof + 0.3f, 0f)),
+                        new MeshPart(
+                            Box(new Vector3(radius * 0.8f, 0.18f, radius * 0.38f)),
+                            new Vector3(radius * 0.2f, roof + 0.75f, 0f)),
+                        new MeshPart(
+                            Cylinder(radius * 0.16f, 2.4f, 8),
+                            new Vector3(-radius * 0.55f, roof + 1.2f, -radius * 0.35f)));
+
+                case FactionId.Meridian:
+                    return Merge(
+                        new MeshPart(baseMesh, Vector3.zero),
+                        new MeshPart(
+                            Cylinder(0.18f, radius * 0.9f, 6),
+                            new Vector3(radius * 0.4f, roof + radius * 0.45f, 0f)),
+                        new MeshPart(
+                            Box(new Vector3(radius * 0.55f, 0.22f, 0.22f)),
+                            new Vector3(radius * 0.4f, roof + radius * 0.7f, 0f)),
+                        new MeshPart(
+                            Box(new Vector3(radius * 0.5f, 0.2f, 0.9f)),
+                            new Vector3(-radius * 0.35f, roof + 0.2f, radius * 0.25f),
+                            Quaternion.Euler(0f, 0f, 24f)));
+
+                default:
+                    return Merge(
+                        new MeshPart(baseMesh, Vector3.zero),
+                        new MeshPart(
+                            Cylinder(radius * 0.13f, 3.4f, 8),
+                            new Vector3(-radius * 0.42f, roof + 1.7f, -radius * 0.3f)),
+                        new MeshPart(
+                            Cylinder(radius * 0.10f, 2.4f, 8),
+                            new Vector3(radius * 0.38f, roof + 1.2f, radius * 0.25f)),
+                        new MeshPart(
+                            Box(new Vector3(0.5f, 0.4f, radius * 0.5f)),
+                            new Vector3(-radius * 0.42f, roof + 3.4f, -radius * 0.3f)));
+            }
+        }
+
+        private static float RoofHeight(BuildingKind kind)
+        {
+            switch (kind)
+            {
+                case BuildingKind.ConstructionYard: return 9.8f;
+                case BuildingKind.PowerPlant: return 9.0f;
+                case BuildingKind.Refinery: return 8.0f;
+                case BuildingKind.Barracks: return 5.4f;
+                case BuildingKind.WarFactory: return 7.6f;
+                case BuildingKind.GunTower: return 4.6f;
+                case BuildingKind.Wall: return 2.6f;
+                case BuildingKind.NavalYard: return 10.4f;
+                default: return 8.0f;
+            }
+        }
+
+        private static float BuildingRadius(BuildingKind kind)
+        {
+            switch (kind)
+            {
+                case BuildingKind.ConstructionYard: return 9f;
+                case BuildingKind.PowerPlant: return 6f;
+                case BuildingKind.Refinery: return 9f;
+                case BuildingKind.Barracks: return 7f;
+                case BuildingKind.WarFactory: return 11f;
+                case BuildingKind.GunTower: return 4f;
+                case BuildingKind.Wall: return 2.2f;
+                case BuildingKind.NavalYard: return 9f;
+                default: return 7f;
+            }
         }
 
         /// <summary>Fast patrol boat with a small gun turret.</summary>
