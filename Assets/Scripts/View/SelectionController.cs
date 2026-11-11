@@ -758,6 +758,8 @@ namespace CQRa.View
                     return "That is not an MCV";
                 case BuildFailure.TooFar:
                     return "Too far from the MCV";
+                case BuildFailure.NotNearWater:
+                    return "Naval Yard must be near the lake";
                 default:
                     return string.Empty;
             }

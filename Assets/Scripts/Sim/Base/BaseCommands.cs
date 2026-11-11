@@ -20,6 +20,7 @@ namespace CQRa.Sim.Base
         NotAnMcv = 7,
         AlreadyDeployed = 8,
         TooFar = 9,
+        NotNearWater = 10,
     }
 
     public enum BuildingCommandFailure : byte
@@ -217,10 +218,19 @@ namespace CQRa.Sim.Base
 
             var yardPosition = entityManager.GetComponentData<LocalTransform>(yard).Position;
             var point2 = new float2(point.x, point.z);
-            if (!BuildRules.IsWithinBuildRadius(
-                    point2,
-                    new float2(yardPosition.x, yardPosition.z),
-                    BuildCatalog.BuildRadius))
+            if (kind == BuildingKind.NavalYard)
+            {
+                var lakeDistance = math.distance(point2, WaterLake.Centre);
+                if (lakeDistance > WaterLake.Radius + 28f)
+                {
+                    failure = BuildFailure.NotNearWater;
+                    return false;
+                }
+            }
+            else if (!BuildRules.IsWithinBuildRadius(
+                         point2,
+                         new float2(yardPosition.x, yardPosition.z),
+                         BuildCatalog.BuildRadius))
             {
                 failure = BuildFailure.OutsideBuildRadius;
                 return false;
@@ -734,6 +744,27 @@ namespace CQRa.Sim.Base
             for (var i = 0; i < candidates.Length; i++)
             {
                 if (TryPlaceBuilding(entityManager, team, kind, candidates[i], out _))
+                {
+                    return true;
+                }
+            }
+
+            return false;
+        }
+
+        /// <summary>Finds a shore site around the lake for the AI naval yard.</summary>
+        public static bool TryAutoPlaceNavalYard(EntityManager entityManager, int team)
+        {
+            var radius = WaterLake.Radius + 8f;
+            for (var step = 0; step < 24; step++)
+            {
+                var angle = step * math.PI / 12f;
+                var point = new float3(
+                    WaterLake.Centre.x + math.cos(angle) * radius,
+                    0f,
+                    WaterLake.Centre.y + math.sin(angle) * radius);
+
+                if (TryPlaceBuilding(entityManager, team, BuildingKind.NavalYard, point, out _))
                 {
                     return true;
                 }

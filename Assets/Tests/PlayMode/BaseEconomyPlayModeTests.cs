@@ -108,6 +108,85 @@ namespace CQRa.Tests.PlayMode
         }
 
         [UnityTest]
+        public IEnumerator NavalYard_RequiresWaterProximity()
+        {
+            yield return null;
+
+            var world = World.DefaultGameObjectInjectionWorld;
+            var entityManager = world.EntityManager;
+            var data = CreateFlatWorld(entityManager, 240f, 121, 1f);
+            var owned = new NativeList<Entity>(Allocator.Persistent);
+            var material = new Material(Shader.Find("Universal Render Pipeline/Lit"));
+            var meshes = UnitMeshes();
+
+            try
+            {
+                var economy = CreateEconomy(entityManager, 5000, 5000);
+                BuildingFactory.SpawnBuilding(entityManager, 0, BuildingKind.ConstructionYard, float3.zero);
+
+                var ok = BaseCommands.TryPlaceBuilding(
+                    entityManager, 0, BuildingKind.NavalYard, new float3(60f, 0f, 0f), out var failure);
+
+                Assert.IsFalse(ok, "naval yards cannot be built away from the lake");
+                Assert.AreEqual(BuildFailure.NotNearWater, failure);
+                Assert.AreEqual(5000, Economy.GetCredits(entityManager.GetComponentData<EconomyState>(economy), 0));
+
+                var shore = new float3(WaterLake.Centre.x + WaterLake.Radius + 5f, 0f, WaterLake.Centre.y);
+                ok = BaseCommands.TryPlaceBuilding(
+                    entityManager, 0, BuildingKind.NavalYard, shore, out failure);
+
+                Assert.IsTrue(ok, $"a shore site should accept the naval yard: {failure}");
+                Assert.AreEqual(BuildFailure.None, failure);
+                Assert.AreEqual(4200, Economy.GetCredits(entityManager.GetComponentData<EconomyState>(economy), 0));
+                Assert.AreNotEqual(Entity.Null, FindBuilding(entityManager, 0, BuildingKind.NavalYard));
+            }
+            finally
+            {
+                Cleanup(entityManager, data, owned, material, meshes);
+            }
+        }
+
+        [UnityTest]
+        public IEnumerator NavalYard_AiAutoPlaceFinishesOnTheShore()
+        {
+            yield return null;
+
+            var world = World.DefaultGameObjectInjectionWorld;
+            var entityManager = world.EntityManager;
+            var data = CreateFlatWorld(entityManager, 240f, 121, 1f);
+            var owned = new NativeList<Entity>(Allocator.Persistent);
+            var material = new Material(Shader.Find("Universal Render Pipeline/Lit"));
+            var meshes = UnitMeshes();
+
+            try
+            {
+                CreateEconomy(entityManager, 5000, 5000);
+                BuildingFactory.SpawnBuilding(entityManager, 0, BuildingKind.ConstructionYard, float3.zero);
+
+                Assert.IsTrue(
+                    BaseCommands.TryAutoPlaceNavalYard(entityManager, 0),
+                    "the AI should find a shore site for its naval yard");
+
+                var yard = FindBuilding(entityManager, 0, BuildingKind.NavalYard);
+                Assert.AreNotEqual(Entity.Null, yard);
+
+                var position = entityManager.GetComponentData<LocalTransform>(yard).Position;
+                var distance = math.distance(
+                    new float2(position.x, position.z),
+                    WaterLake.Centre);
+
+                Assert.LessOrEqual(
+                    distance,
+                    WaterLake.Radius + 28f,
+                    "the auto-placed naval yard must sit near the lake");
+            }
+            finally
+            {
+                Cleanup(entityManager, data, owned, material, meshes);
+            }
+        }
+
+        [UnityTest]
         public IEnumerator Harvester_DeliversCargoToRefinery()
         {
             yield return null;

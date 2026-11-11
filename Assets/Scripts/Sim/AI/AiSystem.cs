@@ -134,7 +134,7 @@ namespace CQRa.Sim.AI
             if (credits > 1200 &&
                 CountBuildings(entityManager, team, BuildingKind.NavalYard) == 0)
             {
-                return BaseCommands.TryAutoPlace(entityManager, team, BuildingKind.NavalYard);
+                return BaseCommands.TryAutoPlaceNavalYard(entityManager, team);
             }
 
             if (credits > 900 &&

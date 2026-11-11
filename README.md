@@ -45,7 +45,7 @@ sell**, Esc to clear/cancel. Selected units and buildings expose their actions i
 right-hand **COMMAND** sidebar: MCVs show **DEPLOY** (click it, then right-click a
 site), production buildings show **RALLY** (click it, then right-click terrain),
 buildings show **REPAIR** and **SELL**, and units show **STOP**. See
-`docs/phase2.md` through `docs/phase30.md` for details.
+`docs/phase2.md` through `docs/phase31.md` for details.
 
 ## Layout
 
@@ -101,5 +101,6 @@ tools/               headless scripts
 | 28 - Sower mines | OK - Verdant mine-layer with cooldown and blast mines |
 | 29 - naval | OK - lake, naval yard, patrol boats/battleships, faction building colours |
 | 30 - naval AI + polish | OK - AI builds naval yards and ships; faction unit scale |
+| 31 - naval yard shore placement | OK - naval yards require lake proximity; AI places on the shore |
 
 See `docs/spec.md` for the full roadmap and frozen scope.
