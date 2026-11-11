@@ -45,14 +45,16 @@ namespace CQRa.Sim.Fog
                 return;
             }
 
+            var terrainEntity = terrainQuery.GetSingletonEntity();
+            var heights = entityManager.GetBuffer<TerrainHeightSample>(terrainEntity).AsNativeArray();
             var team0 = entityManager.GetBuffer<FogCell>(fog0).AsNativeArray();
             var team1 = entityManager.GetBuffer<FogCell>(fog1).AsNativeArray();
 
             FogMath.Decay(team0);
             FogMath.Decay(team1);
 
-            StampUnits(entityManager, info, team0, team1);
-            StampBuildings(entityManager, info, team0, team1);
+            StampUnits(entityManager, terrain, heights, info, team0, team1);
+            StampBuildings(entityManager, terrain, heights, info, team0, team1);
 
             BumpRevision(entityManager, fog0);
             BumpRevision(entityManager, fog1);
@@ -104,6 +106,8 @@ namespace CQRa.Sim.Fog
 
         private static void StampUnits(
             EntityManager entityManager,
+            in TerrainInfo terrain,
+            NativeArray<TerrainHeightSample> heights,
             in FogGridInfo info,
             NativeArray<FogCell> team0,
             NativeArray<FogCell> team1)
@@ -127,12 +131,26 @@ namespace CQRa.Sim.Fog
                 var position = entityManager.GetComponentData<LocalTransform>(units[i]).Position;
                 var radius = entityManager.GetComponentData<VisionSource>(units[i]).Radius;
                 var cells = unitInfo.Team == 0 ? team0 : team1;
-                StampCells(cells, info, position, radius);
+                var elevated = entityManager.HasComponent<AirUnit>(units[i]) ||
+                               entityManager.HasComponent<NavalUnit>(units[i]);
+                var eyeHeight = WaterLake.IsNaval(unitInfo.Kind) ? 5f : 2.2f;
+
+                StampCells(
+                    cells,
+                    terrain,
+                    heights,
+                    info,
+                    position,
+                    radius,
+                    !elevated,
+                    eyeHeight);
             }
         }
 
         private static void StampBuildings(
             EntityManager entityManager,
+            in TerrainInfo terrain,
+            NativeArray<TerrainHeightSample> heights,
             in FogGridInfo info,
             NativeArray<FogCell> team0,
             NativeArray<FogCell> team1)
@@ -156,15 +174,20 @@ namespace CQRa.Sim.Fog
                 var position = entityManager.GetComponentData<LocalTransform>(buildings[i]).Position;
                 var radius = entityManager.GetComponentData<VisionSource>(buildings[i]).Radius;
                 var cells = buildingInfo.Team == 0 ? team0 : team1;
-                StampCells(cells, info, position, radius);
+
+                StampCells(cells, terrain, heights, info, position, radius, true, 8f);
             }
         }
 
         private static void StampCells(
             NativeArray<FogCell> cells,
+            in TerrainInfo terrain,
+            NativeArray<TerrainHeightSample> heights,
             in FogGridInfo info,
             float3 position,
-            float radius)
+            float radius,
+            bool useLineOfSight,
+            float eyeHeight)
         {
             var centre = new float2(position.x, position.z);
             var min = FogMath.WorldToCell(info, centre - radius);
@@ -177,6 +200,12 @@ namespace CQRa.Sim.Fog
                 {
                     var cellCentre = info.Origin + (new float2(x, z) + 0.5f) * info.CellSize;
                     if (math.distancesq(cellCentre, centre) > radiusSq)
+                    {
+                        continue;
+                    }
+
+                    if (useLineOfSight &&
+                        TerrainLineOfSight.IsBlocked(heights, terrain, position, eyeHeight, cellCentre))
                     {
                         continue;
                     }

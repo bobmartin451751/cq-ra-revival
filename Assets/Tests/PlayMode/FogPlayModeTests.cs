@@ -67,6 +67,34 @@ namespace CQRa.Tests.PlayMode
         }
 
         [UnityTest]
+        public IEnumerator Fog_TerrainRidgeBlocksLineOfSight()
+        {
+            yield return null;
+
+            var world = World.DefaultGameObjectInjectionWorld;
+            var entityManager = world.EntityManager;
+            var data = CreateRidgeWorld(entityManager, 140f, 71, 1f);
+
+            try
+            {
+                CreateVisionUnit(entityManager, 0, new float3(-20f, 0f, 0f), 80f);
+
+                yield return new WaitForSeconds(0.5f);
+
+                Assert.IsTrue(
+                    FogQuery.IsVisible(entityManager, 0, new float3(-8f, 0f, 0f)),
+                    "ground in front of the ridge stays visible");
+                Assert.IsFalse(
+                    FogQuery.IsVisible(entityManager, 0, new float3(30f, 0f, 0f)),
+                    "the ridge must hide the ground behind it");
+            }
+            finally
+            {
+                Cleanup(entityManager, data);
+            }
+        }
+
+        [UnityTest]
         public IEnumerator Fog_HidesEnemiesOutsidePlayerVision()
         {
             yield return null;
@@ -153,6 +181,30 @@ namespace CQRa.Tests.PlayMode
             var entities = query.ToEntityArray(Allocator.Temp);
             entityManager.DestroyEntity(entities);
             entities.Dispose();
+        }
+
+        private static Entity CreateRidgeWorld(
+            EntityManager entityManager,
+            float size,
+            int resolution,
+            float cellSize)
+        {
+            var entity = CreateFlatWorld(entityManager, size, resolution, cellSize);
+            var heights = entityManager.GetBuffer<TerrainHeightSample>(entity);
+
+            for (var z = 0; z < resolution; z++)
+            {
+                for (var x = 0; x < resolution; x++)
+                {
+                    var worldX = x / (float)(resolution - 1) * size - size * 0.5f;
+                    if (worldX >= -2f && worldX <= 4f)
+                    {
+                        heights[z * resolution + x] = new TerrainHeightSample { Height = 25f };
+                    }
+                }
+            }
+
+            return entity;
         }
 
         private static Entity CreateFlatWorld(EntityManager entityManager, float size, int resolution, float cellSize)
