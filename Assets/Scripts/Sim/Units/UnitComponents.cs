@@ -88,35 +88,18 @@ namespace CQRa.Sim.Units
         public float Damage;
     }
 
-    /// <summary>Naval unit constrained to the lake circle.</summary>
+    /// <summary>Naval unit constrained to the water body it launched into.</summary>
     public struct NavalUnit : IComponentData
     {
-        public float2 Centre;
-        public float Radius;
+        public int BodyIndex;
         public float Level;
     }
 
-    public static class WaterLake
+    public static class NavalRules
     {
-        public static readonly float2 Centre = new float2(-100f, 0f);
-        public const float Radius = 28f;
-        public const float Level = 0.55f;
-
         public static bool IsNaval(UnitKind kind)
         {
             return kind == UnitKind.PatrolBoat || kind == UnitKind.Battleship;
-        }
-
-        public static float3 ClampToLake(float3 point)
-        {
-            var offset = new float2(point.x, point.z) - Centre;
-            var distance = math.length(offset);
-            if (distance > Radius - 3f)
-            {
-                offset = math.normalizesafe(offset, new float2(1f, 0f)) * (Radius - 3f);
-            }
-
-            return new float3(Centre.x + offset.x, Level, Centre.y + offset.y);
         }
     }
 

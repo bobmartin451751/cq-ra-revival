@@ -13,12 +13,20 @@ namespace CQRa.Sim.Base
         WarFactory = 4,
         GunTower = 5,
         Wall = 6,
-        NavalYard = 7,
+        Dock = 7,
     }
 
     /// <summary>Marks a static player building.</summary>
     public struct BuildingTag : IComponentData
     {
+    }
+
+    /// <summary>Links a dock to the water body where its ships launch.</summary>
+    public struct NavalDock : IComponentData
+    {
+        public int BodyIndex;
+        public float3 SpawnPoint;
+        public float Level;
     }
 
     /// <summary>Gameplay identity of a building. Buildings do not move and are not units.</summary>
@@ -150,8 +158,30 @@ namespace CQRa.Sim.Base
             BuildingKind.WarFactory,
             BuildingKind.GunTower,
             BuildingKind.Wall,
-            BuildingKind.NavalYard,
+            BuildingKind.Dock,
         };
+
+        public static bool IsAvailable(BuildingKind kind)
+        {
+            return kind != BuildingKind.Dock || MapWater.HasWater;
+        }
+
+        public static int VisibleBuildableCount
+        {
+            get
+            {
+                var count = 0;
+                for (var i = 0; i < PlayerBuildable.Length; i++)
+                {
+                    if (IsAvailable(PlayerBuildable[i]))
+                    {
+                        count++;
+                    }
+                }
+
+                return count;
+            }
+        }
 
         public static BuildingSpec Get(BuildingKind kind)
         {
@@ -180,8 +210,8 @@ namespace CQRa.Sim.Base
                     return "Gun Tower";
                 case BuildingKind.Wall:
                     return "Wall";
-                case BuildingKind.NavalYard:
-                    return "Naval Yard";
+                case BuildingKind.Dock:
+                    return "Dock";
                 default:
                     return "Construction Yard";
             }

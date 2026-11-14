@@ -164,6 +164,7 @@ namespace CQRa.View
             var offsetX = (_seed % 997) * 0.173f + 13.7f;
             var offsetZ = ((_seed / 7) % 991) * 0.291f + 41.3f;
             var baseFrequency = _noiseScale / _size;
+            var waterBodies = MapRuntime.Current?.WaterBodies;
 
             for (var z = 0; z < _res; z++)
             {
@@ -205,16 +206,21 @@ namespace CQRa.View
                         h += undulation * (1f - blend);
                     }
 
-                    // Carve the naval lake on the western edge of the basin.
-                    var lakeDistance = Mathf.Sqrt(
-                        (wx + 100f) * (wx + 100f) + wz * wz);
-                    if (lakeDistance < 36f)
+                    // Carve every water body on the selected map. Inside the shape the
+                    // ground drops below the water line; a 10 m shore band blends back.
+                    if (waterBodies != null)
                     {
-                        var lakeBlend = Mathf.SmoothStep(
-                            0f,
-                            1f,
-                            Mathf.Clamp01((lakeDistance - 26f) / 10f));
-                        h = Mathf.Lerp(-3f, h, lakeBlend);
+                        for (var i = 0; i < waterBodies.Length; i++)
+                        {
+                            var signed = MapWater.SignedDistance(i, new Unity.Mathematics.float2(wx, wz));
+                            if (signed >= 10f)
+                            {
+                                continue;
+                            }
+
+                            var shore = Mathf.SmoothStep(0f, 1f, Mathf.Clamp01(signed / 10f));
+                            h = Mathf.Lerp(MapWater.Level(i) - 3f, h, shore);
+                        }
                     }
 
                     _heights[z * _res + x] = h;

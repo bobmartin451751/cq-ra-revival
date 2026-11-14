@@ -133,7 +133,7 @@ namespace CQRa.Sim.Fog
                 var cells = unitInfo.Team == 0 ? team0 : team1;
                 var elevated = entityManager.HasComponent<AirUnit>(units[i]) ||
                                entityManager.HasComponent<NavalUnit>(units[i]);
-                var eyeHeight = WaterLake.IsNaval(unitInfo.Kind) ? 5f : 2.2f;
+                var eyeHeight = NavalRules.IsNaval(unitInfo.Kind) ? 5f : 2.2f;
 
                 StampCells(
                     cells,

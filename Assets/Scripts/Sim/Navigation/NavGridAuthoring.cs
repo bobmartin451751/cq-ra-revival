@@ -1,3 +1,4 @@
+using CQRa.Sim.Content;
 using CQRa.View;
 using Unity.Collections;
 using Unity.Entities;
@@ -93,13 +94,8 @@ namespace CQRa.Sim.Navigation
                 }
             }
 
-            var blockers = new NavBlocker[sceneryBlockers.Length + 1];
+            var blockers = new NavBlocker[sceneryBlockers.Length];
             System.Array.Copy(sceneryBlockers, blockers, sceneryBlockers.Length);
-            blockers[blockers.Length - 1] = new NavBlocker
-            {
-                Centre = new float2(-100f, 0f),
-                Radius = 28f,
-            };
 
             var walkable = NavGridBuilder.Build(
                 cellCount,
@@ -110,7 +106,8 @@ namespace CQRa.Sim.Navigation
                 _terrain.SampleHeight,
                 blockers,
                 _edgeMargin,
-                _obstaclePadding);
+                _obstaclePadding,
+                MapWater.ContainsAny);
 
             var entity = entityManager.CreateEntity();
 

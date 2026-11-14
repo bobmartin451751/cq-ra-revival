@@ -1,6 +1,7 @@
 using System.Collections.Generic;
 using CQRa.Sim.Base;
 using CQRa.Sim.Factions;
+using Unity.Mathematics;
 using UnityEngine;
 
 namespace CQRa.View
@@ -536,8 +537,8 @@ namespace CQRa.View
                 new MeshPart(Box(new Vector3(0.4f, 0.5f, 0.4f)), new Vector3(0.5f, 1.55f, 0.5f)));
         }
 
-        /// <summary>Naval yard: dry dock with a slipway and crane.</summary>
-        public static Mesh NavalYard()
+        /// <summary>Shore dock with a slipway and crane.</summary>
+        public static Mesh Dock()
         {
             return Merge(
                 new MeshPart(Box(new Vector3(14f, 4f, 10f)), new Vector3(0f, 2f, 0f)),
@@ -559,7 +560,7 @@ namespace CQRa.View
                 case BuildingKind.WarFactory: return WarFactory();
                 case BuildingKind.GunTower: return GunTower();
                 case BuildingKind.Wall: return Wall();
-                case BuildingKind.NavalYard: return NavalYard();
+                case BuildingKind.Dock: return Dock();
                 default: return ConstructionYard();
             }
         }
@@ -630,7 +631,7 @@ namespace CQRa.View
                 case BuildingKind.WarFactory: return 7.6f;
                 case BuildingKind.GunTower: return 4.6f;
                 case BuildingKind.Wall: return 2.6f;
-                case BuildingKind.NavalYard: return 10.4f;
+                case BuildingKind.Dock: return 10.4f;
                 default: return 8.0f;
             }
         }
@@ -646,7 +647,7 @@ namespace CQRa.View
                 case BuildingKind.WarFactory: return 11f;
                 case BuildingKind.GunTower: return 4f;
                 case BuildingKind.Wall: return 2.2f;
-                case BuildingKind.NavalYard: return 9f;
+                case BuildingKind.Dock: return 9f;
                 default: return 7f;
             }
         }
@@ -671,6 +672,149 @@ namespace CQRa.View
                 new MeshPart(Box(new Vector3(0.5f, 0.5f, 5f)), new Vector3(-0.8f, 2.9f, 6.4f)),
                 new MeshPart(Box(new Vector3(0.5f, 0.5f, 5f)), new Vector3(0.8f, 2.9f, 6.4f)),
                 new MeshPart(Cylinder(0.9f, 1.2f, 8), new Vector3(0f, 2.2f, -5.6f)));
+        }
+
+        /// <summary>Flat polygon mesh on the XZ plane, triangulated by ear clipping.</summary>
+        public static Mesh FlatPolygon(float2[] polygon, float y)
+        {
+            if (polygon == null || polygon.Length < 3)
+            {
+                return Box(new Vector3(1f, 0.02f, 1f));
+            }
+
+            var points = new List<Vector2>(polygon.Length);
+            for (var i = 0; i < polygon.Length; i++)
+            {
+                points.Add(new Vector2(polygon[i].x, polygon[i].y));
+            }
+
+            if (SignedArea(points) < 0f)
+            {
+                points.Reverse();
+            }
+
+            var indices = new List<int>();
+            for (var i = 0; i < points.Count; i++)
+            {
+                indices.Add(i);
+            }
+
+            var triangles = new List<int>();
+            var guard = 0;
+            while (indices.Count > 3 && guard++ < 1024)
+            {
+                var earFound = false;
+                for (var i = 0; i < indices.Count; i++)
+                {
+                    var previous = indices[(i + indices.Count - 1) % indices.Count];
+                    var current = indices[i];
+                    var next = indices[(i + 1) % indices.Count];
+
+                    if (!IsEar(points, indices, previous, current, next))
+                    {
+                        continue;
+                    }
+
+                    triangles.Add(previous);
+                    triangles.Add(current);
+                    triangles.Add(next);
+                    indices.RemoveAt(i);
+                    earFound = true;
+                    break;
+                }
+
+                if (!earFound)
+                {
+                    break;
+                }
+            }
+
+            for (var i = 1; i < indices.Count - 1; i++)
+            {
+                triangles.Add(indices[0]);
+                triangles.Add(indices[i]);
+                triangles.Add(indices[i + 1]);
+            }
+
+            var vertices = new Vector3[points.Count];
+            var normals = new Vector3[points.Count];
+            var uvs = new Vector2[points.Count];
+            for (var i = 0; i < points.Count; i++)
+            {
+                vertices[i] = new Vector3(points[i].x, y, points[i].y);
+                normals[i] = Vector3.up;
+                uvs[i] = new Vector2(points[i].x * 0.05f, points[i].y * 0.05f);
+            }
+
+            var mesh = new Mesh { name = "WaterPolygon" };
+            mesh.SetVertices(vertices);
+            mesh.SetNormals(normals);
+            mesh.SetUVs(0, uvs);
+            mesh.SetTriangles(triangles, 0);
+            mesh.RecalculateBounds();
+            return mesh;
+        }
+
+        private static float SignedArea(List<Vector2> points)
+        {
+            var area = 0f;
+            for (var i = 0; i < points.Count; i++)
+            {
+                var a = points[i];
+                var b = points[(i + 1) % points.Count];
+                area += a.x * b.y - b.x * a.y;
+            }
+
+            return area * 0.5f;
+        }
+
+        private static bool IsEar(
+            List<Vector2> points,
+            List<int> indices,
+            int previous,
+            int current,
+            int next)
+        {
+            var a = points[previous];
+            var b = points[current];
+            var c = points[next];
+
+            var cross = (b.x - a.x) * (c.y - b.y) - (b.y - a.y) * (c.x - b.x);
+            if (cross <= 0f)
+            {
+                return false;
+            }
+
+            for (var i = 0; i < indices.Count; i++)
+            {
+                var index = indices[i];
+                if (index == previous || index == current || index == next)
+                {
+                    continue;
+                }
+
+                if (PointInTriangle(points[index], a, b, c))
+                {
+                    return false;
+                }
+            }
+
+            return true;
+        }
+
+        private static bool PointInTriangle(Vector2 point, Vector2 a, Vector2 b, Vector2 c)
+        {
+            var d1 = Sign(point, a, b);
+            var d2 = Sign(point, b, c);
+            var d3 = Sign(point, c, a);
+            var hasNegative = d1 < 0f || d2 < 0f || d3 < 0f;
+            var hasPositive = d1 > 0f || d2 > 0f || d3 > 0f;
+            return !(hasNegative && hasPositive);
+        }
+
+        private static float Sign(Vector2 p1, Vector2 p2, Vector2 p3)
+        {
+            return (p1.x - p3.x) * (p2.y - p3.y) - (p2.x - p3.x) * (p1.y - p3.y);
         }
 
         /// <summary>Low ore crystal pile, deterministic per seed.</summary>

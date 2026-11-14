@@ -1,4 +1,5 @@
 using CQRa.Sim.Base;
+using CQRa.Sim.Content;
 using CQRa.Sim.Factions;
 using CQRa.Sim.Fog;
 using CQRa.Sim.Units;
@@ -131,10 +132,11 @@ namespace CQRa.Sim.AI
                 return BaseCommands.TryAutoPlace(entityManager, team, BuildingKind.WarFactory);
             }
 
-            if (credits > 1200 &&
-                CountBuildings(entityManager, team, BuildingKind.NavalYard) == 0)
+            if (MapWater.HasWater &&
+                credits > 1200 &&
+                CountBuildings(entityManager, team, BuildingKind.Dock) == 0)
             {
-                return BaseCommands.TryAutoPlaceNavalYard(entityManager, team);
+                return BaseCommands.TryAutoPlaceDock(entityManager, team);
             }
 
             if (credits > 900 &&
@@ -263,7 +265,8 @@ namespace CQRa.Sim.AI
             in AiProfile profile,
             int credits)
         {
-            if (CountBuildings(entityManager, team, BuildingKind.NavalYard) == 0)
+            if (!MapWater.HasWater ||
+                CountBuildings(entityManager, team, BuildingKind.Dock) == 0)
             {
                 return;
             }

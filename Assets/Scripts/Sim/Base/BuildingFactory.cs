@@ -98,7 +98,9 @@ namespace CQRa.Sim.Base
             {
                 entityManager.AddComponent<RefineryTag>(entity);
             }
-            else if (kind == BuildingKind.Barracks || kind == BuildingKind.WarFactory)
+            else if (kind == BuildingKind.Barracks ||
+                     kind == BuildingKind.WarFactory ||
+                     kind == BuildingKind.Dock)
             {
                 entityManager.AddComponent<ProductionTag>(entity);
                 entityManager.AddBuffer<ProductionOrder>(entity);
@@ -122,6 +124,22 @@ namespace CQRa.Sim.Base
                     Range = DefenseCatalog.GunTowerRange,
                     Cooldown = DefenseCatalog.GunTowerCooldown,
                     CooldownRemaining = 0f,
+                });
+            }
+
+            if (kind == BuildingKind.Dock &&
+                MapWater.TryFindDockSite(
+                    new float2(position.x, position.z),
+                    20f,
+                    8f,
+                    out var bodyIndex,
+                    out var launchPoint))
+            {
+                entityManager.AddComponentData(entity, new NavalDock
+                {
+                    BodyIndex = bodyIndex,
+                    SpawnPoint = launchPoint,
+                    Level = MapWater.Level(bodyIndex),
                 });
             }
 

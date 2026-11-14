@@ -180,7 +180,7 @@
       "kind": "PatrolBoat",
       "cost": 600,
       "buildSeconds": 8.0,
-      "producer": "NavalYard",
+      "producer": "Dock",
       "maxHealth": 320,
       "armor": 0.3,
       "damage": 40,
@@ -196,7 +196,7 @@
       "kind": "Battleship",
       "cost": 1400,
       "buildSeconds": 14.0,
-      "producer": "NavalYard",
+      "producer": "Dock",
       "maxHealth": 800,
       "armor": 0.45,
       "damage": 90,
@@ -217,6 +217,6 @@
     { "kind": "WarFactory", "cost": 900, "powerProduced": 0, "powerUsed": 60, "radius": 11, "navRadius": 11, "health": 800, "vision": 32 },
     { "kind": "GunTower", "cost": 500, "powerProduced": 0, "powerUsed": 20, "radius": 4, "navRadius": 4, "health": 450, "vision": 24 },
     { "kind": "Wall", "cost": 50, "powerProduced": 0, "powerUsed": 0, "radius": 2.2, "navRadius": 2.2, "health": 250, "vision": 6 },
-    { "kind": "NavalYard", "cost": 800, "powerProduced": 0, "powerUsed": 40, "radius": 9, "navRadius": 9, "health": 700, "vision": 30 }
+    { "kind": "Dock", "cost": 800, "powerProduced": 0, "powerUsed": 40, "radius": 9, "navRadius": 9, "health": 700, "vision": 30 }
   ]
 }

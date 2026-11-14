@@ -1,3 +1,4 @@
+using CQRa.Sim.Content;
 using CQRa.Sim.Factions;
 using CQRa.Sim.Navigation;
 using CQRa.Sim.Units;
@@ -236,14 +237,46 @@ namespace CQRa.Sim.Base
                 spawnPoint = safe;
             }
 
-            if (WaterLake.IsNaval(kind))
+            if (NavalRules.IsNaval(kind))
             {
-                spawnPoint = WaterLake.ClampToLake(spawnPoint);
-                rallyPoint = WaterLake.ClampToLake(rallyPoint);
+                if (entityManager.HasComponent<NavalDock>(building))
+                {
+                    var dock = entityManager.GetComponentData<NavalDock>(building);
+                    spawnPoint = dock.SpawnPoint;
+                    rallyPoint = MapWater.ClampPoint(dock.BodyIndex, rallyPoint, 2f);
+                }
+                else if (MapWater.HasWater &&
+                         MapWater.TryGetSpawn(0, new float2(spawnPoint.x, spawnPoint.z), 4f, out var waterSpawn))
+                {
+                    spawnPoint = waterSpawn;
+                    rallyPoint = MapWater.ClampPoint(0, rallyPoint, 2f);
+                }
             }
 
             var yaw = math.atan2(direction.x, direction.y);
             var unit = UnitFactory.SpawnDefault(entityManager, spawnPoint, yaw, kind, info.Team);
+
+            if (NavalRules.IsNaval(kind) && entityManager.HasComponent<NavalUnit>(unit))
+            {
+                var dock = entityManager.HasComponent<NavalDock>(building)
+                    ? entityManager.GetComponentData<NavalDock>(building)
+                    : default;
+                var bodyIndex = entityManager.HasComponent<NavalDock>(building)
+                    ? dock.BodyIndex
+                    : 0;
+                var level = entityManager.HasComponent<NavalDock>(building)
+                    ? dock.Level
+                    : MapWater.HasWater ? MapWater.Level(0) : 0f;
+
+                var naval = entityManager.GetComponentData<NavalUnit>(unit);
+                naval.BodyIndex = bodyIndex;
+                naval.Level = level;
+                entityManager.SetComponentData(unit, naval);
+
+                var transform = entityManager.GetComponentData<LocalTransform>(unit);
+                transform.Position = new float3(spawnPoint.x, level, spawnPoint.z);
+                entityManager.SetComponentData(unit, transform);
+            }
 
             var move = entityManager.GetComponentData<MoveTarget>(unit);
             move.Destination = rallyPoint;

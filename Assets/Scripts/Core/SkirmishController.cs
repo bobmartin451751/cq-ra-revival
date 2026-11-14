@@ -377,7 +377,7 @@ namespace CQRa.Core
             GUI.color = previous;
 
             var width = 540f;
-            var height = 540f;
+            var height = 570f;
             var x = (Screen.width - width) * 0.5f;
             var y = (Screen.height - height) * 0.5f;
             var panel = new Rect(x, y, width, height);
@@ -502,7 +502,11 @@ namespace CQRa.Core
                     : new Color(0.28f, 0.26f, 0.22f);
 
                 if (GUI.Button(
-                        new Rect(x + 30f + i * (mapWidth + 8f), y + 372f, mapWidth, 30f),
+                        new Rect(
+                            x + 30f + (i % 3) * (mapWidth + 8f),
+                            y + 372f + (i / 3) * 34f,
+                            mapWidth,
+                            30f),
                         map.Name,
                         _button))
                 {
@@ -513,12 +517,12 @@ namespace CQRa.Core
             }
 
             GUI.Label(
-                new Rect(x + 30f, y + 406f, width - 60f, 28f),
+                new Rect(x + 30f, y + 442f, width - 60f, 28f),
                 MapCatalog.Get(_selectedMap).Description,
                 _label);
 
             if (GUI.Button(
-                    new Rect(x + 30f, y + 440f, width - 60f, 44f),
+                    new Rect(x + 30f, y + 476f, width - 60f, 44f),
                     "START MATCH",
                     _button))
             {
@@ -541,7 +545,7 @@ namespace CQRa.Core
             }
 
             GUI.Label(
-                new Rect(x + 30f, y + 492f, width - 60f, 24f),
+                new Rect(x + 30f, y + 528f, width - 60f, 24f),
                 "WASD/edges pan Â· wheel zoom Â· Q/E rotate",
                 _label);
         }

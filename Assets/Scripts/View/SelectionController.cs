@@ -421,6 +421,13 @@ namespace CQRa.View
                 return;
             }
 
+            var kind = BuildCatalog.PlayerBuildable[index];
+            if (!BuildCatalog.IsAvailable(kind))
+            {
+                ShowMessage("Dock requires a map with water");
+                return;
+            }
+
             var world = World.DefaultGameObjectInjectionWorld;
             if (world == null || !world.IsCreated ||
                 BaseCommands.FindConstructionYard(world.EntityManager, BuildCatalog.PlayerTeam) == Entity.Null)
@@ -431,7 +438,7 @@ namespace CQRa.View
 
             _armedBuild = index;
             _armedCommand = ArmedCommand.None;
-            ShowMessage($"Placing {BuildCatalog.DisplayName(BuildCatalog.PlayerBuildable[index])} - left-click to place, Esc to cancel");
+            ShowMessage($"Placing {BuildCatalog.DisplayName(kind)} - left-click to place, Esc to cancel");
         }
 
         private Entity FindSelectedProducer()
@@ -759,7 +766,9 @@ namespace CQRa.View
                 case BuildFailure.TooFar:
                     return "Too far from the MCV";
                 case BuildFailure.NotNearWater:
-                    return "Naval Yard must be near the lake";
+                    return "Dock must be placed on a shoreline";
+                case BuildFailure.NoWater:
+                    return "This map has no water";
                 default:
                     return string.Empty;
             }
@@ -1711,8 +1720,9 @@ namespace CQRa.View
             }
 
             var rows = _sidebarTab == 0
-                ? BuildCatalog.PlayerBuildable.Length
-                : ProductionCatalog.RosterFor(FactionRuntime.ForTeam(BuildCatalog.PlayerTeam)).Length;
+                ? BuildCatalog.VisibleBuildableCount
+                : ProductionCatalog.VisibleRosterCount(
+                    FactionRuntime.ForTeam(BuildCatalog.PlayerTeam));
             var queueY = rowY + rows * 31f + 4f;
 
             var queueText = "Queue: select a producer";
@@ -1737,6 +1747,11 @@ namespace CQRa.View
             for (var i = 0; i < BuildCatalog.PlayerBuildable.Length; i++)
             {
                 var kind = BuildCatalog.PlayerBuildable[i];
+                if (!BuildCatalog.IsAvailable(kind))
+                {
+                    continue;
+                }
+
                 var spec = BuildCatalog.Get(kind);
                 var label = $"[{i + 1}] {BuildCatalog.DisplayName(kind)}    {spec.Cost}";
 
@@ -1766,6 +1781,11 @@ namespace CQRa.View
             for (var i = 0; i < roster.Length; i++)
             {
                 var kind = roster[i];
+                if (!ProductionCatalog.IsAvailable(kind))
+                {
+                    continue;
+                }
+
                 var spec = ProductionCatalog.Get(kind);
                 var name = ProductionCatalog.UnitName(faction, kind);
                 var key = ProductionCatalog.Hotkey(i);

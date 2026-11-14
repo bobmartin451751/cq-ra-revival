@@ -1,3 +1,4 @@
+using CQRa.Sim.Content;
 using CQRa.Sim.Factions;
 using CQRa.Sim.Navigation;
 using CQRa.Sim.Units;
@@ -21,6 +22,7 @@ namespace CQRa.Sim.Base
         AlreadyDeployed = 8,
         TooFar = 9,
         NotNearWater = 10,
+        NoWater = 11,
     }
 
     public enum BuildingCommandFailure : byte
@@ -218,10 +220,15 @@ namespace CQRa.Sim.Base
 
             var yardPosition = entityManager.GetComponentData<LocalTransform>(yard).Position;
             var point2 = new float2(point.x, point.z);
-            if (kind == BuildingKind.NavalYard)
+            if (kind == BuildingKind.Dock)
             {
-                var lakeDistance = math.distance(point2, WaterLake.Centre);
-                if (lakeDistance > WaterLake.Radius + 28f)
+                if (!MapWater.HasWater)
+                {
+                    failure = BuildFailure.NoWater;
+                    return false;
+                }
+
+                if (!MapWater.TryFindDockSite(point2, 20f, 8f, out _, out _))
                 {
                     failure = BuildFailure.NotNearWater;
                     return false;
@@ -752,25 +759,59 @@ namespace CQRa.Sim.Base
             return false;
         }
 
-        /// <summary>Finds a shore site around the lake for the AI naval yard.</summary>
-        public static bool TryAutoPlaceNavalYard(EntityManager entityManager, int team)
+        /// <summary>Finds a shore site around any water body for the AI dock.</summary>
+        public static bool TryAutoPlaceDock(EntityManager entityManager, int team)
         {
-            var radius = WaterLake.Radius + 8f;
-            for (var step = 0; step < 24; step++)
+            if (!MapWater.HasWater)
             {
-                var angle = step * math.PI / 12f;
-                var point = new float3(
-                    WaterLake.Centre.x + math.cos(angle) * radius,
-                    0f,
-                    WaterLake.Centre.y + math.sin(angle) * radius);
+                return false;
+            }
 
-                if (TryPlaceBuilding(entityManager, team, BuildingKind.NavalYard, point, out _))
+            for (var bodyIndex = 0; bodyIndex < MapWater.BodyCount; bodyIndex++)
+            {
+                var body = MapWater.Body(bodyIndex);
+                if (body == null)
                 {
-                    return true;
+                    continue;
+                }
+
+                var centre = MapWater.Centre(bodyIndex);
+                var extent = body.Kind == WaterShapeKind.Circle
+                    ? body.Radius
+                    : PontoonRadius(body.Points, centre);
+
+                for (var step = 0; step < 32; step++)
+                {
+                    var angle = step * math.PI / 16f;
+                    var point = new float3(
+                        centre.x + math.cos(angle) * (extent + 10f),
+                        0f,
+                        centre.y + math.sin(angle) * (extent + 10f));
+
+                    if (TryPlaceBuilding(entityManager, team, BuildingKind.Dock, point, out _))
+                    {
+                        return true;
+                    }
                 }
             }
 
             return false;
+        }
+
+        private static float PontoonRadius(float2[] points, float2 centre)
+        {
+            if (points == null || points.Length == 0)
+            {
+                return 0f;
+            }
+
+            var max = 0f;
+            for (var i = 0; i < points.Length; i++)
+            {
+                max = math.max(max, math.distance(points[i], centre));
+            }
+
+            return max;
         }
 
         /// <summary>

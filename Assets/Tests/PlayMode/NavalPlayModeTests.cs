@@ -1,4 +1,5 @@
 using System.Collections;
+using CQRa.Sim.Content;
 using CQRa.Sim.Navigation;
 using CQRa.Sim.Units;
 using NUnit.Framework;
@@ -21,6 +22,9 @@ namespace CQRa.Tests.PlayMode
             var entityManager = world.EntityManager;
             var data = CreateFlatWorld(entityManager, 240f, 241, 1f);
             var entity = entityManager.CreateEntity();
+            MapRuntime.Select(0);
+            var body = MapWater.Body(0);
+            var level = body.Level;
 
             try
             {
@@ -43,26 +47,28 @@ namespace CQRa.Tests.PlayMode
                 entityManager.AddComponentData(entity, new UnitMotion());
                 entityManager.AddComponentData(entity, new NavalUnit
                 {
-                    Centre = WaterLake.Centre,
-                    Radius = WaterLake.Radius,
-                    Level = WaterLake.Level,
+                    BodyIndex = 0,
+                    Level = level,
                 });
+                var start = MapWater.ClampPoint(
+                    0,
+                    new float3(body.Centre.x + body.Radius - 10f, level, body.Centre.y),
+                    4f);
                 entityManager.AddComponentData(
                     entity,
                     LocalTransform.FromPositionRotationScale(
-                        new float3(-80f, WaterLake.Level, 0f),
+                        start,
                         quaternion.identity,
                         1f));
 
                 yield return new WaitForSeconds(2f);
 
                 var position = entityManager.GetComponentData<LocalTransform>(entity).Position;
-                var distance = math.distance(
-                    new float2(position.x, position.z),
-                    WaterLake.Centre);
 
-                Assert.LessOrEqual(distance, WaterLake.Radius, "ships must stay in the lake");
-                Assert.AreEqual(WaterLake.Level, position.y, 0.01f);
+                Assert.IsTrue(
+                    MapWater.Contains(0, new float2(position.x, position.z)),
+                    "ships must stay in their water body");
+                Assert.AreEqual(level, position.y, 0.01f);
             }
             finally
             {
@@ -75,6 +81,8 @@ namespace CQRa.Tests.PlayMode
                 {
                     entityManager.DestroyEntity(data);
                 }
+
+                MapRuntime.Reset();
             }
         }
 

@@ -19,10 +19,52 @@ namespace CQRa.Sim.Content
         }
     }
 
+    public enum WaterShapeKind : byte
+    {
+        Circle = 0,
+        Polygon = 1,
+    }
+
     /// <summary>
-    /// Hand-authored skirmish map. Terrain shape, scenery, ore, crates and both
-    /// starting positions are data; the lake stays at the same western site so the
-    /// naval rules remain consistent across maps.
+    /// One connected water area. A body is either a circle or a simple polygon.
+    /// Polygon points are world-space XZ and must not self-intersect.
+    /// </summary>
+    public sealed class WaterBody
+    {
+        public string Name;
+        public WaterShapeKind Kind;
+        public float2 Centre;
+        public float Radius;
+        public float2[] Points;
+        public float Level;
+
+        public static WaterBody Circle(string name, float x, float z, float radius, float level)
+        {
+            return new WaterBody
+            {
+                Name = name,
+                Kind = WaterShapeKind.Circle,
+                Centre = new float2(x, z),
+                Radius = radius,
+                Level = level,
+            };
+        }
+
+        public static WaterBody Polygon(string name, float level, params float2[] points)
+        {
+            return new WaterBody
+            {
+                Name = name,
+                Kind = WaterShapeKind.Polygon,
+                Points = points,
+                Level = level,
+            };
+        }
+    }
+
+    /// <summary>
+    /// Hand-authored skirmish map. Terrain shape, scenery, water, ore, crates and both
+    /// starting positions are data; water bodies are either circles or simple polygons.
     /// </summary>
     public sealed class MapDefinition
     {
@@ -37,8 +79,11 @@ namespace CQRa.Sim.Content
         public float2 PlayerStart;
         public float2 AiStart;
         public MapObstacle[] Obstacles;
+        public WaterBody[] WaterBodies;
         public float2[] OrePositions;
         public float2[] CratePositions;
+
+        public bool HasWater => WaterBodies != null && WaterBodies.Length > 0;
     }
 
     /// <summary>
@@ -61,6 +106,10 @@ namespace CQRa.Sim.Content
                 BasinBlend = 16f,
                 PlayerStart = new float2(0f, -32f),
                 AiStart = new float2(0f, 32f),
+                WaterBodies = new[]
+                {
+                    WaterBody.Circle("West Lake", -100f, 0f, 28f, 0.55f),
+                },
                 Obstacles = new[]
                 {
                     new MapObstacle(-24f, 6f, 7f, 9f, 11),
@@ -96,7 +145,7 @@ namespace CQRa.Sim.Content
             {
                 Id = "rusted-flats",
                 Name = "Rusted Flats",
-                Description = "Wide low ground with long sight lines and a contested centre.",
+                Description = "Wide dry low ground with long sight lines and no naval access.",
                 Seed = 4241,
                 MaxHeight = 14f,
                 NoiseScale = 5.6f,
@@ -104,6 +153,7 @@ namespace CQRa.Sim.Content
                 BasinBlend = 18f,
                 PlayerStart = new float2(-34f, -30f),
                 AiStart = new float2(34f, 30f),
+                WaterBodies = System.Array.Empty<WaterBody>(),
                 Obstacles = new[]
                 {
                     new MapObstacle(-16f, 0f, 9f, 7f, 103),
@@ -140,22 +190,38 @@ namespace CQRa.Sim.Content
             {
                 Id = "broken-ridge",
                 Name = "Broken Ridge",
-                Description = "Tight basin, high ridges and short, brutal engagement lanes.",
+                Description = "Tight basin around a large polygonal central lake.",
                 Seed = 7717,
                 MaxHeight = 44f,
                 NoiseScale = 2.8f,
-                BasinRadius = 44f,
-                BasinBlend = 20f,
+                BasinRadius = 54f,
+                BasinBlend = 24f,
                 PlayerStart = new float2(-30f, -32f),
                 AiStart = new float2(30f, 32f),
+                WaterBodies = new[]
+                {
+                    WaterBody.Polygon(
+                        "Ridge Lake",
+                        0.55f,
+                        new float2(-8f, -32f),
+                        new float2(14f, -34f),
+                        new float2(34f, -18f),
+                        new float2(36f, 4f),
+                        new float2(26f, 24f),
+                        new float2(8f, 34f),
+                        new float2(-12f, 30f),
+                        new float2(-26f, 14f),
+                        new float2(-30f, -6f),
+                        new float2(-22f, -24f)),
+                },
                 Obstacles = new[]
                 {
-                    new MapObstacle(-10f, 0f, 10f, 15f, 211),
-                    new MapObstacle(14f, 6f, 8f, 13f, 227),
-                    new MapObstacle(-30f, 22f, 6f, 9f, 241),
-                    new MapObstacle(34f, -18f, 6f, 8f, 263),
-                    new MapObstacle(-44f, -16f, 5f, 7f, 277),
-                    new MapObstacle(6f, 38f, 5f, 8f, 293),
+                    new MapObstacle(-48f, -18f, 6f, 9f, 211),
+                    new MapObstacle(48f, 8f, 6f, 8f, 227),
+                    new MapObstacle(-32f, 42f, 5f, 7f, 241),
+                    new MapObstacle(38f, -40f, 5f, 8f, 263),
+                    new MapObstacle(-58f, 25f, 4f, 6f, 277),
+                    new MapObstacle(55f, -22f, 4f, 7f, 293),
                 },
                 OrePositions = new[]
                 {
@@ -172,12 +238,119 @@ namespace CQRa.Sim.Content
                 },
                 CratePositions = new[]
                 {
-                    new float2(0f, 0f),
+                    new float2(50f, 0f),
                     new float2(-38f, 32f),
                     new float2(40f, -28f),
                     new float2(-54f, -42f),
                     new float2(58f, 22f),
                     new float2(16f, -56f),
+                },
+            },
+            new MapDefinition
+            {
+                Id = "twin-shallows",
+                Name = "Twin Shallows",
+                Description = "Two separate lakes on opposite flanks, each with its own dock.",
+                Seed = 5153,
+                MaxHeight = 22f,
+                NoiseScale = 4.2f,
+                BasinRadius = 50f,
+                BasinBlend = 18f,
+                PlayerStart = new float2(-34f, -30f),
+                AiStart = new float2(34f, 30f),
+                WaterBodies = new[]
+                {
+                    WaterBody.Circle("South-West Shallows", -78f, -44f, 24f, 0.55f),
+                    WaterBody.Circle("North-East Shallows", 78f, 44f, 24f, 0.55f),
+                },
+                Obstacles = new[]
+                {
+                    new MapObstacle(0f, 0f, 7f, 8f, 331),
+                    new MapObstacle(-14f, 22f, 6f, 7f, 347),
+                    new MapObstacle(18f, -22f, 6f, 7f, 359),
+                    new MapObstacle(-50f, 38f, 5f, 6f, 373),
+                    new MapObstacle(50f, -38f, 5f, 6f, 389),
+                },
+                OrePositions = new[]
+                {
+                    new float2(-56f, 10f),
+                    new float2(56f, -10f),
+                    new float2(-20f, -70f),
+                    new float2(20f, 70f),
+                    new float2(-110f, 20f),
+                    new float2(110f, -20f),
+                    new float2(-30f, 60f),
+                    new float2(30f, -60f),
+                    new float2(100f, 80f),
+                    new float2(-100f, -80f),
+                },
+                CratePositions = new[]
+                {
+                    new float2(0f, 0f),
+                    new float2(-46f, 44f),
+                    new float2(52f, -34f),
+                    new float2(-64f, 10f),
+                    new float2(72f, 18f),
+                    new float2(24f, -58f),
+                },
+            },
+            new MapDefinition
+            {
+                Id = "flooded-delta",
+                Name = "Flooded Delta",
+                Description = "A huge irregular western delta with deep inlets and open water.",
+                Seed = 8929,
+                MaxHeight = 30f,
+                NoiseScale = 3.4f,
+                BasinRadius = 54f,
+                BasinBlend = 20f,
+                PlayerStart = new float2(-30f, -32f),
+                AiStart = new float2(30f, 32f),
+                WaterBodies = new[]
+                {
+                    WaterBody.Polygon(
+                        "Delta",
+                        0.55f,
+                        new float2(-125f, -30f),
+                        new float2(-95f, -48f),
+                        new float2(-55f, -44f),
+                        new float2(-38f, -20f),
+                        new float2(-44f, 10f),
+                        new float2(-28f, 32f),
+                        new float2(-52f, 52f),
+                        new float2(-92f, 48f),
+                        new float2(-118f, 24f),
+                        new float2(-132f, 0f)),
+                },
+                Obstacles = new[]
+                {
+                    new MapObstacle(0f, 0f, 7f, 9f, 401),
+                    new MapObstacle(20f, -26f, 6f, 8f, 419),
+                    new MapObstacle(-20f, 50f, 6f, 9f, 431),
+                    new MapObstacle(52f, 26f, 5f, 7f, 443),
+                    new MapObstacle(-58f, 82f, 5f, 7f, 457),
+                },
+                OrePositions = new[]
+                {
+                    new float2(40f, -60f),
+                    new float2(40f, 60f),
+                    new float2(20f, 0f),
+                    new float2(70f, -20f),
+                    new float2(70f, 30f),
+                    new float2(100f, 60f),
+                    new float2(100f, -60f),
+                    new float2(0f, -80f),
+                    new float2(0f, 80f),
+                    new float2(-145f, 50f),
+                },
+                CratePositions = new[]
+                {
+                    new float2(0f, 0f),
+                    new float2(20f, 50f),
+                    new float2(40f, -34f),
+                    new float2(-20f, -62f),
+                    new float2(60f, 18f),
+                    new float2(24f, -58f),
                 },
             },
         };

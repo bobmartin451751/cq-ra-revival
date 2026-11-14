@@ -25,7 +25,8 @@ namespace CQRa.Sim.Navigation
             Func<float, float, float> sampleHeight,
             IReadOnlyList<NavBlocker> blockers,
             float edgeMargin,
-            float obstaclePadding)
+            float obstaclePadding,
+            Func<float2, bool> extraBlocked = null)
         {
             if (sizeX <= 0 || sizeZ <= 0 || cellSize <= 0f)
             {
@@ -74,6 +75,12 @@ namespace CQRa.Sim.Navigation
                             cells[cell] = 0;
                             continue;
                         }
+                    }
+
+                    if (extraBlocked != null && extraBlocked(new float2(cx, cz)))
+                    {
+                        cells[cell] = 0;
+                        continue;
                     }
 
                     var h = sampleHeight(cx, cz);

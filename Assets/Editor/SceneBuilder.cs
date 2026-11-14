@@ -211,26 +211,8 @@ namespace CQRa.EditorTools
 
         private static void CreateWater()
         {
-            var shader = Shader.Find("Universal Render Pipeline/Lit");
-            var material = new Material(shader) { name = "Water" };
-            material.SetFloat("_Surface", 1f);
-            material.SetFloat("_Blend", 0f);
-            material.SetFloat("_SrcBlend", (float)BlendMode.SrcAlpha);
-            material.SetFloat("_DstBlend", (float)BlendMode.OneMinusSrcAlpha);
-            material.SetFloat("_ZWrite", 0f);
-            material.SetColor("_BaseColor", new Color(0.10f, 0.28f, 0.34f, 0.72f));
-            material.SetFloat("_Smoothness", 0.80f);
-            material.SetFloat("_Metallic", 0.10f);
-            material.EnableKeyword("_SURFACE_TYPE_TRANSPARENT");
-            material.renderQueue = (int)RenderQueue.Transparent;
-
             var go = new GameObject("Water");
-            go.transform.position = new Vector3(-100f, 0.55f, 0f);
-            go.AddComponent<MeshFilter>().sharedMesh = ProceduralMeshes.Cylinder(30f, 0.08f, 48);
-            var renderer = go.AddComponent<MeshRenderer>();
-            renderer.sharedMaterial = material;
-            renderer.shadowCastingMode = ShadowCastingMode.Off;
-            renderer.receiveShadows = false;
+            go.AddComponent<WaterRenderer>();
         }
 
         private static void CreateContent()

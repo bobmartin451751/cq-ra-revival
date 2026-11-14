@@ -92,6 +92,26 @@ namespace CQRa.Sim.Base
             return RosterFor(FactionRuntime.ForTeam(team));
         }
 
+        public static bool IsAvailable(UnitKind kind)
+        {
+            return !NavalRules.IsNaval(kind) || MapWater.HasWater;
+        }
+
+        public static int VisibleRosterCount(FactionId faction)
+        {
+            var roster = RosterFor(faction);
+            var count = 0;
+            for (var i = 0; i < roster.Length; i++)
+            {
+                if (IsAvailable(roster[i]))
+                {
+                    count++;
+                }
+            }
+
+            return count;
+        }
+
         public static string UnitName(FactionId faction, UnitKind kind)
         {
             switch (faction)

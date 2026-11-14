@@ -1,5 +1,6 @@
 using System.Collections;
 using CQRa.Sim.Base;
+using CQRa.Sim.Content;
 using CQRa.Sim.Navigation;
 using CQRa.Sim.Units;
 using CQRa.View;
@@ -87,6 +88,79 @@ namespace CQRa.Tests.PlayMode
             }
             finally
             {
+                Cleanup(entityManager, data, material);
+            }
+        }
+
+        [UnityTest]
+        public IEnumerator Dock_ProducesShipsInsideItsWaterBody()
+        {
+            yield return null;
+
+            var world = World.DefaultGameObjectInjectionWorld;
+            var entityManager = world.EntityManager;
+            var data = CreateFlatWorld(entityManager, 240f, 121, 1f);
+            var material = new Material(Shader.Find("Universal Render Pipeline/Lit"));
+            MapRuntime.Select(0);
+
+            try
+            {
+                var body = MapWater.Body(0);
+                var dockPosition = new float3(
+                    body.Centre.x + body.Radius + 5f,
+                    0f,
+                    body.Centre.y);
+                CreateEconomy(entityManager, 5000, 5000);
+                var dock = BuildingFactory.SpawnBuilding(
+                    entityManager, 0, BuildingKind.Dock, dockPosition);
+
+                Assert.IsTrue(
+                    entityManager.HasComponent<NavalDock>(dock),
+                    "a shoreline dock records its water body");
+
+                Assert.IsTrue(
+                    ProductionCommands.TryEnqueue(
+                        entityManager, 0, UnitKind.PatrolBoat, dock, out var failure),
+                    $"dock should queue a patrol boat ({failure})");
+
+                var queue = entityManager.GetBuffer<ProductionOrder>(dock);
+                var order = queue[0];
+                order.Remaining = 0.05f;
+                queue[0] = order;
+
+                yield return new WaitForSeconds(0.6f);
+
+                using var unitQuery = entityManager.CreateEntityQuery(
+                    ComponentType.ReadOnly<UnitInfo>(),
+                    ComponentType.ReadOnly<NavalUnit>(),
+                    ComponentType.ReadOnly<LocalTransform>());
+                using var units = unitQuery.ToEntityArray(Allocator.Temp);
+
+                var produced = Entity.Null;
+                foreach (var unit in units)
+                {
+                    var info = entityManager.GetComponentData<UnitInfo>(unit);
+                    if (info.Team == 0 && info.Kind == UnitKind.PatrolBoat)
+                    {
+                        produced = unit;
+                        break;
+                    }
+                }
+
+                Assert.AreNotEqual(Entity.Null, produced, "the dock must launch a patrol boat");
+
+                var naval = entityManager.GetComponentData<NavalUnit>(produced);
+                var position = entityManager.GetComponentData<LocalTransform>(produced).Position;
+
+                Assert.AreEqual(0, naval.BodyIndex);
+                Assert.AreEqual(body.Level, position.y, 0.01f);
+                Assert.IsTrue(
+                    MapWater.Contains(0, new float2(position.x, position.z)),
+                    "the launched ship must start inside the dock's water");
+            }
+            finally
+            {
+                MapRuntime.Reset();
                 Cleanup(entityManager, data, material);
             }
         }

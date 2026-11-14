@@ -1,3 +1,4 @@
+using CQRa.Sim.Content;
 using CQRa.Sim.Navigation;
 using Unity.Collections;
 using Unity.Entities;
@@ -107,6 +108,7 @@ namespace CQRa.Sim.Units
                 var isAir = air[i] == 1;
                 var isNaval = air[i] == 2;
                 var altitude = isAir ? entityManager.GetComponentData<AirUnit>(entity).Altitude : 0f;
+                var naval = isNaval ? entityManager.GetComponentData<NavalUnit>(entity) : default;
 
                 if (entityManager.HasComponent<DeployState>(entity) &&
                     entityManager.GetComponentData<DeployState>(entity).Deployed != 0)
@@ -239,13 +241,7 @@ namespace CQRa.Sim.Units
 
                 if (isNaval)
                 {
-                    var offset = next - WaterLake.Centre;
-                    var distanceFromCentre = math.length(offset);
-                    var maxRadius = WaterLake.Radius - 2f;
-                    if (distanceFromCentre > maxRadius)
-                    {
-                        next = WaterLake.Centre + math.normalizesafe(offset, new float2(1f, 0f)) * maxRadius;
-                    }
+                    next = MapWater.ClampInside(naval.BodyIndex, next, 2f);
                 }
 
                 if (!isAir && !isNaval && !IsWalkable(nav, gridInfo, next))
@@ -285,7 +281,7 @@ namespace CQRa.Sim.Units
                 }
 
                 var height = isNaval
-                    ? WaterLake.Level
+                    ? naval.Level
                     : TerrainSampler.Sample(heights, terrainInfo, next.x, next.y) + altitude;
 
                 transform.Position = new float3(next.x, height, next.y);

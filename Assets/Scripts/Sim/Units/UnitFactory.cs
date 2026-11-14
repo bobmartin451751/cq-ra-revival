@@ -222,13 +222,12 @@ namespace CQRa.Sim.Units
                 });
             }
 
-            if (WaterLake.IsNaval(kind))
+            if (NavalRules.IsNaval(kind))
             {
                 entityManager.AddComponentData(entity, new NavalUnit
                 {
-                    Centre = WaterLake.Centre,
-                    Radius = WaterLake.Radius,
-                    Level = WaterLake.Level,
+                    BodyIndex = 0,
+                    Level = MapWater.HasWater ? MapWater.Level(0) : 0f,
                 });
             }
 
