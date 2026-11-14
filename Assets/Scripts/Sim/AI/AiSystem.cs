@@ -296,10 +296,31 @@ namespace CQRa.Sim.AI
                 return;
             }
 
+            var choiceCount = 0;
+            for (var i = 0; i < roster.Length; i++)
+            {
+                if (AirCatalog.IsAircraft(roster[i]) && !AirCatalog.IsTransport(roster[i]))
+                {
+                    choiceCount++;
+                }
+            }
+
+            if (choiceCount == 0)
+            {
+                return;
+            }
+
+            var start = air % choiceCount;
+            var seen = 0;
             for (var i = 0; i < roster.Length; i++)
             {
                 var kind = roster[i];
                 if (!AirCatalog.IsAircraft(kind) || AirCatalog.IsTransport(kind))
+                {
+                    continue;
+                }
+
+                if (seen++ < start)
                 {
                     continue;
                 }
