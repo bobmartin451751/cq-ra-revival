@@ -59,13 +59,39 @@ namespace CQRa.Sim.Base
             UnitKind.Tank,
             UnitKind.Harvester,
             UnitKind.Mcv,
-            UnitKind.Gunship,
             UnitKind.Engineer,
         };
 
-        private static readonly UnitKind[] AshfallRoster = WithUnique(UnitKind.Thumper, UnitKind.Rig);
-        private static readonly UnitKind[] VerdantRoster = WithUnique(UnitKind.Mantis, UnitKind.Sower);
-        private static readonly UnitKind[] MeridianRoster = WithUnique(UnitKind.Skyfall);
+        private static readonly UnitKind[] AshfallAir =
+        {
+            UnitKind.Gunship,
+            UnitKind.AshfallFighter,
+            UnitKind.AshfallBomber,
+            UnitKind.AshfallTransport,
+        };
+
+        private static readonly UnitKind[] VerdantAir =
+        {
+            UnitKind.VerdantFighter,
+            UnitKind.VerdantBomber,
+            UnitKind.VerdantAttackHeli,
+            UnitKind.VerdantTransport,
+        };
+
+        private static readonly UnitKind[] MeridianAir =
+        {
+            UnitKind.Skyfall,
+            UnitKind.MeridianBomber,
+            UnitKind.MeridianAttackHeli,
+            UnitKind.MeridianTransport,
+        };
+
+        private static readonly UnitKind[] AshfallRoster =
+            WithUnique(AshfallAir, UnitKind.Thumper, UnitKind.Rig);
+        private static readonly UnitKind[] VerdantRoster =
+            WithUnique(VerdantAir, UnitKind.Mantis, UnitKind.Sower);
+        private static readonly UnitKind[] MeridianRoster =
+            WithUnique(MeridianAir);
 
         public static UnitKind UniqueFor(FactionId faction)
         {
@@ -136,10 +162,10 @@ namespace CQRa.Sim.Base
             return Get(kind).Label;
         }
 
-        private static UnitKind[] WithUnique(params UnitKind[] uniques)
+        private static UnitKind[] WithUnique(UnitKind[] air, params UnitKind[] uniques)
         {
             var naval = new[] { UnitKind.PatrolBoat, UnitKind.Battleship };
-            var roster = new UnitKind[Buildable.Length + uniques.Length + naval.Length];
+            var roster = new UnitKind[Buildable.Length + uniques.Length + naval.Length + air.Length];
             var index = 0;
 
             for (var i = 0; i < Buildable.Length; i++)
@@ -155,6 +181,11 @@ namespace CQRa.Sim.Base
             for (var i = 0; i < naval.Length; i++)
             {
                 roster[index++] = naval[i];
+            }
+
+            for (var i = 0; i < air.Length; i++)
+            {
+                roster[index++] = air[i];
             }
 
             return roster;

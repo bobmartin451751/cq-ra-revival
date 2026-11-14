@@ -72,7 +72,7 @@ namespace CQRa.Tests.PlayMode
         }
 
         [UnityTest]
-        public IEnumerator WarFactory_ProducesGunship()
+        public IEnumerator Airfield_ProducesGunship()
         {
             yield return null;
 
@@ -86,7 +86,7 @@ namespace CQRa.Tests.PlayMode
             {
                 CreateEconomy(entityManager, 3000, 3000);
                 var factory = BuildingFactory.SpawnBuilding(
-                    entityManager, 0, BuildingKind.WarFactory, new float3(-30f, 0f, 0f));
+                    entityManager, 0, BuildingKind.Airfield, new float3(-30f, 0f, 0f));
 
                 Assert.IsTrue(
                     ProductionCommands.TryEnqueue(
@@ -117,7 +117,7 @@ namespace CQRa.Tests.PlayMode
                     }
                 }
 
-                Assert.AreNotEqual(Entity.Null, produced, "the war factory must produce a gunship");
+                Assert.AreNotEqual(Entity.Null, produced, "the airfield must produce a gunship");
                 Assert.IsTrue(entityManager.HasComponent<AirUnit>(produced));
             }
             finally

@@ -117,7 +117,7 @@ namespace CQRa.Sim.Content
             },
             new UnitDefinition
             {
-                Kind = UnitKind.Gunship, Cost = 900, BuildSeconds = 10f, Producer = BuildingKind.WarFactory,
+                Kind = UnitKind.Gunship, Cost = 900, BuildSeconds = 10f, Producer = BuildingKind.Airfield,
                 MaxHealth = 180f, Armor = 0.20f, Damage = 34f, Range = 22f, Cooldown = 1.1f,
                 AcquireRange = 26f, Speed = 16f, Radius = 2.6f, Vision = 44f, Label = "Gunship",
             },
@@ -141,7 +141,7 @@ namespace CQRa.Sim.Content
             },
             new UnitDefinition
             {
-                Kind = UnitKind.Skyfall, Cost = 1000, BuildSeconds = 11f, Producer = BuildingKind.WarFactory,
+                Kind = UnitKind.Skyfall, Cost = 1000, BuildSeconds = 11f, Producer = BuildingKind.Airfield,
                 MaxHealth = 150f, Armor = 0.15f, Damage = 55f, Range = 26f, Cooldown = 1f,
                 AcquireRange = 30f, Speed = 20f, Radius = 2.4f, Vision = 50f, Label = "Skyfall",
             },
@@ -169,6 +169,63 @@ namespace CQRa.Sim.Content
                 MaxHealth = 800f, Armor = 0.45f, Damage = 90f, Range = 38f, Cooldown = 3f,
                 AcquireRange = 40f, Speed = 5f, Radius = 6f, Vision = 45f, Label = "Battleship",
             },
+            new UnitDefinition
+            {
+                Kind = UnitKind.AshfallFighter, Cost = 900, BuildSeconds = 8f, Producer = BuildingKind.Airfield,
+                MaxHealth = 160f, Armor = 0.15f, Damage = 30f, Range = 24f, Cooldown = 0.8f,
+                AcquireRange = 30f, Speed = 24f, Radius = 2.2f, Vision = 50f, Label = "Warden",
+            },
+            new UnitDefinition
+            {
+                Kind = UnitKind.AshfallBomber, Cost = 1200, BuildSeconds = 12f, Producer = BuildingKind.Airfield,
+                MaxHealth = 260f, Armor = 0.25f, Damage = 90f, Range = 30f, Cooldown = 2.5f,
+                AcquireRange = 32f, Speed = 13f, Radius = 3.2f, Vision = 40f, Label = "Cinder",
+            },
+            new UnitDefinition
+            {
+                Kind = UnitKind.AshfallTransport, Cost = 700, BuildSeconds = 9f, Producer = BuildingKind.Airfield,
+                MaxHealth = 240f, Armor = 0.15f, Speed = 14f, Radius = 3f, Vision = 32f, Label = "Mule",
+            },
+            new UnitDefinition
+            {
+                Kind = UnitKind.VerdantFighter, Cost = 850, BuildSeconds = 8f, Producer = BuildingKind.Airfield,
+                MaxHealth = 140f, Armor = 0.12f, Damage = 24f, Range = 22f, Cooldown = 0.65f,
+                AcquireRange = 28f, Speed = 26f, Radius = 2.1f, Vision = 52f, Label = "Kite",
+            },
+            new UnitDefinition
+            {
+                Kind = UnitKind.VerdantBomber, Cost = 1100, BuildSeconds = 11f, Producer = BuildingKind.Airfield,
+                MaxHealth = 220f, Armor = 0.20f, Damage = 80f, Range = 28f, Cooldown = 2.4f,
+                AcquireRange = 30f, Speed = 14f, Radius = 3f, Vision = 38f, Label = "Blight",
+            },
+            new UnitDefinition
+            {
+                Kind = UnitKind.VerdantAttackHeli, Cost = 650, BuildSeconds = 8f, Producer = BuildingKind.Airfield,
+                MaxHealth = 170f, Armor = 0.15f, Damage = 26f, Range = 18f, Cooldown = 0.6f,
+                AcquireRange = 22f, Speed = 15f, Radius = 2.4f, Vision = 38f, Label = "Scythe",
+            },
+            new UnitDefinition
+            {
+                Kind = UnitKind.VerdantTransport, Cost = 650, BuildSeconds = 9f, Producer = BuildingKind.Airfield,
+                MaxHealth = 220f, Armor = 0.12f, Speed = 13f, Radius = 3f, Vision = 30f, Label = "Hauler",
+            },
+            new UnitDefinition
+            {
+                Kind = UnitKind.MeridianBomber, Cost = 1300, BuildSeconds = 13f, Producer = BuildingKind.Airfield,
+                MaxHealth = 280f, Armor = 0.28f, Damage = 110f, Range = 34f, Cooldown = 3f,
+                AcquireRange = 36f, Speed = 12f, Radius = 3.4f, Vision = 42f, Label = "Comet",
+            },
+            new UnitDefinition
+            {
+                Kind = UnitKind.MeridianAttackHeli, Cost = 800, BuildSeconds = 9f, Producer = BuildingKind.Airfield,
+                MaxHealth = 200f, Armor = 0.18f, Damage = 40f, Range = 22f, Cooldown = 0.8f,
+                AcquireRange = 26f, Speed = 14f, Radius = 2.6f, Vision = 40f, Label = "Talon",
+            },
+            new UnitDefinition
+            {
+                Kind = UnitKind.MeridianTransport, Cost = 750, BuildSeconds = 10f, Producer = BuildingKind.Airfield,
+                MaxHealth = 260f, Armor = 0.15f, Speed = 12f, Radius = 3.2f, Vision = 32f, Label = "Atlas",
+            },
         };
 
         private static readonly BuildingDefinition[] DefaultBuildings =
@@ -181,6 +238,8 @@ namespace CQRa.Sim.Content
             new BuildingDefinition { Kind = BuildingKind.GunTower, Cost = 500, PowerUsed = 20, Radius = 4f, NavRadius = 4f, Health = 450f, Vision = 24f },
             new BuildingDefinition { Kind = BuildingKind.Wall, Cost = 50, Radius = 2.2f, NavRadius = 2.2f, Health = 250f, Vision = 6f },
             new BuildingDefinition { Kind = BuildingKind.Dock, Cost = 800, PowerUsed = 40, Radius = 9f, NavRadius = 9f, Health = 700f, Vision = 30f },
+            new BuildingDefinition { Kind = BuildingKind.Airfield, Cost = 1100, PowerUsed = 50, Radius = 12f, NavRadius = 12f, Health = 900f, Vision = 34f },
+            new BuildingDefinition { Kind = BuildingKind.AntiAir, Cost = 450, PowerUsed = 10, Radius = 3f, NavRadius = 3f, Health = 380f, Vision = 26f },
         };
 
         private static UnitDefinition[] _units = (UnitDefinition[])DefaultUnits.Clone();

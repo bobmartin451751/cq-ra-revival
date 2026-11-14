@@ -548,6 +548,29 @@ namespace CQRa.View
                 new MeshPart(Box(new Vector3(4f, 2f, 3f)), new Vector3(4f, 5f, -1f)));
         }
 
+        /// <summary>Airfield: hangar, control tower and landing pad.</summary>
+        public static Mesh Airfield()
+        {
+            return Merge(
+                new MeshPart(Box(new Vector3(16f, 5f, 12f)), new Vector3(0f, 2.5f, 0f)),
+                new MeshPart(Box(new Vector3(18f, 0.5f, 18f)), new Vector3(0f, 0.25f, 12f)),
+                new MeshPart(Box(new Vector3(4f, 9f, 4f)), new Vector3(-8f, 5.5f, -5f)),
+                new MeshPart(Box(new Vector3(7f, 0.4f, 2f)), new Vector3(-8f, 9.8f, -5f)),
+                new MeshPart(Box(new Vector3(1.2f, 7f, 1.2f)), new Vector3(9f, 4.5f, -4f)),
+                new MeshPart(Box(new Vector3(10f, 0.3f, 1f)), new Vector3(4f, 7.5f, -4f)));
+        }
+
+        /// <summary>Squat anti-air gun with a rotating quad mount.</summary>
+        public static Mesh AntiAir()
+        {
+            return Merge(
+                new MeshPart(Box(new Vector3(3.6f, 2.0f, 3.6f)), new Vector3(0f, 1f, 0f)),
+                new MeshPart(Box(new Vector3(2.4f, 1.2f, 2.4f)), new Vector3(0f, 2.5f, 0f)),
+                new MeshPart(Cylinder(0.9f, 1.2f, 8), new Vector3(0f, 3.5f, 0f)),
+                new MeshPart(Box(new Vector3(2.8f, 0.35f, 0.35f)), new Vector3(0f, 3.7f, 0.7f)),
+                new MeshPart(Box(new Vector3(0.35f, 0.35f, 2.8f)), new Vector3(0.7f, 3.7f, 0f)));
+        }
+
         /// <summary>Base mesh for a building kind, before faction trim.</summary>
         public static Mesh Building(BuildingKind kind)
         {
@@ -561,6 +584,8 @@ namespace CQRa.View
                 case BuildingKind.GunTower: return GunTower();
                 case BuildingKind.Wall: return Wall();
                 case BuildingKind.Dock: return Dock();
+                case BuildingKind.Airfield: return Airfield();
+                case BuildingKind.AntiAir: return AntiAir();
                 default: return ConstructionYard();
             }
         }
@@ -632,6 +657,8 @@ namespace CQRa.View
                 case BuildingKind.GunTower: return 4.6f;
                 case BuildingKind.Wall: return 2.6f;
                 case BuildingKind.Dock: return 10.4f;
+                case BuildingKind.Airfield: return 10.5f;
+                case BuildingKind.AntiAir: return 4.2f;
                 default: return 8.0f;
             }
         }
@@ -648,6 +675,8 @@ namespace CQRa.View
                 case BuildingKind.GunTower: return 4f;
                 case BuildingKind.Wall: return 2.2f;
                 case BuildingKind.Dock: return 9f;
+                case BuildingKind.Airfield: return 12f;
+                case BuildingKind.AntiAir: return 3f;
                 default: return 7f;
             }
         }
@@ -815,6 +844,58 @@ namespace CQRa.View
         private static float Sign(Vector2 p1, Vector2 p2, Vector2 p3)
         {
             return (p1.x - p3.x) * (p2.y - p3.y) - (p2.x - p3.x) * (p1.y - p3.y);
+        }
+
+        /// <summary>Fast delta-wing fighter. Variant changes wing sweep and tail shape.</summary>
+        public static Mesh Fighter(int variant)
+        {
+            var wing = 1.0f + variant * 0.12f;
+            var length = 7f + variant * 0.4f;
+            return Merge(
+                new MeshPart(Box(new Vector3(1.5f, 1.1f, length)), new Vector3(0f, 1.7f, 0f)),
+                new MeshPart(Box(new Vector3(7f * wing, 0.22f, 2.1f)), new Vector3(0f, 1.6f, 0.2f)),
+                new MeshPart(Box(new Vector3(1.2f, 0.7f, 1.8f)), new Vector3(0f, 2.35f, -0.5f)),
+                new MeshPart(Box(new Vector3(2.2f, 0.5f, 1.2f)), new Vector3(0f, 1.9f, -2.8f)),
+                new MeshPart(Box(new Vector3(0.35f, 0.12f, 1.8f)), new Vector3(0f, 2.1f, length * 0.48f)));
+        }
+
+        /// <summary>Broad-wing bomber with twin engines and a heavy tail.</summary>
+        public static Mesh Bomber(int variant)
+        {
+            var span = 10f + variant * 0.8f;
+            var length = 10f + variant * 0.6f;
+            return Merge(
+                new MeshPart(Box(new Vector3(2.1f, 1.4f, length)), new Vector3(0f, 2.1f, 0f)),
+                new MeshPart(Box(new Vector3(span, 0.28f, 3.1f)), new Vector3(0f, 2.0f, 0f)),
+                new MeshPart(Cylinder(0.45f, 1.3f, 8), new Vector3(-3.1f, 2.0f, -0.5f)),
+                new MeshPart(Cylinder(0.45f, 1.3f, 8), new Vector3(3.1f, 2.0f, -0.5f)),
+                new MeshPart(Box(new Vector3(1.4f, 0.7f, 2.4f)), new Vector3(0f, 2.3f, -length * 0.38f)),
+                new MeshPart(Box(new Vector3(0.4f, 0.9f, 1.8f)), new Vector3(0f, 2.8f, -length * 0.44f)));
+        }
+
+        /// <summary>Attack helicopter: compact hull, rotor and weapon pods.</summary>
+        public static Mesh AttackHeli(int variant)
+        {
+            var length = 6.2f + variant * 0.5f;
+            return Merge(
+                new MeshPart(Box(new Vector3(2.1f, 1.6f, length)), new Vector3(0f, 1.8f, 0f)),
+                new MeshPart(Box(new Vector3(0.8f, 0.7f, 4.2f)), new Vector3(0f, 1.6f, -length * 0.55f)),
+                new MeshPart(Cylinder(2.7f + variant * 0.15f, 0.16f, 12), new Vector3(0f, 3.0f, 0f)),
+                new MeshPart(Cylinder(0.18f, 1.1f, 6), new Vector3(0f, 2.5f, 0f)),
+                new MeshPart(Box(new Vector3(0.7f, 0.5f, 1.6f)), new Vector3(-1.3f, 1.5f, 0.9f)),
+                new MeshPart(Box(new Vector3(0.7f, 0.5f, 1.6f)), new Vector3(1.3f, 1.5f, 0.9f)));
+        }
+
+        /// <summary>Heavy transport helicopter with a long cabin and twin rotors.</summary>
+        public static Mesh TransportHeli(int variant)
+        {
+            var length = 9f + variant * 0.6f;
+            return Merge(
+                new MeshPart(Box(new Vector3(2.5f, 2.0f, length)), new Vector3(0f, 2.2f, 0f)),
+                new MeshPart(Box(new Vector3(2.1f, 1.5f, 3.4f)), new Vector3(0f, 3.3f, -1.2f)),
+                new MeshPart(Cylinder(3.2f, 0.16f, 12), new Vector3(0f, 3.8f, 1.8f)),
+                new MeshPart(Cylinder(2.4f, 0.16f, 12), new Vector3(0f, 3.7f, -3.3f)),
+                new MeshPart(Box(new Vector3(0.8f, 0.8f, 3.4f)), new Vector3(0f, 2.1f, length * 0.55f)));
         }
 
         /// <summary>Low ore crystal pile, deterministic per seed.</summary>

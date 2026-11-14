@@ -231,8 +231,9 @@ namespace CQRa.Sim.Base
             var spec = BuildCatalog.Get(info.Kind);
             var spawnPoint = position + new float3(direction.x, 0f, direction.y) * (spec.NavRadius + 3f);
             spawnPoint.y = position.y;
+            var isAir = AirCatalog.IsAircraft(kind);
 
-            if (NavGridQuery.TryClampToWalkable(entityManager, spawnPoint, out var safe))
+            if (!isAir && NavGridQuery.TryClampToWalkable(entityManager, spawnPoint, out var safe))
             {
                 spawnPoint = safe;
             }
@@ -255,6 +256,13 @@ namespace CQRa.Sim.Base
 
             var yaw = math.atan2(direction.x, direction.y);
             var unit = UnitFactory.SpawnDefault(entityManager, spawnPoint, yaw, kind, info.Team);
+
+            if (isAir && entityManager.HasComponent<AircraftHome>(unit))
+            {
+                var home = entityManager.GetComponentData<AircraftHome>(unit);
+                home.Airfield = building;
+                entityManager.SetComponentData(unit, home);
+            }
 
             if (NavalRules.IsNaval(kind) && entityManager.HasComponent<NavalUnit>(unit))
             {

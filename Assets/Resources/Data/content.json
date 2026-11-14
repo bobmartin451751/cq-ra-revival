@@ -68,7 +68,7 @@
       "kind": "Gunship",
       "cost": 900,
       "buildSeconds": 10.0,
-      "producer": "WarFactory",
+      "producer": "Airfield",
       "maxHealth": 180,
       "armor": 0.2,
       "damage": 34,
@@ -132,7 +132,7 @@
       "kind": "Skyfall",
       "cost": 1000,
       "buildSeconds": 11.0,
-      "producer": "WarFactory",
+      "producer": "Airfield",
       "maxHealth": 150,
       "armor": 0.15,
       "damage": 55,
@@ -217,6 +217,8 @@
     { "kind": "WarFactory", "cost": 900, "powerProduced": 0, "powerUsed": 60, "radius": 11, "navRadius": 11, "health": 800, "vision": 32 },
     { "kind": "GunTower", "cost": 500, "powerProduced": 0, "powerUsed": 20, "radius": 4, "navRadius": 4, "health": 450, "vision": 24 },
     { "kind": "Wall", "cost": 50, "powerProduced": 0, "powerUsed": 0, "radius": 2.2, "navRadius": 2.2, "health": 250, "vision": 6 },
-    { "kind": "Dock", "cost": 800, "powerProduced": 0, "powerUsed": 40, "radius": 9, "navRadius": 9, "health": 700, "vision": 30 }
+    { "kind": "Dock", "cost": 800, "powerProduced": 0, "powerUsed": 40, "radius": 9, "navRadius": 9, "health": 700, "vision": 30 },
+    { "kind": "Airfield", "cost": 1100, "powerProduced": 0, "powerUsed": 50, "radius": 12, "navRadius": 12, "health": 900, "vision": 34 },
+    { "kind": "AntiAir", "cost": 450, "powerProduced": 0, "powerUsed": 10, "radius": 3, "navRadius": 3, "health": 380, "vision": 26 }
   ]
 }

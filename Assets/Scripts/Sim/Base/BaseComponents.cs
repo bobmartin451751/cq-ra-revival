@@ -14,6 +14,8 @@ namespace CQRa.Sim.Base
         GunTower = 5,
         Wall = 6,
         Dock = 7,
+        Airfield = 8,
+        AntiAir = 9,
     }
 
     /// <summary>Marks a static player building.</summary>
@@ -69,6 +71,9 @@ namespace CQRa.Sim.Base
         public const float GunTowerDamage = 18f;
         public const float GunTowerRange = 28f;
         public const float GunTowerCooldown = 0.7f;
+        public const float AntiAirDamage = 16f;
+        public const float AntiAirRange = 34f;
+        public const float AntiAirCooldown = 0.55f;
     }
 
     /// <summary>Repair and sell tuning shared by the systems and HUD.</summary>
@@ -190,6 +195,8 @@ namespace CQRa.Sim.Base
             BuildingKind.GunTower,
             BuildingKind.Wall,
             BuildingKind.Dock,
+            BuildingKind.Airfield,
+            BuildingKind.AntiAir,
         };
 
         public static bool IsAvailable(BuildingKind kind)
@@ -243,6 +250,10 @@ namespace CQRa.Sim.Base
                     return "Wall";
                 case BuildingKind.Dock:
                     return "Dock";
+                case BuildingKind.Airfield:
+                    return "Airfield";
+                case BuildingKind.AntiAir:
+                    return "AA Gun";
                 default:
                     return "Construction Yard";
             }

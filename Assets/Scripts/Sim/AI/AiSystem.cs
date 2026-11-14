@@ -75,6 +75,7 @@ namespace CQRa.Sim.AI
             MaintainHarvesters(entityManager, team, profile, credits);
             MaintainArmy(entityManager, team, profile, credits);
             MaintainNavy(entityManager, team, profile, credits);
+            MaintainAirForce(entityManager, team, profile, credits);
 
             if (TryBuild(entityManager, team, profile, credits, economy))
             {
@@ -137,6 +138,12 @@ namespace CQRa.Sim.AI
                 CountBuildings(entityManager, team, BuildingKind.Dock) == 0)
             {
                 return BaseCommands.TryAutoPlaceDock(entityManager, team);
+            }
+
+            if (credits > 1800 &&
+                CountBuildings(entityManager, team, BuildingKind.Airfield) == 0)
+            {
+                return BaseCommands.TryAutoPlace(entityManager, team, BuildingKind.Airfield);
             }
 
             if (credits > 900 &&
@@ -256,6 +263,53 @@ namespace CQRa.Sim.AI
             if (credits >= spec.Cost + CreditsReserve)
             {
                 ProductionCommands.TryEnqueue(entityManager, team, kind, Entity.Null, out _);
+            }
+        }
+
+        private static void MaintainAirForce(
+            EntityManager entityManager,
+            int team,
+            in AiProfile profile,
+            int credits)
+        {
+            if (CountBuildings(entityManager, team, BuildingKind.Airfield) == 0)
+            {
+                return;
+            }
+
+            var roster = ProductionCatalog.RosterForTeam(team);
+            var target = profile.MaxFactories >= 2 ? 3 : 2;
+            var air = 0;
+            for (var i = 0; i < roster.Length; i++)
+            {
+                if (!AirCatalog.IsAircraft(roster[i]))
+                {
+                    continue;
+                }
+
+                air += CountUnits(entityManager, team, roster[i]);
+                air += CountQueued(entityManager, team, roster[i]);
+            }
+
+            if (air >= target)
+            {
+                return;
+            }
+
+            for (var i = 0; i < roster.Length; i++)
+            {
+                var kind = roster[i];
+                if (!AirCatalog.IsAircraft(kind) || AirCatalog.IsTransport(kind))
+                {
+                    continue;
+                }
+
+                var spec = ProductionCatalog.Get(kind);
+                if (credits >= spec.Cost + CreditsReserve &&
+                    ProductionCommands.TryEnqueue(entityManager, team, kind, Entity.Null, out _))
+                {
+                    return;
+                }
             }
         }
 

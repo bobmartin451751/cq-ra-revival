@@ -10,9 +10,9 @@ namespace CQRa.Tests.EditMode
         [Test]
         public void EachFaction_HasASeventhUniqueUnit()
         {
-            Assert.AreEqual(10, ProductionCatalog.RosterFor(FactionId.Ashfall).Length);
-            Assert.AreEqual(10, ProductionCatalog.RosterFor(FactionId.Verdant).Length);
-            Assert.AreEqual(9, ProductionCatalog.RosterFor(FactionId.Meridian).Length);
+            Assert.AreEqual(13, ProductionCatalog.RosterFor(FactionId.Ashfall).Length);
+            Assert.AreEqual(13, ProductionCatalog.RosterFor(FactionId.Verdant).Length);
+            Assert.AreEqual(11, ProductionCatalog.RosterFor(FactionId.Meridian).Length);
 
             Assert.AreEqual(UnitKind.Thumper, ProductionCatalog.UniqueFor(FactionId.Ashfall));
             Assert.AreEqual(UnitKind.Mantis, ProductionCatalog.UniqueFor(FactionId.Verdant));
@@ -51,7 +51,7 @@ namespace CQRa.Tests.EditMode
 
             Assert.AreEqual(BuildingKind.WarFactory, thumper.Producer);
             Assert.AreEqual(BuildingKind.Barracks, mantis.Producer);
-            Assert.AreEqual(BuildingKind.WarFactory, skyfall.Producer);
+            Assert.AreEqual(BuildingKind.Airfield, skyfall.Producer);
 
             Assert.Greater(thumper.Cost, mantis.Cost);
             Assert.Greater(skyfall.Cost, thumper.Cost);

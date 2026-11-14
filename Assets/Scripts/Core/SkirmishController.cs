@@ -31,6 +31,7 @@ namespace CQRa.Core
         private FactionId _aiFaction = FactionId.Verdant;
         private int _teamCount = 2;
         private TeamMode _teamMode = TeamMode.FreeForAll;
+        private readonly int[] _customAlliances = new int[MatchRuntime.MaxTeams];
         private bool _active;
         private bool _matchOver;
         private int _winner = 255;
@@ -91,6 +92,8 @@ namespace CQRa.Core
                 _teamCount = Mathf.Clamp(ReadIntArg("-teams", 2), 2, 8);
                 _teamMode = HasArg("-teammode") ? TeamMode.Teams : TeamMode.FreeForAll;
             }
+
+            ResetCustomTeams();
 
             var world = World.DefaultGameObjectInjectionWorld;
             if (world != null && world.IsCreated)
@@ -320,7 +323,7 @@ namespace CQRa.Core
             _matchOver = false;
             Time.timeScale = 1f;
 
-            MatchRuntime.Configure(_teamCount, _teamMode);
+            MatchRuntime.Configure(_teamCount, _teamMode, _customAlliances);
 
             if (_selection != null)
             {
@@ -542,6 +545,7 @@ namespace CQRa.Core
                         _button))
                 {
                     _teamCount = count;
+                    ResetCustomTeams();
                     EnsureSelectedMap();
                 }
 
@@ -565,6 +569,10 @@ namespace CQRa.Core
                         _button))
                 {
                     _teamMode = modes[i];
+                    if (_teamMode == TeamMode.Teams)
+                    {
+                        ResetCustomTeams();
+                    }
                 }
 
                 GUI.backgroundColor = previousColor;
@@ -593,11 +601,35 @@ namespace CQRa.Core
                 GUI.backgroundColor = previousColor;
             }
 
-            GUI.Label(
-                new Rect(x + 30f, y + 432f, width - 60f, 34f),
-                $"{FactionCatalog.Name(_playerFaction)} vs {FactionCatalog.Name(_aiFaction)}\n" +
-                FactionCatalog.Description(_playerFaction),
-                _label);
+            if (_teamMode == TeamMode.Teams)
+            {
+                for (var team = 0; team < _teamCount; team++)
+                {
+                    var alliance = _customAlliances[team] == 0 ? "A" : "B";
+                    var previousColor = GUI.backgroundColor;
+                    GUI.backgroundColor = _customAlliances[team] == 0
+                        ? new Color(0.28f, 0.46f, 0.64f)
+                        : new Color(0.64f, 0.34f, 0.26f);
+
+                    if (GUI.Button(
+                            new Rect(x + 30f + team * 60f, y + 432f, 54f, 30f),
+                            $"{team + 1}:{alliance}",
+                            _button))
+                    {
+                        _customAlliances[team] = _customAlliances[team] == 0 ? 1 : 0;
+                    }
+
+                    GUI.backgroundColor = previousColor;
+                }
+            }
+            else
+            {
+                GUI.Label(
+                    new Rect(x + 30f, y + 432f, width - 60f, 34f),
+                    $"{FactionCatalog.Name(_playerFaction)} vs {FactionCatalog.Name(_aiFaction)}\n" +
+                    FactionCatalog.Description(_playerFaction),
+                    _label);
+            }
 
             GUI.Label(new Rect(x + 30f, y + 472f, width - 60f, 22f), "MAP", _label);
 
@@ -701,6 +733,17 @@ namespace CQRa.Core
                 new Rect(x + 30f, y + 704f, width - 60f, 24f),
                 "WASD/edges pan Â· wheel zoom Â· Q/E rotate",
                 _label);
+        }
+
+        private void ResetCustomTeams()
+        {
+            for (var team = 0; team < _customAlliances.Length; team++)
+            {
+                _customAlliances[team] = _teamMode == TeamMode.Teams &&
+                                         team >= _teamCount / 2
+                    ? 1
+                    : 0;
+            }
         }
 
         private int FilteredMapCount()

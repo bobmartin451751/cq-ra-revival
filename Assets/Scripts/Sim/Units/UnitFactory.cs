@@ -138,6 +138,10 @@ namespace CQRa.Sim.Units
                 CooldownRemaining = 0f,
                 AcquireRange = combat.AcquireRange,
             });
+            entityManager.AddComponentData(entity, new WeaponTargeting
+            {
+                Mask = AirCatalog.DefaultTargeting(kind),
+            });
 
             entityManager.AddComponentData(entity, new CombatState
             {
@@ -156,9 +160,46 @@ namespace CQRa.Sim.Units
                 });
             }
 
-            if (kind == UnitKind.Gunship || kind == UnitKind.Skyfall)
+            if (AirCatalog.IsAircraft(kind))
             {
-                entityManager.AddComponentData(entity, new AirUnit { Altitude = 18f });
+                entityManager.AddComponentData(entity, new AirUnit
+                {
+                    Altitude = AirCatalog.IsPlane(kind) ? 18f : 14f,
+                });
+            }
+
+            if (AirCatalog.UsesAmmo(kind))
+            {
+                var ammo = AirCatalog.AmmoFor(kind);
+                entityManager.AddComponentData(entity, new AircraftAmmo
+                {
+                    Max = ammo,
+                    Current = ammo,
+                });
+                entityManager.AddComponentData(entity, new AircraftHome
+                {
+                    Airfield = Entity.Null,
+                    Returning = 0,
+                    Landed = 0,
+                    RearmTimer = 0f,
+                });
+            }
+
+            if (AirCatalog.TryGetCargoRules(
+                    kind,
+                    out var infantryCapacity,
+                    out var tankCapacity,
+                    out var infantryWithTank,
+                    out var isTransport))
+            {
+                entityManager.AddComponentData(entity, new TransportCargo
+                {
+                    InfantryCapacity = infantryCapacity,
+                    TankCapacity = tankCapacity,
+                    InfantryWithTank = infantryWithTank,
+                    IsTransport = (byte)(isTransport ? 1 : 0),
+                });
+                entityManager.AddBuffer<CargoUnit>(entity);
             }
 
             if (kind == UnitKind.Thumper)

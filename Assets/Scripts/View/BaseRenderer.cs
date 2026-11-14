@@ -142,6 +142,8 @@ namespace CQRa.View
                 case (int)BuildingKind.GunTower: return new Color(0.28f, 0.30f, 0.31f);
                 case (int)BuildingKind.Wall: return new Color(0.44f, 0.42f, 0.38f);
                 case (int)BuildingKind.Dock: return new Color(0.28f, 0.30f, 0.32f);
+                case (int)BuildingKind.Airfield: return new Color(0.30f, 0.33f, 0.30f);
+                case (int)BuildingKind.AntiAir: return new Color(0.26f, 0.28f, 0.30f);
                 default: return new Color(0.36f, 0.35f, 0.31f);
             }
         }

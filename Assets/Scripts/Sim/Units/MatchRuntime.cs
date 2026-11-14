@@ -18,6 +18,7 @@ namespace CQRa.Sim.Units
 
         private static int _teamCount = 2;
         private static TeamMode _mode = TeamMode.FreeForAll;
+        private static readonly int[] Alliances = { 0, 1, 2, 3, 4, 5, 6, 7 };
 
         public static int TeamCount => _teamCount;
         public static TeamMode Mode => _mode;
@@ -26,12 +27,44 @@ namespace CQRa.Sim.Units
         {
             _teamCount = math.clamp(teamCount, 2, MaxTeams);
             _mode = mode;
+            for (var team = 0; team < MaxTeams; team++)
+            {
+                Alliances[team] = mode == TeamMode.Teams
+                    ? (team < _teamCount / 2 ? 0 : 1)
+                    : team;
+            }
+        }
+
+        public static void Configure(int teamCount, TeamMode mode, int[] alliances)
+        {
+            Configure(teamCount, mode);
+            if (alliances == null)
+            {
+                return;
+            }
+
+            for (var team = 0; team < MaxTeams && team < alliances.Length; team++)
+            {
+                Alliances[team] = alliances[team];
+            }
+        }
+
+        public static void SetAlliance(int team, int alliance)
+        {
+            if (team >= 0 && team < MaxTeams)
+            {
+                Alliances[team] = alliance;
+            }
         }
 
         public static void Reset()
         {
             _teamCount = 2;
             _mode = TeamMode.FreeForAll;
+            for (var team = 0; team < MaxTeams; team++)
+            {
+                Alliances[team] = team;
+            }
         }
 
         public static int AllianceFor(int team)
@@ -41,7 +74,12 @@ namespace CQRa.Sim.Units
                 return team;
             }
 
-            return team < _teamCount / 2 ? 0 : 1;
+            if (team < 0 || team >= MaxTeams)
+            {
+                return team;
+            }
+
+            return Alliances[team];
         }
 
         public static bool AreAllied(int a, int b)

@@ -119,6 +119,16 @@ namespace CQRa.Sim.Units
                 ProceduralMeshes.Sower(),
                 ProceduralMeshes.PatrolBoat(),
                 ProceduralMeshes.Battleship(),
+                ProceduralMeshes.Fighter(0),
+                ProceduralMeshes.Bomber(0),
+                ProceduralMeshes.TransportHeli(0),
+                ProceduralMeshes.Fighter(1),
+                ProceduralMeshes.Bomber(1),
+                ProceduralMeshes.AttackHeli(0),
+                ProceduralMeshes.TransportHeli(1),
+                ProceduralMeshes.Bomber(2),
+                ProceduralMeshes.AttackHeli(1),
+                ProceduralMeshes.TransportHeli(2),
             };
 
             _renderMeshArray = UnitFactory.CreateRenderMeshArray(_materials, _meshes);
@@ -254,6 +264,16 @@ namespace CQRa.Sim.Units
                 UnitKind.Sower => new Color(0.34f, 0.42f, 0.28f),
                 UnitKind.PatrolBoat => new Color(0.32f, 0.30f, 0.26f),
                 UnitKind.Battleship => new Color(0.28f, 0.30f, 0.34f),
+                UnitKind.AshfallFighter => new Color(0.34f, 0.36f, 0.40f),
+                UnitKind.AshfallBomber => new Color(0.38f, 0.32f, 0.26f),
+                UnitKind.AshfallTransport => new Color(0.42f, 0.38f, 0.28f),
+                UnitKind.VerdantFighter => new Color(0.30f, 0.44f, 0.32f),
+                UnitKind.VerdantBomber => new Color(0.34f, 0.40f, 0.28f),
+                UnitKind.VerdantAttackHeli => new Color(0.32f, 0.44f, 0.30f),
+                UnitKind.VerdantTransport => new Color(0.38f, 0.44f, 0.30f),
+                UnitKind.MeridianBomber => new Color(0.30f, 0.34f, 0.46f),
+                UnitKind.MeridianAttackHeli => new Color(0.28f, 0.36f, 0.48f),
+                UnitKind.MeridianTransport => new Color(0.32f, 0.38f, 0.46f),
                 _ => new Color(0.43f, 0.27f, 0.18f),
             };
 

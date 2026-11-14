@@ -134,7 +134,8 @@ namespace CQRa.Sim.Base
 
                 var info = entityManager.GetComponentData<UnitInfo>(candidate);
                 if (MatchRuntime.AreAllied(info.Team, team) ||
-                    entityManager.GetComponentData<Health>(candidate).Current <= 0f)
+                    entityManager.GetComponentData<Health>(candidate).Current <= 0f ||
+                    !CanTarget(entityManager, self, candidate))
                 {
                     continue;
                 }
@@ -160,6 +161,15 @@ namespace CQRa.Sim.Base
             }
 
             return best;
+        }
+
+        private static bool CanTarget(EntityManager entityManager, Entity tower, Entity target)
+        {
+            var mask = entityManager.HasComponent<WeaponTargeting>(tower)
+                ? entityManager.GetComponentData<WeaponTargeting>(tower).Mask
+                : TargetClass.Both;
+            var isAir = entityManager.HasComponent<AirUnit>(target);
+            return (mask & (isAir ? TargetClass.Air : TargetClass.Ground)) != 0;
         }
     }
 }

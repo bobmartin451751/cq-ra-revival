@@ -26,9 +26,9 @@ namespace CQRa.Tests.EditMode
             Assert.Greater(yard.PowerProduced, 0);
             Assert.Greater(BuildCatalog.BuildRadius, 0f);
             Assert.AreEqual(
-                7,
+                9,
                 BuildCatalog.PlayerBuildable.Length,
-                "power, refinery, barracks, factory, tower, wall and naval yard are buildable");
+                "power, refinery, barracks, factory, tower, wall, dock, airfield and AA gun are buildable");
         }
 
         [Test]
@@ -71,7 +71,7 @@ namespace CQRa.Tests.EditMode
             Assert.Greater(mcv.MaxHealth, harvester.MaxHealth);
             Assert.Greater(mcv.Armor, 0f);
             Assert.Greater(UnitFactory.RadiusFor(UnitKind.Mcv), UnitFactory.RadiusFor(UnitKind.Harvester));
-            Assert.AreEqual(13, UnitMaterials.KindCount, "all base, unique, support and naval unit kinds are renderable");
+            Assert.AreEqual(23, UnitMaterials.KindCount, "all base, unique, support, naval and air unit kinds are renderable");
         }
 
         [Test]

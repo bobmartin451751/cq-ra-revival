@@ -8,10 +8,10 @@ namespace CQRa.Tests.EditMode
     public sealed class Phase12Tests
     {
         [Test]
-        public void Gunship_IsBuiltAtTheWarFactory()
+        public void Gunship_IsBuiltAtTheAirfield()
         {
             var spec = ProductionCatalog.Get(UnitKind.Gunship);
-            Assert.AreEqual(BuildingKind.WarFactory, spec.Producer);
+            Assert.AreEqual(BuildingKind.Airfield, spec.Producer);
             Assert.Greater(spec.Cost, 0);
             Assert.Greater(spec.Seconds, 0f);
             Assert.AreEqual("Gunship", spec.Label);

@@ -40,6 +40,7 @@ namespace CQRa.View
         [SerializeField] private float _dragThresholdPixels = 6f;
 
         private readonly List<Entity> _selected = new List<Entity>();
+        private readonly List<UnitKind> _unitRows = new List<UnitKind>();
 
         private Vector2 _dragStart;
         private Vector2 _dragCurrent;
@@ -200,6 +201,16 @@ namespace CQRa.View
                     ArmBuild(6);
                 }
 
+                if (keyboard.digit8Key.wasPressedThisFrame)
+                {
+                    ArmBuild(7);
+                }
+
+                if (keyboard.digit9Key.wasPressedThisFrame)
+                {
+                    ArmBuild(8);
+                }
+
                 if (keyboard.zKey.wasPressedThisFrame)
                 {
                     TryProduce(UnitKind.Infantry);
@@ -245,6 +256,11 @@ namespace CQRa.View
                     }
                 }
 
+                if (keyboard.eKey.wasPressedThisFrame)
+                {
+                    UnloadSelectedTransports();
+                }
+
                 if (keyboard.rKey.wasPressedThisFrame)
                 {
                     ToggleRepairSelected();
@@ -280,7 +296,8 @@ namespace CQRa.View
                         _armedCommand = ArmedCommand.None;
                     }
                 }
-                else if (!TryIssueAttackOrder(screenPosition) &&
+                else if (!TryLoadTransport(screenPosition) &&
+                         !TryIssueAttackOrder(screenPosition) &&
                          !TrySetRally(screenPosition))
                 {
                     IssueMoveOrder(screenPosition);
@@ -339,6 +356,80 @@ namespace CQRa.View
             {
                 _moveMarker.Show(new Vector3(destination.x, destination.y, destination.z));
             }
+        }
+
+        private bool TryLoadTransport(Vector2 screenPosition)
+        {
+            if (!TryPickSelectable(screenPosition, false, out var transport))
+            {
+                return false;
+            }
+
+            var world = World.DefaultGameObjectInjectionWorld;
+            if (world == null || !world.IsCreated)
+            {
+                return false;
+            }
+
+            var entityManager = world.EntityManager;
+            if (!entityManager.Exists(transport) ||
+                !entityManager.HasComponent<TransportCargo>(transport) ||
+                !entityManager.HasComponent<UnitInfo>(transport))
+            {
+                return false;
+            }
+
+            var transportTeam = entityManager.GetComponentData<UnitInfo>(transport).Team;
+            if (!MatchRuntime.AreAllied(transportTeam, BuildCatalog.PlayerTeam))
+            {
+                return false;
+            }
+
+            var loaded = 0;
+            var failure = TransportFailure.None;
+            for (var i = _selected.Count - 1; i >= 0; i--)
+            {
+                var unit = _selected[i];
+                if (unit == transport || !entityManager.Exists(unit))
+                {
+                    continue;
+                }
+
+                if (TransportCommands.TryLoad(entityManager, transport, unit, out failure))
+                {
+                    loaded++;
+                    _selected.RemoveAt(i);
+                }
+            }
+
+            if (loaded > 0)
+            {
+                ShowMessage($"Loaded {loaded} unit(s)");
+                return true;
+            }
+
+            ShowMessage(failure == TransportFailure.Full
+                ? "Transport is full"
+                : "Select infantry or a tank to load");
+            return failure != TransportFailure.None;
+        }
+
+        private void UnloadSelectedTransports()
+        {
+            var world = World.DefaultGameObjectInjectionWorld;
+            if (world == null || !world.IsCreated)
+            {
+                return;
+            }
+
+            var entityManager = world.EntityManager;
+            var total = 0;
+            for (var i = 0; i < _selected.Count; i++)
+            {
+                total += TransportCommands.TryUnload(entityManager, _selected[i]);
+            }
+
+            ShowMessage(total > 0 ? $"Unloaded {total} unit(s)" : "No transport cargo selected");
         }
 
         /// <summary>
@@ -1506,6 +1597,17 @@ namespace CQRa.View
                 new Rect(x + 12f, 284f, SidebarWidth - 24f, 22f),
                 $"{title}{rankText}  {healthText}",
                 _hintStyle);
+
+            if (entityManager.HasComponent<TransportCargo>(entity) &&
+                entityManager.HasBuffer<CargoUnit>(entity))
+            {
+                var cargo = entityManager.GetComponentData<TransportCargo>(entity);
+                var payload = entityManager.GetBuffer<CargoUnit>(entity, true);
+                GUI.Label(
+                    new Rect(x + 12f, 306f, SidebarWidth - 24f, 22f),
+                    $"Cargo: {payload.Length}  (max {cargo.InfantryCapacity})  [E] unload",
+                    _hintStyle);
+            }
         }
 
         private void DrawCommandButtons(float x)
@@ -1727,8 +1829,7 @@ namespace CQRa.View
 
             var rows = _sidebarTab == 0
                 ? BuildCatalog.VisibleBuildableCount
-                : ProductionCatalog.VisibleRosterCount(
-                    FactionRuntime.ForTeam(BuildCatalog.PlayerTeam));
+                : _unitRows.Count;
             var queueY = rowY + rows * 31f + 4f;
 
             var queueText = "Queue: select a producer";
@@ -1781,17 +1882,11 @@ namespace CQRa.View
 
         private void DrawUnitRows(float x, float rowY)
         {
-            var faction = FactionRuntime.ForTeam(BuildCatalog.PlayerTeam);
-            var roster = ProductionCatalog.RosterFor(faction);
-
-            for (var i = 0; i < roster.Length; i++)
+            RefreshUnitRows();
+            for (var i = 0; i < _unitRows.Count; i++)
             {
-                var kind = roster[i];
-                if (!ProductionCatalog.IsAvailable(kind))
-                {
-                    continue;
-                }
-
+                var kind = _unitRows[i];
+                var faction = FactionRuntime.ForTeam(BuildCatalog.PlayerTeam);
                 var spec = ProductionCatalog.Get(kind);
                 var name = ProductionCatalog.UnitName(faction, kind);
                 var key = ProductionCatalog.Hotkey(i);
@@ -1805,6 +1900,45 @@ namespace CQRa.View
                 {
                     TryProduce(kind);
                 }
+            }
+        }
+
+        private void RefreshUnitRows()
+        {
+            _unitRows.Clear();
+            var faction = FactionRuntime.ForTeam(BuildCatalog.PlayerTeam);
+            var roster = ProductionCatalog.RosterFor(faction);
+            var producerKind = (BuildingKind)255;
+
+            if (_selectedProducer != Entity.Null)
+            {
+                var world = World.DefaultGameObjectInjectionWorld;
+                if (world != null && world.IsCreated)
+                {
+                    var entityManager = world.EntityManager;
+                    if (entityManager.Exists(_selectedProducer) &&
+                        entityManager.HasComponent<BuildingInfo>(_selectedProducer))
+                    {
+                        producerKind = entityManager.GetComponentData<BuildingInfo>(_selectedProducer).Kind;
+                    }
+                }
+            }
+
+            for (var i = 0; i < roster.Length; i++)
+            {
+                var kind = roster[i];
+                if (!ProductionCatalog.IsAvailable(kind))
+                {
+                    continue;
+                }
+
+                if (producerKind != (BuildingKind)255 &&
+                    ProductionCatalog.Get(kind).Producer != producerKind)
+                {
+                    continue;
+                }
+
+                _unitRows.Add(kind);
             }
         }
 

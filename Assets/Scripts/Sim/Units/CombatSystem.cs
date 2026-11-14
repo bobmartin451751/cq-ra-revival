@@ -75,6 +75,12 @@ namespace CQRa.Sim.Units
                     continue;
                 }
 
+                if (entityManager.HasComponent<AircraftHome>(entity) &&
+                    entityManager.GetComponentData<AircraftHome>(entity).Returning != 0)
+                {
+                    continue;
+                }
+
                 var weapon = entityManager.GetComponentData<Weapon>(entity);
                 weapon.CooldownRemaining = math.max(0f, weapon.CooldownRemaining - dt);
 
@@ -94,6 +100,7 @@ namespace CQRa.Sim.Units
                 if (state.Target != Entity.Null &&
                     !IsValidTarget(
                         entityManager,
+                        entity,
                         state.Target,
                         info.Team,
                         state.Explicit == 0))
@@ -149,6 +156,22 @@ namespace CQRa.Sim.Units
                         {
                             Fire(entityManager, entity, state.Target, position, weapon, ref dead);
                             weapon.CooldownRemaining = weapon.Cooldown;
+
+                            if (entityManager.HasComponent<AircraftAmmo>(entity))
+                            {
+                                var ammo = entityManager.GetComponentData<AircraftAmmo>(entity);
+                                ammo.Current = math.max(0, ammo.Current - 1);
+                                entityManager.SetComponentData(entity, ammo);
+
+                                if (ammo.Current == 0)
+                                {
+                                    var home = entityManager.GetComponentData<AircraftHome>(entity);
+                                    home.Returning = 1;
+                                    entityManager.SetComponentData(entity, home);
+                                    state.Target = Entity.Null;
+                                    state.Explicit = 0;
+                                }
+                            }
                         }
                     }
                     else if (state.Explicit != 0 && moveTarget.HasOrder == 0)
@@ -234,6 +257,7 @@ namespace CQRa.Sim.Units
 
         private static bool IsValidTarget(
             EntityManager entityManager,
+            Entity attacker,
             Entity target,
             int team,
             bool requireVisible)
@@ -247,7 +271,8 @@ namespace CQRa.Sim.Units
 
             if (entityManager.GetComponentData<Health>(target).Current <= 0f ||
                 !TryGetTeam(entityManager, target, out var targetTeam) ||
-                MatchRuntime.AreAllied(team, targetTeam))
+                MatchRuntime.AreAllied(team, targetTeam) ||
+                !CanTarget(entityManager, attacker, target))
             {
                 return false;
             }
@@ -259,6 +284,15 @@ namespace CQRa.Sim.Units
 
             var targetPosition = entityManager.GetComponentData<LocalTransform>(target).Position;
             return FogQuery.IsVisible(entityManager, team, targetPosition);
+        }
+
+        private static bool CanTarget(EntityManager entityManager, Entity attacker, Entity target)
+        {
+            var mask = entityManager.HasComponent<WeaponTargeting>(attacker)
+                ? entityManager.GetComponentData<WeaponTargeting>(attacker).Mask
+                : TargetClass.Both;
+            var isAir = entityManager.HasComponent<AirUnit>(target);
+            return (mask & (isAir ? TargetClass.Air : TargetClass.Ground)) != 0;
         }
 
         private static bool TryGetTeam(EntityManager entityManager, Entity entity, out int team)
@@ -300,7 +334,8 @@ namespace CQRa.Sim.Units
 
                 if (!TryGetTeam(entityManager, candidate, out var candidateTeam) ||
                     MatchRuntime.AreAllied(team, candidateTeam) ||
-                    entityManager.GetComponentData<Health>(candidate).Current <= 0f)
+                    entityManager.GetComponentData<Health>(candidate).Current <= 0f ||
+                    !CanTarget(entityManager, self, candidate))
                 {
                     continue;
                 }

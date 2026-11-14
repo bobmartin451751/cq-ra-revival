@@ -17,7 +17,7 @@ namespace CQRa.Sim.Base
     /// </summary>
     public static class BuildingFactory
     {
-        public const int BuildingKindCount = 8;
+        public const int BuildingKindCount = 10;
         public const int TeamCount = 8;
         public const int FactionVariantCount = 3;
         public const int BuildingMeshCount = BuildingKindCount * FactionVariantCount;
@@ -104,7 +104,8 @@ namespace CQRa.Sim.Base
             if (kind == BuildingKind.Refinery ||
                 kind == BuildingKind.Barracks ||
                 kind == BuildingKind.WarFactory ||
-                kind == BuildingKind.Dock)
+                kind == BuildingKind.Dock ||
+                kind == BuildingKind.Airfield)
             {
                 entityManager.AddComponent<ProductionTag>(entity);
                 entityManager.AddBuffer<ProductionOrder>(entity);
@@ -129,6 +130,25 @@ namespace CQRa.Sim.Base
                     Range = DefenseCatalog.GunTowerRange,
                     Cooldown = DefenseCatalog.GunTowerCooldown,
                     CooldownRemaining = 0f,
+                });
+                entityManager.AddComponentData(entity, new WeaponTargeting
+                {
+                    Mask = TargetClass.Ground,
+                });
+            }
+
+            if (kind == BuildingKind.AntiAir)
+            {
+                entityManager.AddComponentData(entity, new DefenseWeapon
+                {
+                    Damage = DefenseCatalog.AntiAirDamage,
+                    Range = DefenseCatalog.AntiAirRange,
+                    Cooldown = DefenseCatalog.AntiAirCooldown,
+                    CooldownRemaining = 0f,
+                });
+                entityManager.AddComponentData(entity, new WeaponTargeting
+                {
+                    Mask = TargetClass.Air,
                 });
             }
 

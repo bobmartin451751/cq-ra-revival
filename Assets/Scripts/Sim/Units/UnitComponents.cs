@@ -18,6 +18,16 @@ namespace CQRa.Sim.Units
         Sower = 10,
         PatrolBoat = 11,
         Battleship = 12,
+        AshfallFighter = 13,
+        AshfallBomber = 14,
+        AshfallTransport = 15,
+        VerdantFighter = 16,
+        VerdantBomber = 17,
+        VerdantAttackHeli = 18,
+        VerdantTransport = 19,
+        MeridianBomber = 20,
+        MeridianAttackHeli = 21,
+        MeridianTransport = 22,
     }
 
     /// <summary>Marks an entity as a mobile unit.</summary>
@@ -103,6 +113,188 @@ namespace CQRa.Sim.Units
         }
     }
 
+    [System.Flags]
+    public enum TargetClass : byte
+    {
+        None = 0,
+        Ground = 1,
+        Air = 2,
+        Both = Ground | Air,
+    }
+
+    public struct WeaponTargeting : IComponentData
+    {
+        public TargetClass Mask;
+    }
+
+    public struct AircraftAmmo : IComponentData
+    {
+        public int Max;
+        public int Current;
+    }
+
+    public struct AircraftHome : IComponentData
+    {
+        public Entity Airfield;
+        public byte Returning;
+        public byte Landed;
+        public float RearmTimer;
+    }
+
+    public struct TransportCargo : IComponentData
+    {
+        public int InfantryCapacity;
+        public int TankCapacity;
+        public int InfantryWithTank;
+        public byte IsTransport;
+    }
+
+    public struct CargoUnit : IBufferElementData
+    {
+        public UnitKind Kind;
+        public float Health;
+    }
+
+    public static class AirCatalog
+    {
+        public static bool IsAircraft(UnitKind kind)
+        {
+            switch (kind)
+            {
+                case UnitKind.Gunship:
+                case UnitKind.Skyfall:
+                case UnitKind.AshfallFighter:
+                case UnitKind.AshfallBomber:
+                case UnitKind.AshfallTransport:
+                case UnitKind.VerdantFighter:
+                case UnitKind.VerdantBomber:
+                case UnitKind.VerdantAttackHeli:
+                case UnitKind.VerdantTransport:
+                case UnitKind.MeridianBomber:
+                case UnitKind.MeridianAttackHeli:
+                case UnitKind.MeridianTransport:
+                    return true;
+                default:
+                    return false;
+            }
+        }
+
+        public static bool IsPlane(UnitKind kind)
+        {
+            switch (kind)
+            {
+                case UnitKind.Skyfall:
+                case UnitKind.AshfallFighter:
+                case UnitKind.AshfallBomber:
+                case UnitKind.VerdantFighter:
+                case UnitKind.VerdantBomber:
+                case UnitKind.MeridianBomber:
+                    return true;
+                default:
+                    return false;
+            }
+        }
+
+        public static bool IsTransport(UnitKind kind)
+        {
+            return kind == UnitKind.AshfallTransport ||
+                   kind == UnitKind.VerdantTransport ||
+                   kind == UnitKind.MeridianTransport;
+        }
+
+        public static bool IsAttackHelicopter(UnitKind kind)
+        {
+            return kind == UnitKind.Gunship ||
+                   kind == UnitKind.VerdantAttackHeli ||
+                   kind == UnitKind.MeridianAttackHeli;
+        }
+
+        public static bool UsesAmmo(UnitKind kind)
+        {
+            return kind == UnitKind.Skyfall ||
+                   kind == UnitKind.AshfallFighter ||
+                   kind == UnitKind.AshfallBomber ||
+                   kind == UnitKind.VerdantFighter ||
+                   kind == UnitKind.VerdantBomber ||
+                   kind == UnitKind.MeridianBomber;
+        }
+
+        public static int AmmoFor(UnitKind kind)
+        {
+            switch (kind)
+            {
+                case UnitKind.AshfallBomber:
+                case UnitKind.VerdantBomber:
+                    return 3;
+                case UnitKind.MeridianBomber:
+                    return 2;
+                default:
+                    return 6;
+            }
+        }
+
+        public static bool TryGetCargoRules(
+            UnitKind kind,
+            out int infantryCapacity,
+            out int tankCapacity,
+            out int infantryWithTank,
+            out bool isTransport)
+        {
+            switch (kind)
+            {
+                case UnitKind.Gunship:
+                case UnitKind.VerdantAttackHeli:
+                case UnitKind.MeridianAttackHeli:
+                    infantryCapacity = 5;
+                    tankCapacity = 0;
+                    infantryWithTank = 0;
+                    isTransport = true;
+                    return true;
+
+                case UnitKind.AshfallTransport:
+                case UnitKind.VerdantTransport:
+                case UnitKind.MeridianTransport:
+                    infantryCapacity = 20;
+                    tankCapacity = 1;
+                    infantryWithTank = 5;
+                    isTransport = true;
+                    return true;
+
+                default:
+                    infantryCapacity = 0;
+                    tankCapacity = 0;
+                    infantryWithTank = 0;
+                    isTransport = false;
+                    return false;
+            }
+        }
+
+        public static TargetClass DefaultTargeting(UnitKind kind)
+        {
+            switch (kind)
+            {
+                case UnitKind.Skyfall:
+                case UnitKind.AshfallFighter:
+                case UnitKind.VerdantFighter:
+                    return TargetClass.Air;
+                case UnitKind.AshfallBomber:
+                case UnitKind.VerdantBomber:
+                case UnitKind.MeridianBomber:
+                    return TargetClass.Ground;
+                case UnitKind.Gunship:
+                case UnitKind.VerdantAttackHeli:
+                case UnitKind.MeridianAttackHeli:
+                    return TargetClass.Both;
+                case UnitKind.AshfallTransport:
+                case UnitKind.VerdantTransport:
+                case UnitKind.MeridianTransport:
+                    return TargetClass.None;
+                default:
+                    return TargetClass.Ground;
+            }
+        }
+    }
+
     public static class VeterancyMath
     {
         public static int RankForKills(int kills)
@@ -138,7 +330,7 @@ namespace CQRa.Sim.Units
     public static class UnitMaterials
     {
         public const int TeamCount = 8;
-        public const int KindCount = 13;
+        public const int KindCount = 23;
         public const int HighlightIndex = TeamCount * KindCount;
         public const int Count = HighlightIndex + 1;
 

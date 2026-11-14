@@ -55,6 +55,7 @@ namespace CQRa.Sim.Fog
 
             StampUnits(entityManager, terrain, heights);
             StampBuildings(entityManager, terrain, heights);
+            ShareAlliedVision(entityManager);
 
             for (var team = 0; team < MatchRuntime.TeamCount; team++)
             {
@@ -98,6 +99,40 @@ namespace CQRa.Sim.Fog
                 for (var i = 0; i < buffer.Length; i++)
                 {
                     buffer[i] = new FogCell { Value = FogMath.Never };
+                }
+            }
+        }
+
+        private static void ShareAlliedVision(EntityManager entityManager)
+        {
+            for (var team = 0; team < MatchRuntime.TeamCount; team++)
+            {
+                if (!FogQuery.TryGet(entityManager, team, out var fog, out _))
+                {
+                    continue;
+                }
+
+                var cells = FogQuery.GetCells(entityManager, fog);
+                for (var ally = 0; ally < MatchRuntime.TeamCount; ally++)
+                {
+                    if (ally == team || !MatchRuntime.AreAllied(team, ally))
+                    {
+                        continue;
+                    }
+
+                    if (!FogQuery.TryGet(entityManager, ally, out var allyFog, out _))
+                    {
+                        continue;
+                    }
+
+                    var allyCells = FogQuery.GetCells(entityManager, allyFog);
+                    for (var i = 0; i < cells.Length; i++)
+                    {
+                        if (allyCells[i].Value > cells[i].Value)
+                        {
+                            cells[i] = allyCells[i];
+                        }
+                    }
                 }
             }
         }

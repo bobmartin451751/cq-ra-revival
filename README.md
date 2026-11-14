@@ -45,7 +45,7 @@ sell**, Esc to clear/cancel. Selected units and buildings expose their actions i
 right-hand **COMMAND** sidebar: MCVs show **DEPLOY** (click it, then right-click a
 site), production buildings show **RALLY** (click it, then right-click terrain),
 buildings show **REPAIR** and **SELL**, and units show **STOP**. See
-`docs/phase2.md` through `docs/phase38.md` for details.
+`docs/phase2.md` through `docs/phase39.md` for details.
 
 ## Layout
 
@@ -109,5 +109,6 @@ tools/               headless scripts
 | 36 - water maps + docks | OK - per-map circular/polygon water, dry map, shoreline Dock |
 | 37 - 50 maps + 8 players | OK - four size tiers, 2-8 teams, 15 missions |
 | 38 - MCV start + previews | OK - MCV-only start, refinery harvesters, previews, base validation |
+| 39 - airfields + aircraft | OK - 12 aircraft, rearm, transports, AA guns, shared vision |
 
 See `docs/spec.md` for the full roadmap and frozen scope.
