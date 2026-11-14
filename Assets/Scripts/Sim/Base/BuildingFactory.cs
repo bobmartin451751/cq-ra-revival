@@ -78,10 +78,14 @@ namespace CQRa.Sim.Base
                 PowerUsed = spec.PowerUsed,
             });
 
+            ResearchQuery.Multipliers(
+                entityManager, team, out var researchHealth, out _, out _);
+            var maxHealth = HealthFor(kind) * FactionRuntime.StatsForTeam(team).Health * researchHealth;
+
             entityManager.AddComponentData(entity, new Health
             {
-                Max = HealthFor(kind) * FactionRuntime.StatsForTeam(team).Health,
-                Current = HealthFor(kind) * FactionRuntime.StatsForTeam(team).Health,
+                Max = maxHealth,
+                Current = maxHealth,
                 Armor = 0.5f,
             });
 

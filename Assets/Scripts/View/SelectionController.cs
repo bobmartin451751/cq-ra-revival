@@ -1869,13 +1869,13 @@ namespace CQRa.View
         private void DrawSupplyTabs(float x)
         {
             const float by = 354f;
-            var half = (SidebarWidth - 28f) * 0.5f;
+            var tabWidth = (SidebarWidth - 32f) / 3f;
 
             var previous = GUI.backgroundColor;
             GUI.backgroundColor = _sidebarTab == 0
                 ? new Color(0.62f, 0.44f, 0.20f)
                 : new Color(0.26f, 0.24f, 0.20f);
-            if (GUI.Button(new Rect(x + 12f, by, half, 28f), "STRUCTURES", _sidebarButton))
+            if (GUI.Button(new Rect(x + 12f, by, tabWidth, 28f), "BUILD", _sidebarButton))
             {
                 _sidebarTab = 0;
             }
@@ -1883,9 +1883,23 @@ namespace CQRa.View
             GUI.backgroundColor = _sidebarTab == 1
                 ? new Color(0.62f, 0.44f, 0.20f)
                 : new Color(0.26f, 0.24f, 0.20f);
-            if (GUI.Button(new Rect(x + 16f + half, by, half, 28f), "UNITS", _sidebarButton))
+            if (GUI.Button(
+                    new Rect(x + 12f + tabWidth + 4f, by, tabWidth, 28f),
+                    "UNITS",
+                    _sidebarButton))
             {
                 _sidebarTab = 1;
+            }
+
+            GUI.backgroundColor = _sidebarTab == 2
+                ? new Color(0.62f, 0.44f, 0.20f)
+                : new Color(0.26f, 0.24f, 0.20f);
+            if (GUI.Button(
+                    new Rect(x + 12f + (tabWidth + 4f) * 2f, by, tabWidth, 28f),
+                    "TECHS",
+                    _sidebarButton))
+            {
+                _sidebarTab = 2;
             }
 
             GUI.backgroundColor = previous;
@@ -1895,14 +1909,18 @@ namespace CQRa.View
             {
                 DrawStructureRows(x, rowY);
             }
-            else
+            else if (_sidebarTab == 1)
             {
                 DrawUnitRows(x, rowY);
+            }
+            else
+            {
+                DrawUpgradeRows(x, rowY);
             }
 
             var rows = _sidebarTab == 0
                 ? BuildCatalog.VisibleBuildableCount
-                : _unitRows.Count;
+                : _sidebarTab == 1 ? _unitRows.Count : ResearchCatalog.Count;
             var queueY = rowY + rows * 31f + 4f;
 
             var queueText = "Queue: select a producer";
@@ -2013,6 +2031,46 @@ namespace CQRa.View
                 }
 
                 _unitRows.Add(kind);
+            }
+        }
+
+        private void DrawUpgradeRows(float x, float rowY)
+        {
+            var world = World.DefaultGameObjectInjectionWorld;
+            if (world == null || !world.IsCreated)
+            {
+                return;
+            }
+
+            var entityManager = world.EntityManager;
+            ResearchQuery.TryGet(entityManager, out _, out var state);
+            var team = BuildCatalog.PlayerTeam;
+
+            for (var i = 0; i < ResearchCatalog.Count; i++)
+            {
+                var kind = (UpgradeKind)i;
+                var spec = ResearchCatalog.Get(kind);
+                var status = state.Has(team, kind)
+                    ? "DONE"
+                    : state.IsActive(team) && state.KindFor(team) == kind
+                        ? $"RESEARCHING {Mathf.CeilToInt(state.TimerFor(team))}s"
+                        : $"RESEARCH {spec.Cost}  {spec.Seconds:0}s";
+
+                if (GUI.Button(
+                        new Rect(x + 12f, rowY + i * 34f, SidebarWidth - 24f, 31f),
+                        $"{spec.Label}\n{spec.Description}  [{status}]",
+                        _sidebarButton))
+                {
+                    if (ResearchCommands.TryStart(
+                            entityManager, team, kind, out var failure))
+                    {
+                        ShowMessage($"{spec.Label} research started");
+                    }
+                    else
+                    {
+                        ShowMessage(ResearchCommands.FailureText(failure));
+                    }
+                }
             }
         }
 

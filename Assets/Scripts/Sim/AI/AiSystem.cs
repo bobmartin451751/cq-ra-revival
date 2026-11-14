@@ -76,6 +76,7 @@ namespace CQRa.Sim.AI
             MaintainArmy(entityManager, team, profile, credits);
             MaintainNavy(entityManager, team, profile, credits);
             MaintainAirForce(entityManager, team, profile, credits);
+            MaintainResearch(entityManager, team, credits);
 
             if (TryBuild(entityManager, team, profile, credits, economy))
             {
@@ -329,6 +330,39 @@ namespace CQRa.Sim.AI
                 if (credits >= spec.Cost + CreditsReserve &&
                     ProductionCommands.TryEnqueue(entityManager, team, kind, Entity.Null, out _))
                 {
+                    return;
+                }
+            }
+        }
+
+        private static void MaintainResearch(
+            EntityManager entityManager,
+            int team,
+            int credits)
+        {
+            if (credits < 1500)
+            {
+                return;
+            }
+
+            var hasState = ResearchQuery.TryGet(entityManager, out _, out var state);
+            if (hasState && state.IsActive(team))
+            {
+                return;
+            }
+
+            for (var i = 0; i < ResearchCatalog.Count; i++)
+            {
+                var kind = (UpgradeKind)i;
+                if (state.Has(team, kind))
+                {
+                    continue;
+                }
+
+                var spec = ResearchCatalog.Get(kind);
+                if (credits >= spec.Cost + CreditsReserve)
+                {
+                    ResearchCommands.TryStart(entityManager, team, kind, out _);
                     return;
                 }
             }

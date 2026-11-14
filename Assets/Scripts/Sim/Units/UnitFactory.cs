@@ -143,6 +143,24 @@ namespace CQRa.Sim.Units
                 Mask = AirCatalog.DefaultTargeting(kind),
             });
 
+            CQRa.Sim.Base.ResearchQuery.Multipliers(
+                entityManager, team, out var researchHealth, out var researchDamage, out var researchSpeed);
+            if (researchHealth != 1f || researchDamage != 1f || researchSpeed != 1f)
+            {
+                var boostedHealth = entityManager.GetComponentData<Health>(entity);
+                boostedHealth.Max *= researchHealth;
+                boostedHealth.Current *= researchHealth;
+                entityManager.SetComponentData(entity, boostedHealth);
+
+                var boostedWeapon = entityManager.GetComponentData<Weapon>(entity);
+                boostedWeapon.Damage *= researchDamage;
+                entityManager.SetComponentData(entity, boostedWeapon);
+
+                var boostedInfo = entityManager.GetComponentData<UnitInfo>(entity);
+                boostedInfo.MaxSpeed *= researchSpeed;
+                entityManager.SetComponentData(entity, boostedInfo);
+            }
+
             entityManager.AddComponentData(entity, new CombatState
             {
                 Target = Entity.Null,
