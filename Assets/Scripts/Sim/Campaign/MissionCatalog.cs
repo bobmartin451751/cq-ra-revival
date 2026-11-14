@@ -26,7 +26,7 @@ namespace CQRa.Sim.Campaign
 
     /// <summary>
     /// Loads hand-authored campaign missions from Resources/Data/missions.json and falls
-    /// back to three built-in missions when the asset is missing.
+    /// back to five built-in missions when the asset is missing.
     /// </summary>
     public static class MissionCatalog
     {
@@ -60,6 +60,24 @@ namespace CQRa.Sim.Campaign
                 briefing = "Strike the heart of the enemy base. Kill their Construction Yard and they cannot rebuild.",
                 playerFaction = "Ashfall",
                 aiFaction = "Meridian",
+            },
+            new MissionDto
+            {
+                id = "m4", name = "Iron Tide", difficulty = "Hardened",
+                objective = "survive", surviveSeconds = 360f,
+                objectiveText = "Survive for 6 minutes.",
+                briefing = "The Syndicate is spending everything to break you. Hold the basin and keep your economy alive.",
+                playerFaction = "Verdant",
+                aiFaction = "Meridian",
+            },
+            new MissionDto
+            {
+                id = "m5", name = "The Last Compact", difficulty = "Brutal",
+                objective = "destroyYard",
+                objectiveText = "Destroy the Ashfall Construction Yard.",
+                briefing = "Ashfall has committed its last field command. Break their yard and end the campaign.",
+                playerFaction = "Meridian",
+                aiFaction = "Ashfall",
             },
         };
 

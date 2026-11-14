@@ -32,6 +32,28 @@
       "surviveSeconds": 0,
       "playerFaction": "Ashfall",
       "aiFaction": "Meridian"
+    },
+    {
+      "id": "m4",
+      "name": "Iron Tide",
+      "briefing": "The Syndicate is spending everything to break you. Hold the basin and keep your economy alive.",
+      "difficulty": "Hardened",
+      "objective": "survive",
+      "objectiveText": "Survive for 6 minutes.",
+      "surviveSeconds": 360,
+      "playerFaction": "Verdant",
+      "aiFaction": "Meridian"
+    },
+    {
+      "id": "m5",
+      "name": "The Last Compact",
+      "briefing": "Ashfall has committed its last field command. Break their yard and end the campaign.",
+      "difficulty": "Brutal",
+      "objective": "destroyYard",
+      "objectiveText": "Destroy the Ashfall Construction Yard.",
+      "surviveSeconds": 0,
+      "playerFaction": "Meridian",
+      "aiFaction": "Ashfall"
     }
   ]
 }
