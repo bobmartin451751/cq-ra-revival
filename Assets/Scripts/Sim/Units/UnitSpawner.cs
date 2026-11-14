@@ -2,6 +2,7 @@ using Unity.Entities;
 using Unity.Mathematics;
 using Unity.Rendering;
 using UnityEngine;
+using CQRa.Sim.Content;
 using CQRa.Sim.Factions;
 using CQRa.View;
 
@@ -124,15 +125,17 @@ namespace CQRa.Sim.Units
 
             for (var team = 0; team < TeamCount; team++)
             {
-                var direction = team == 0 ? 1f : -1f;
-                var teamZ = direction * 32f;
-                var yaw = team == 0 ? 0f : Mathf.PI;
+                var map = MapRuntime.Current;
+                var start = team == 0 ? map.PlayerStart : map.AiStart;
+                var forward = math.normalizesafe(new float2(-start.x, -start.y), new float2(0f, 1f));
+                var right = new float2(forward.y, -forward.x);
+                var yaw = math.atan2(forward.x, forward.y);
                 var index = 0;
 
-                index = SpawnKind(entityManager, team, UnitKind.Harvester, _harvestersPerTeam, index, teamZ, yaw);
-                index = SpawnKind(entityManager, team, UnitKind.Mcv, _mcvsPerTeam, index, teamZ, yaw);
-                index = SpawnKind(entityManager, team, UnitKind.Tank, _tanksPerTeam, index, teamZ, yaw);
-                SpawnKind(entityManager, team, UnitKind.Infantry, _infantryPerTeam, index, teamZ, yaw);
+                index = SpawnKind(entityManager, team, UnitKind.Harvester, _harvestersPerTeam, index, start, forward, right, yaw);
+                index = SpawnKind(entityManager, team, UnitKind.Mcv, _mcvsPerTeam, index, start, forward, right, yaw);
+                index = SpawnKind(entityManager, team, UnitKind.Tank, _tanksPerTeam, index, start, forward, right, yaw);
+                SpawnKind(entityManager, team, UnitKind.Infantry, _infantryPerTeam, index, start, forward, right, yaw);
             }
 
             Debug.Log($"[UnitSpawner] spawned {SpawnedCount} units across {TeamCount} teams");
@@ -144,18 +147,23 @@ namespace CQRa.Sim.Units
             UnitKind kind,
             int count,
             int slot,
-            float teamZ,
+            float2 start,
+            float2 forward,
+            float2 right,
             float yaw)
         {
             for (var i = 0; i < count; i++)
             {
                 var column = slot % 6;
                 var row = slot / 6;
-                var x = (column - 2.5f) * _spacing;
-                var z = teamZ - Mathf.Sign(teamZ) * row * _spacing;
+                var offset = right * ((column - 2.5f) * _spacing) +
+                             forward * (row * _spacing);
+                var x = start.x + offset.x;
+                var z = start.y + offset.y;
 
                 if (_terrain != null)
                 {
+                    x = Mathf.Clamp(x, -_terrain.Size * 0.5f + 6f, _terrain.Size * 0.5f - 6f);
                     z = Mathf.Clamp(z, -_terrain.Size * 0.5f + 6f, _terrain.Size * 0.5f - 6f);
                 }
 

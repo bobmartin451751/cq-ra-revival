@@ -1,4 +1,5 @@
 using CQRa.Sim.Base;
+using CQRa.Sim.Content;
 using CQRa.Sim.Navigation;
 using CQRa.View;
 using Unity.Collections;
@@ -71,9 +72,11 @@ namespace CQRa.Sim.Base
             }
 
             var spawned = 0;
-            for (var i = 0; i < OrePositions.Length; i++)
+            var map = MapRuntime.Current;
+            var orePositions = map != null ? ToVectors(map.OrePositions) : OrePositions;
+            for (var i = 0; i < orePositions.Length; i++)
             {
-                var point = OrePositions[i];
+                var point = orePositions[i];
                 if (!NavGridQuery.IsWalkable(entityManager, point))
                 {
                     continue;
@@ -95,9 +98,10 @@ namespace CQRa.Sim.Base
             if (existingCrates.IsEmptyIgnoreFilter)
             {
                 var crates = 0;
-                for (var i = 0; i < CratePositions.Length; i++)
+                var cratePositions = map != null ? ToVectors(map.CratePositions) : CratePositions;
+                for (var i = 0; i < cratePositions.Length; i++)
                 {
-                    var point = CratePositions[i];
+                    var point = cratePositions[i];
                     if (!NavGridQuery.IsWalkable(entityManager, point))
                     {
                         continue;
@@ -115,6 +119,22 @@ namespace CQRa.Sim.Base
 
                 Debug.Log($"[Economy] {crates} crates");
             }
+        }
+
+        private static Vector2[] ToVectors(float2[] points)
+        {
+            if (points == null)
+            {
+                return System.Array.Empty<Vector2>();
+            }
+
+            var result = new Vector2[points.Length];
+            for (var i = 0; i < points.Length; i++)
+            {
+                result[i] = new Vector2(points[i].x, points[i].y);
+            }
+
+            return result;
         }
 
         private static void EnsureEconomy(EntityManager entityManager)

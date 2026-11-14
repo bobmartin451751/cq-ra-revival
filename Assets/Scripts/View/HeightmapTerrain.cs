@@ -1,3 +1,4 @@
+using CQRa.Sim.Content;
 using UnityEngine;
 using UnityEngine.Rendering;
 
@@ -55,7 +56,24 @@ namespace CQRa.View
 
         private void Awake()
         {
+            ApplySelectedMap();
             Generate();
+        }
+
+        /// <summary>Copies the selected skirmish map's terrain shape into this heightmap.</summary>
+        public void ApplySelectedMap()
+        {
+            var map = MapRuntime.Current;
+            if (map == null)
+            {
+                return;
+            }
+
+            _seed = map.Seed;
+            _maxHeight = map.MaxHeight;
+            _noiseScale = map.NoiseScale;
+            _basinRadius = map.BasinRadius;
+            _basinBlend = map.BasinBlend;
         }
 
         private void OnDestroy()

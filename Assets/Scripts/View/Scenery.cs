@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using CQRa.Sim.Content;
 using UnityEngine;
 using UnityEngine.Rendering;
 
@@ -38,7 +39,30 @@ namespace CQRa.View
 
         private void Awake()
         {
+            ApplySelectedMap();
             BuildVisuals();
+        }
+
+        private void ApplySelectedMap()
+        {
+            var map = MapRuntime.Current;
+            if (map == null || map.Obstacles == null)
+            {
+                return;
+            }
+
+            _obstacles = new ObstacleSpec[map.Obstacles.Length];
+            for (var i = 0; i < map.Obstacles.Length; i++)
+            {
+                var obstacle = map.Obstacles[i];
+                _obstacles[i] = new ObstacleSpec
+                {
+                    Centre = new Vector2(obstacle.Centre.x, obstacle.Centre.y),
+                    Radius = obstacle.Radius,
+                    Height = obstacle.Height,
+                    Seed = obstacle.Seed,
+                };
+            }
         }
 
         private void BuildVisuals()

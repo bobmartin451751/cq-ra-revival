@@ -2,6 +2,7 @@ using System;
 using CQRa.Sim.AI;
 using CQRa.Sim.Base;
 using CQRa.Sim.Campaign;
+using CQRa.Sim.Content;
 using CQRa.Sim.Factions;
 using CQRa.Sim.Units;
 using CQRa.View;
@@ -35,6 +36,7 @@ namespace CQRa.Core
 
         private int _menuMode; // 0 = skirmish, 1 = campaign
         private int _selectedMission;
+        private int _selectedMap;
         private bool _campaignActive;
         private bool _missionWon;
         private bool _enemyYardSeen;
@@ -43,6 +45,10 @@ namespace CQRa.Core
         private float _surviveSeconds;
         private float _missionElapsed;
         private static int _pendingMission = -1;
+        private static bool _pendingSkirmish;
+        private static AiDifficulty _pendingDifficulty;
+        private static FactionId _pendingPlayerFaction;
+        private static FactionId _pendingAiFaction;
 
         private GUIStyle _label;
         private GUIStyle _title;
@@ -71,6 +77,7 @@ namespace CQRa.Core
         {
             _captureRun = HasArg("-screenshot");
             MissionCatalog.Load();
+            _selectedMap = MapRuntime.SelectedIndex;
 
             var world = World.DefaultGameObjectInjectionWorld;
             if (world != null && world.IsCreated)
@@ -94,6 +101,16 @@ namespace CQRa.Core
             {
                 // Capture modes script their own setup; never show the menu in batch runs.
                 BeginMatch(false);
+            }
+            else if (_pendingSkirmish)
+            {
+                _pendingSkirmish = false;
+                _selectedMap = MapRuntime.SelectedIndex;
+                _difficulty = _pendingDifficulty;
+                _playerFaction = _pendingPlayerFaction;
+                _aiFaction = _pendingAiFaction;
+                _campaignActive = false;
+                BeginMatch(true);
             }
             else if (_pendingMission >= 0)
             {
@@ -222,6 +239,16 @@ namespace CQRa.Core
                 return;
             }
 
+            // Campaign missions use the original basin map.
+            if (MapRuntime.SelectedIndex != 0)
+            {
+                MapRuntime.Select(0);
+                _pendingMission = index;
+                Restart();
+                return;
+            }
+
+            _selectedMap = 0;
             var mission = missions[index];
             _selectedMission = index;
             _difficulty = MissionCatalog.DifficultyFor(mission);
@@ -350,7 +377,7 @@ namespace CQRa.Core
             GUI.color = previous;
 
             var width = 540f;
-            var height = 470f;
+            var height = 540f;
             var x = (Screen.width - width) * 0.5f;
             var y = (Screen.height - height) * 0.5f;
             var panel = new Rect(x, y, width, height);
@@ -398,7 +425,7 @@ namespace CQRa.Core
 
         private void DrawSkirmishMenu(float x, float y, float width)
         {
-            GUI.Label(new Rect(x + 30f, y + 156f, width - 60f, 24f), "DIFFICULTY", _label);
+            GUI.Label(new Rect(x + 30f, y + 150f, width - 60f, 24f), "DIFFICULTY", _label);
 
             var difficulties = new[]
             {
@@ -418,7 +445,7 @@ namespace CQRa.Core
                     : new Color(0.28f, 0.26f, 0.22f);
 
                 if (GUI.Button(
-                        new Rect(x + 30f + i * 121f, y + 184f, 111f, 38f),
+                        new Rect(x + 30f + i * 121f, y + 174f, 111f, 38f),
                         difficulty.ToString(),
                         _button))
                 {
@@ -429,11 +456,11 @@ namespace CQRa.Core
             }
 
             GUI.Label(
-                new Rect(x + 30f, y + 234f, width - 60f, 40f),
+                new Rect(x + 30f, y + 216f, width - 60f, 32f),
                 Describe(_difficulty),
                 _label);
 
-            GUI.Label(new Rect(x + 30f, y + 278f, width - 60f, 22f), "FACTION", _label);
+            GUI.Label(new Rect(x + 30f, y + 252f, width - 60f, 22f), "FACTION", _label);
 
             for (var i = 0; i < FactionCatalog.All.Length; i++)
             {
@@ -445,7 +472,7 @@ namespace CQRa.Core
                     : new Color(0.28f, 0.26f, 0.22f);
 
                 if (GUI.Button(
-                        new Rect(x + 30f + i * 162f, y + 302f, 152f, 30f),
+                        new Rect(x + 30f + i * 162f, y + 276f, 152f, 30f),
                         FactionCatalog.Name(faction),
                         _button))
                 {
@@ -457,22 +484,64 @@ namespace CQRa.Core
             }
 
             GUI.Label(
-                new Rect(x + 30f, y + 336f, width - 60f, 34f),
+                new Rect(x + 30f, y + 310f, width - 60f, 34f),
                 $"{FactionCatalog.Name(_playerFaction)} vs {FactionCatalog.Name(_aiFaction)}\n" +
                 FactionCatalog.Description(_playerFaction),
                 _label);
 
-            if (GUI.Button(
-                    new Rect(x + 30f, y + 374f, width - 60f, 44f),
-                    "START MATCH",
-                    _button))
+            GUI.Label(new Rect(x + 30f, y + 348f, width - 60f, 22f), "MAP", _label);
+
+            var mapWidth = (width - 60f - 16f) / 3f;
+            for (var i = 0; i < MapCatalog.Count; i++)
             {
-                _campaignActive = false;
-                BeginMatch(true);
+                var map = MapCatalog.Get(i);
+                var selected = i == _selectedMap;
+                var previousColor = GUI.backgroundColor;
+                GUI.backgroundColor = selected
+                    ? new Color(0.72f, 0.48f, 0.20f)
+                    : new Color(0.28f, 0.26f, 0.22f);
+
+                if (GUI.Button(
+                        new Rect(x + 30f + i * (mapWidth + 8f), y + 372f, mapWidth, 30f),
+                        map.Name,
+                        _button))
+                {
+                    _selectedMap = i;
+                }
+
+                GUI.backgroundColor = previousColor;
             }
 
             GUI.Label(
-                new Rect(x + 30f, y + 426f, width - 60f, 24f),
+                new Rect(x + 30f, y + 406f, width - 60f, 28f),
+                MapCatalog.Get(_selectedMap).Description,
+                _label);
+
+            if (GUI.Button(
+                    new Rect(x + 30f, y + 440f, width - 60f, 44f),
+                    "START MATCH",
+                    _button))
+            {
+                var needsReload = MapRuntime.SelectedIndex != _selectedMap;
+                MapRuntime.Select(_selectedMap);
+                _campaignActive = false;
+
+                if (needsReload)
+                {
+                    _pendingSkirmish = true;
+                    _pendingDifficulty = _difficulty;
+                    _pendingPlayerFaction = _playerFaction;
+                    _pendingAiFaction = _aiFaction;
+                    Restart();
+                }
+                else
+                {
+                    BeginMatch(true);
+                }
+            }
+
+            GUI.Label(
+                new Rect(x + 30f, y + 492f, width - 60f, 24f),
                 "WASD/edges pan Â· wheel zoom Â· Q/E rotate",
                 _label);
         }
