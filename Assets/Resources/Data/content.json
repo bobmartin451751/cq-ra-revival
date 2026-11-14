@@ -207,7 +207,17 @@
       "radius": 6,
       "vision": 45,
       "label": "Battleship"
-    }
+    },
+    { "kind": "AshfallFighter", "cost": 900, "buildSeconds": 8.0, "producer": "Airfield", "maxHealth": 160, "armor": 0.15, "damage": 30, "range": 24, "cooldown": 0.8, "acquireRange": 30, "speed": 24, "radius": 2.2, "vision": 50, "label": "Warden" },
+    { "kind": "AshfallBomber", "cost": 1200, "buildSeconds": 12.0, "producer": "Airfield", "maxHealth": 260, "armor": 0.25, "damage": 90, "range": 30, "cooldown": 2.5, "acquireRange": 32, "speed": 13, "radius": 3.2, "vision": 40, "label": "Cinder" },
+    { "kind": "AshfallTransport", "cost": 700, "buildSeconds": 9.0, "producer": "Airfield", "maxHealth": 240, "armor": 0.15, "damage": 0, "range": 0, "cooldown": 0, "acquireRange": 0, "speed": 14, "radius": 3.0, "vision": 32, "label": "Mule" },
+    { "kind": "VerdantFighter", "cost": 850, "buildSeconds": 8.0, "producer": "Airfield", "maxHealth": 140, "armor": 0.12, "damage": 24, "range": 22, "cooldown": 0.65, "acquireRange": 28, "speed": 26, "radius": 2.1, "vision": 52, "label": "Kite" },
+    { "kind": "VerdantBomber", "cost": 1100, "buildSeconds": 11.0, "producer": "Airfield", "maxHealth": 220, "armor": 0.2, "damage": 80, "range": 28, "cooldown": 2.4, "acquireRange": 30, "speed": 14, "radius": 3.0, "vision": 38, "label": "Blight" },
+    { "kind": "VerdantAttackHeli", "cost": 650, "buildSeconds": 8.0, "producer": "Airfield", "maxHealth": 170, "armor": 0.15, "damage": 26, "range": 18, "cooldown": 0.6, "acquireRange": 22, "speed": 15, "radius": 2.4, "vision": 38, "label": "Scythe" },
+    { "kind": "VerdantTransport", "cost": 650, "buildSeconds": 9.0, "producer": "Airfield", "maxHealth": 220, "armor": 0.12, "damage": 0, "range": 0, "cooldown": 0, "acquireRange": 0, "speed": 13, "radius": 3.0, "vision": 30, "label": "Hauler" },
+    { "kind": "MeridianBomber", "cost": 1300, "buildSeconds": 13.0, "producer": "Airfield", "maxHealth": 280, "armor": 0.28, "damage": 110, "range": 34, "cooldown": 3.0, "acquireRange": 36, "speed": 12, "radius": 3.4, "vision": 42, "label": "Comet" },
+    { "kind": "MeridianAttackHeli", "cost": 800, "buildSeconds": 9.0, "producer": "Airfield", "maxHealth": 200, "armor": 0.18, "damage": 40, "range": 22, "cooldown": 0.8, "acquireRange": 26, "speed": 14, "radius": 2.6, "vision": 40, "label": "Talon" },
+    { "kind": "MeridianTransport", "cost": 750, "buildSeconds": 10.0, "producer": "Airfield", "maxHealth": 260, "armor": 0.15, "damage": 0, "range": 0, "cooldown": 0, "acquireRange": 0, "speed": 12, "radius": 3.2, "vision": 32, "label": "Atlas" }
   ],
   "buildings": [
     { "kind": "ConstructionYard", "cost": 0, "powerProduced": 10, "powerUsed": 0, "radius": 9, "navRadius": 9, "health": 1200, "vision": 38 },

@@ -388,6 +388,13 @@ namespace CQRa.Sim.AI
                     return;
                 }
 
+                if (commander.Attacking == 0 &&
+                    army.Length >= math.max(1, profile.AttackArmySize / 2) &&
+                    AnyAlliedCommanderAttacking(entityManager, commander.Team))
+                {
+                    commander.Attacking = 1;
+                }
+
                 if (commander.Attacking == 0 && army.Length < profile.AttackArmySize)
                 {
                     return;
@@ -426,6 +433,24 @@ namespace CQRa.Sim.AI
             {
                 army.Dispose();
             }
+        }
+
+        private static bool AnyAlliedCommanderAttacking(EntityManager entityManager, int team)
+        {
+            using var query = entityManager.CreateEntityQuery(ComponentType.ReadOnly<AiCommander>());
+            using var commanders = query.ToEntityArray(Allocator.Temp);
+            for (var i = 0; i < commanders.Length; i++)
+            {
+                var other = entityManager.GetComponentData<AiCommander>(commanders[i]);
+                if (other.Team != team &&
+                    other.Attacking != 0 &&
+                    MatchRuntime.AreAllied(other.Team, team))
+                {
+                    return true;
+                }
+            }
+
+            return false;
         }
 
         private static NativeList<Entity> CollectArmy(EntityManager entityManager, int team)

@@ -126,6 +126,49 @@ namespace CQRa.Tests.PlayMode
             }
         }
 
+        [UnityTest]
+        public IEnumerator Fighter_RearmsAtAirfield()
+        {
+            yield return null;
+
+            var world = World.DefaultGameObjectInjectionWorld;
+            var entityManager = world.EntityManager;
+            var airfield = BuildingFactory.SpawnBuilding(
+                entityManager, 0, BuildingKind.Airfield, float3.zero);
+            var fighter = Entity.Null;
+
+            try
+            {
+                var position = entityManager.GetComponentData<LocalTransform>(airfield).Position;
+                fighter = UnitFactory.SpawnDefault(
+                    entityManager, position, 0f, UnitKind.AshfallFighter, 0);
+                var ammo = entityManager.GetComponentData<AircraftAmmo>(fighter);
+                ammo.Current = 0;
+                entityManager.SetComponentData(fighter, ammo);
+                var home = entityManager.GetComponentData<AircraftHome>(fighter);
+                home.Airfield = airfield;
+                home.Returning = 1;
+                entityManager.SetComponentData(fighter, home);
+
+                yield return new WaitForSeconds(5.5f);
+
+                ammo = entityManager.GetComponentData<AircraftAmmo>(fighter);
+                Assert.AreEqual(ammo.Max, ammo.Current, "the fighter should rearm at the Airfield");
+            }
+            finally
+            {
+                if (fighter != Entity.Null && entityManager.Exists(fighter))
+                {
+                    entityManager.DestroyEntity(fighter);
+                }
+
+                if (entityManager.Exists(airfield))
+                {
+                    entityManager.DestroyEntity(airfield);
+                }
+            }
+        }
+
         private static Mesh[] Meshes()
         {
             return new[]

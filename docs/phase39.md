@@ -75,22 +75,22 @@ Included:
 - shared allied fog/vision
 - custom team assignment toggles in the skirmish menu
 - team alliance API supporting arbitrary A/B groups
+- allied AI commanders join an attack when another allied AI is already attacking
+- AI cycles its aircraft production between fighter, bomber and attack helicopter roles
 
 Still outstanding:
 
 - odd-player auto-balance
-- dedicated AI coordination
 - measured performance tuning on 8-player huge maps
 
 ## Verification
 
 - EditMode **87/87**
-- PlayMode **72/72**
+- PlayMode **73/73**
 - Windows player built.
 
 ## Known limits
 - Aircraft rearming uses vertical pad landing, not runways.
 - AI transport use is not implemented.
-- Fighter/bomber rearm behaviour is covered by code paths but not a long-duration
-  visual playtest.
+- Fighter/bomber rearming has a PlayMode regression test.
 - The new aircraft are simple procedural silhouettes rather than highly detailed models.
