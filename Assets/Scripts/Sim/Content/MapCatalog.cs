@@ -507,7 +507,7 @@ namespace CQRa.Sim.Content
                 MaxHeight = 16f + family * 5f + (int)tier * 4f,
                 NoiseScale = 4.8f - family * 0.35f,
                 BasinRadius = basinRadius,
-                BasinBlend = worldSize * 0.07f,
+                BasinBlend = worldSize * 0.09f,
                 PlayerStart = spawns[0].Position,
                 AiStart = spawns[1].Position,
                 Spawns = spawns,

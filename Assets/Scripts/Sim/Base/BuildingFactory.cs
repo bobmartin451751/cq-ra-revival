@@ -95,13 +95,16 @@ namespace CQRa.Sim.Base
             {
                 entityManager.AddComponent<ConstructionYardTag>(entity);
             }
-            else if (kind == BuildingKind.Refinery)
+
+            if (kind == BuildingKind.Refinery)
             {
                 entityManager.AddComponent<RefineryTag>(entity);
             }
-            else if (kind == BuildingKind.Barracks ||
-                     kind == BuildingKind.WarFactory ||
-                     kind == BuildingKind.Dock)
+
+            if (kind == BuildingKind.Refinery ||
+                kind == BuildingKind.Barracks ||
+                kind == BuildingKind.WarFactory ||
+                kind == BuildingKind.Dock)
             {
                 entityManager.AddComponent<ProductionTag>(entity);
                 entityManager.AddBuffer<ProductionOrder>(entity);
@@ -117,7 +120,8 @@ namespace CQRa.Sim.Base
                     HasValue = 1,
                 });
             }
-            else if (kind == BuildingKind.GunTower)
+
+            if (kind == BuildingKind.GunTower)
             {
                 entityManager.AddComponentData(entity, new DefenseWeapon
                 {

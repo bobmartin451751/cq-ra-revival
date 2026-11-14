@@ -36,7 +36,7 @@
       "kind": "Harvester",
       "cost": 500,
       "buildSeconds": 10.0,
-      "producer": "WarFactory",
+      "producer": "Refinery",
       "maxHealth": 220,
       "armor": 0.25,
       "damage": 0,

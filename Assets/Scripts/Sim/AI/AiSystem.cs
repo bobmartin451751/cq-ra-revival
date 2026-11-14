@@ -172,7 +172,7 @@ namespace CQRa.Sim.AI
             in AiProfile profile,
             int credits)
         {
-            if (CountBuildings(entityManager, team, BuildingKind.WarFactory) == 0)
+            if (CountBuildings(entityManager, team, BuildingKind.Refinery) == 0)
             {
                 return;
             }

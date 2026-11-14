@@ -11,7 +11,7 @@ namespace CQRa.Tests.EditMode
         {
             Assert.AreEqual(BuildingKind.Barracks, ProductionCatalog.Get(UnitKind.Infantry).Producer);
             Assert.AreEqual(BuildingKind.WarFactory, ProductionCatalog.Get(UnitKind.Tank).Producer);
-            Assert.AreEqual(BuildingKind.WarFactory, ProductionCatalog.Get(UnitKind.Harvester).Producer);
+            Assert.AreEqual(BuildingKind.Refinery, ProductionCatalog.Get(UnitKind.Harvester).Producer);
             Assert.AreEqual(BuildingKind.WarFactory, ProductionCatalog.Get(UnitKind.Mcv).Producer);
 
             Assert.AreEqual(6, ProductionCatalog.Buildable.Length);

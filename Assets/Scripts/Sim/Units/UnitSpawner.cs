@@ -18,9 +18,9 @@ namespace CQRa.Sim.Units
         [SerializeField] private HeightmapTerrain _terrain;
         [SerializeField] private Material _unitTemplate;
         [SerializeField] private bool _spawnOnStart;
-        [SerializeField] private int _tanksPerTeam = 4;
-        [SerializeField] private int _infantryPerTeam = 6;
-        [SerializeField] private int _harvestersPerTeam = 1;
+        [SerializeField] private int _tanksPerTeam = 0;
+        [SerializeField] private int _infantryPerTeam = 0;
+        [SerializeField] private int _harvestersPerTeam = 0;
         [SerializeField] private int _mcvsPerTeam = 1;
         [SerializeField] private float _spacing = 8f;
 
@@ -30,6 +30,10 @@ namespace CQRa.Sim.Units
 
         public int SpawnedCount { get; private set; }
         public int TeamCount => CQRa.Sim.Units.MatchRuntime.TeamCount;
+        public int McvsPerTeam => _mcvsPerTeam;
+        public int HarvestersPerTeam => _harvestersPerTeam;
+        public int TanksPerTeam => _tanksPerTeam;
+        public int InfantryPerTeam => _infantryPerTeam;
         public bool SpawnOnStart
         {
             get => _spawnOnStart;

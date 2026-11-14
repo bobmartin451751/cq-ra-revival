@@ -93,6 +93,99 @@ namespace CQRa.Tests.PlayMode
         }
 
         [UnityTest]
+        public IEnumerator SecondWaterBody_CanLaunchItsOwnShip()
+        {
+            yield return null;
+
+            var world = World.DefaultGameObjectInjectionWorld;
+            var entityManager = world.EntityManager;
+            var data = CreateFlatWorld(entityManager, 320f, 161, 1f);
+            var material = new Material(Shader.Find("Universal Render Pipeline/Lit"));
+            MapRuntime.Select(3);
+
+            try
+            {
+                var body = MapWater.Body(1);
+                var centre = MapWater.Centre(1);
+                var site = centre + new float2(body.Radius + 6f, 0f);
+                CreateEconomy(entityManager, 5000, 5000);
+                var dock = BuildingFactory.SpawnBuilding(
+                    entityManager, 0, BuildingKind.Dock,
+                    new float3(site.x, 0f, site.y));
+
+                Assert.IsTrue(entityManager.HasComponent<NavalDock>(dock));
+                Assert.AreEqual(1, entityManager.GetComponentData<NavalDock>(dock).BodyIndex);
+
+                Assert.IsTrue(
+                    ProductionCommands.TryEnqueue(
+                        entityManager, 0, UnitKind.PatrolBoat, dock, out var failure),
+                    $"second lake dock should queue a ship ({failure})");
+
+                var queue = entityManager.GetBuffer<ProductionOrder>(dock);
+                var order = queue[0];
+                order.Remaining = 0.05f;
+                queue[0] = order;
+
+                yield return new WaitForSeconds(0.6f);
+
+                using var unitQuery = entityManager.CreateEntityQuery(
+                    ComponentType.ReadOnly<UnitInfo>(),
+                    ComponentType.ReadOnly<NavalUnit>());
+                using var units = unitQuery.ToEntityArray(Allocator.Temp);
+
+                var produced = Entity.Null;
+                for (var i = 0; i < units.Length; i++)
+                {
+                    var info = entityManager.GetComponentData<UnitInfo>(units[i]);
+                    if (info.Team == 0 && info.Kind == UnitKind.PatrolBoat)
+                    {
+                        produced = units[i];
+                        break;
+                    }
+                }
+
+                Assert.AreNotEqual(Entity.Null, produced);
+                Assert.AreEqual(1, entityManager.GetComponentData<NavalUnit>(produced).BodyIndex);
+            }
+            finally
+            {
+                MapRuntime.Reset();
+                Cleanup(entityManager, data, material);
+            }
+        }
+
+        [UnityTest]
+        public IEnumerator Refinery_ProducesHarvesters()
+        {
+            yield return null;
+
+            var world = World.DefaultGameObjectInjectionWorld;
+            var entityManager = world.EntityManager;
+            var data = CreateFlatWorld(entityManager, 140f, 71, 1f);
+            var material = new Material(Shader.Find("Universal Render Pipeline/Lit"));
+
+            try
+            {
+                CreateEconomy(entityManager, 5000, 5000);
+                var refinery = BuildingFactory.SpawnBuilding(
+                    entityManager, 0, BuildingKind.Refinery, float3.zero);
+
+                Assert.IsTrue(
+                    entityManager.HasComponent<ProductionTag>(refinery),
+                    "refineries must own a production queue");
+
+                Assert.IsTrue(
+                    ProductionCommands.TryEnqueue(
+                        entityManager, 0, UnitKind.Harvester, refinery, out var failure),
+                    $"refinery should queue a harvester ({failure})");
+            }
+            finally
+            {
+                Cleanup(entityManager, data, material);
+            }
+        }
+
+        [UnityTest]
         public IEnumerator Dock_ProducesShipsInsideItsWaterBody()
         {
             yield return null;

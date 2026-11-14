@@ -105,7 +105,7 @@ namespace CQRa.Sim.Content
             },
             new UnitDefinition
             {
-                Kind = UnitKind.Harvester, Cost = 500, BuildSeconds = 10f, Producer = BuildingKind.WarFactory,
+                Kind = UnitKind.Harvester, Cost = 500, BuildSeconds = 10f, Producer = BuildingKind.Refinery,
                 MaxHealth = 220f, Armor = 0.25f, Speed = 6f, Radius = 3.8f, Vision = 22f,
                 Label = "Harvester",
             },

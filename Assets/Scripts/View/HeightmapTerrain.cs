@@ -75,7 +75,7 @@ namespace CQRa.View
             _basinRadius = map.BasinRadius;
             _basinBlend = map.BasinBlend;
             _size = map.WorldSize;
-            _resolution = Mathf.Clamp(Mathf.RoundToInt(_size / 2.8f), 97, 241);
+            _resolution = Mathf.Clamp(Mathf.RoundToInt(_size / 1.6f), 129, 321);
         }
 
         private void OnDestroy()
@@ -215,12 +215,12 @@ namespace CQRa.View
                         for (var i = 0; i < waterBodies.Length; i++)
                         {
                             var signed = MapWater.SignedDistance(i, new Unity.Mathematics.float2(wx, wz));
-                            if (signed >= 10f)
+                            if (signed >= 12f)
                             {
                                 continue;
                             }
 
-                            var shore = Mathf.SmoothStep(0f, 1f, Mathf.Clamp01(signed / 10f));
+                            var shore = Mathf.SmoothStep(0f, 1f, Mathf.Clamp01(signed / 12f));
                             h = Mathf.Lerp(MapWater.Level(i) - 3f, h, shore);
                         }
                     }

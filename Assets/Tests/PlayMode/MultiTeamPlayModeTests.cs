@@ -11,6 +11,24 @@ namespace CQRa.Tests.PlayMode
 {
     public sealed class MultiTeamPlayModeTests
     {
+        [Test]
+        public void UnitSpawner_DefaultsToMcvOnly()
+        {
+            var go = new UnityEngine.GameObject("SpawnerProbe");
+            try
+            {
+                var spawner = go.AddComponent<UnitSpawner>();
+                Assert.AreEqual(1, spawner.McvsPerTeam);
+                Assert.AreEqual(0, spawner.HarvestersPerTeam);
+                Assert.AreEqual(0, spawner.TanksPerTeam);
+                Assert.AreEqual(0, spawner.InfantryPerTeam);
+            }
+            finally
+            {
+                UnityEngine.Object.DestroyImmediate(go);
+            }
+        }
+
         [UnityTest]
         public IEnumerator StartMatch_EightTeams_CreatesSevenCommanders()
         {

@@ -441,7 +441,7 @@ namespace CQRa.Core
             GUI.color = previous;
 
             var width = 540f;
-            var height = 700f;
+            var height = 740f;
             var x = (Screen.width - width) * 0.5f;
             var y = (Screen.height - height) * 0.5f;
             var panel = new Rect(x, y, width, height);
@@ -656,15 +656,24 @@ namespace CQRa.Core
                     _label);
             }
 
+            var preview = MapPreviewCache.Get(_selectedMap);
+            if (preview != null)
+            {
+                GUI.DrawTexture(
+                    new Rect(x + 30f, y + 566f, 80f, 80f),
+                    preview,
+                    ScaleMode.ScaleToFit);
+            }
+
             GUI.Label(
-                new Rect(x + 30f, y + 568f, width - 60f, 28f),
+                new Rect(x + 120f, y + 566f, width - 150f, 64f),
                 $"{_mapPage + 1}/{pages}  [{MapCatalog.Get(_selectedMap).SizeTier} " +
-                $"{MapCatalog.Get(_selectedMap).MinPlayers}-{MapCatalog.Get(_selectedMap).MaxPlayers}p]  " +
+                $"{MapCatalog.Get(_selectedMap).MinPlayers}-{MapCatalog.Get(_selectedMap).MaxPlayers}p]\n" +
                 MapCatalog.Get(_selectedMap).Description,
                 _label);
 
             if (GUI.Button(
-                    new Rect(x + 30f, y + 600f, width - 60f, 44f),
+                    new Rect(x + 30f, y + 650f, width - 60f, 44f),
                     "START MATCH",
                     _button))
             {
@@ -689,7 +698,7 @@ namespace CQRa.Core
             }
 
             GUI.Label(
-                new Rect(x + 30f, y + 654f, width - 60f, 24f),
+                new Rect(x + 30f, y + 704f, width - 60f, 24f),
                 "WASD/edges pan Â· wheel zoom Â· Q/E rotate",
                 _label);
         }
@@ -819,8 +828,17 @@ namespace CQRa.Core
                 mission.aiFaction,
                 FactionCatalog.DefaultOpponent(playerFaction));
             var missionMap = MapCatalog.Get(MapCatalog.FindIndex(mission.mapId));
+            var missionPreview = MapPreviewCache.Get(MapCatalog.FindIndex(mission.mapId));
+            if (missionPreview != null)
+            {
+                GUI.DrawTexture(
+                    new Rect(x + 30f, y + 366f, 64f, 64f),
+                    missionPreview,
+                    ScaleMode.ScaleToFit);
+            }
+
             GUI.Label(
-                new Rect(x + 30f, y + 366f, width - 60f, 82f),
+                new Rect(x + 104f, y + 366f, width - 134f, 82f),
                 $"{FactionCatalog.Name(playerFaction)} vs {FactionCatalog.Name(aiFaction)}\n" +
                 $"Map: {missionMap?.Name ?? "Ash Basin"}  |  {mission.teamCount} players\n" +
                 mission.briefing,
