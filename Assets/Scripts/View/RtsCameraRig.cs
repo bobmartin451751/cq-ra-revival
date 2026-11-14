@@ -56,6 +56,10 @@ namespace CQRa.View
             _terrain = terrain;
             _camera = camera;
             _enableEdgeScroll = enableEdgeScroll;
+            if (terrain != null)
+            {
+                _maxDistance = Mathf.Max(_maxDistance, terrain.Size * 0.45f);
+            }
         }
 
         public void SetPose(Vector3 pivot, float yaw, float pitch, float distance)
@@ -78,6 +82,11 @@ namespace CQRa.View
             if (_terrain == null)
             {
                 _terrain = FindFirstObjectByType<HeightmapTerrain>();
+            }
+
+            if (_terrain != null)
+            {
+                _maxDistance = Mathf.Max(_maxDistance, _terrain.Size * 0.45f);
             }
 
             SnapTargetsToPose();

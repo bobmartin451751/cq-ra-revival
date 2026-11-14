@@ -298,14 +298,8 @@ namespace CQRa.Sim.AI
             var army = CollectArmy(entityManager, commander.Team);
             try
             {
-                var hasFog = FogQuery.TryGet(entityManager, commander.Team, out var fog, out var fogInfo);
-                var fogCells = hasFog
-                    ? FogQuery.GetCells(entityManager, fog)
-                    : default;
-
                 var yardPosition = entityManager.GetComponentData<LocalTransform>(yard).Position;
-                var enemy = FindEnemyTarget(
-                    entityManager, commander.Team, yardPosition, hasFog, fogInfo, fogCells);
+                var enemy = FindEnemyTarget(entityManager, commander.Team, yardPosition);
 
                 if (enemy == Entity.Null)
                 {
@@ -342,8 +336,7 @@ namespace CQRa.Sim.AI
                     }
 
                     var position = entityManager.GetComponentData<LocalTransform>(unit).Position;
-                    var target = FindNearestEnemy(
-                        entityManager, commander.Team, position, hasFog, fogInfo, fogCells);
+                    var target = FindNearestEnemy(entityManager, commander.Team, position);
                     if (target == Entity.Null)
                     {
                         target = enemy;
@@ -389,10 +382,7 @@ namespace CQRa.Sim.AI
         private static Entity FindEnemyTarget(
             EntityManager entityManager,
             int team,
-            float3 position,
-            bool hasFog,
-            in FogGridInfo fogInfo,
-            NativeArray<FogCell> fogCells)
+            float3 position)
         {
             using var query = entityManager.CreateEntityQuery(new EntityQueryDesc
             {
@@ -419,7 +409,7 @@ namespace CQRa.Sim.AI
                 {
                     var candidate = entities[i];
                     if (!TryGetTeam(entityManager, candidate, out var candidateTeam) ||
-                        candidateTeam == team ||
+                        MatchRuntime.AreAllied(team, candidateTeam) ||
                         entityManager.GetComponentData<Health>(candidate).Current <= 0f)
                     {
                         continue;
@@ -432,7 +422,7 @@ namespace CQRa.Sim.AI
                     }
 
                     var candidatePosition = entityManager.GetComponentData<LocalTransform>(candidate).Position;
-                    if (!IsVisibleTo(hasFog, fogInfo, fogCells, candidatePosition))
+                    if (!IsVisibleTo(entityManager, team, candidatePosition))
                     {
                         continue;
                     }
@@ -463,10 +453,7 @@ namespace CQRa.Sim.AI
         private static Entity FindNearestEnemy(
             EntityManager entityManager,
             int team,
-            float3 position,
-            bool hasFog,
-            in FogGridInfo fogInfo,
-            NativeArray<FogCell> fogCells)
+            float3 position)
         {
             using var query = entityManager.CreateEntityQuery(new EntityQueryDesc
             {
@@ -490,14 +477,14 @@ namespace CQRa.Sim.AI
             {
                 var candidate = entities[i];
                 if (!TryGetTeam(entityManager, candidate, out var candidateTeam) ||
-                    candidateTeam == team ||
+                    MatchRuntime.AreAllied(team, candidateTeam) ||
                     entityManager.GetComponentData<Health>(candidate).Current <= 0f)
                 {
                     continue;
                 }
 
                 var candidatePosition = entityManager.GetComponentData<LocalTransform>(candidate).Position;
-                if (!IsVisibleTo(hasFog, fogInfo, fogCells, candidatePosition))
+                if (!IsVisibleTo(entityManager, team, candidatePosition))
                 {
                     continue;
                 }
@@ -519,18 +506,9 @@ namespace CQRa.Sim.AI
             return best;
         }
 
-        private static bool IsVisibleTo(
-            bool hasFog,
-            in FogGridInfo info,
-            NativeArray<FogCell> cells,
-            float3 position)
+        private static bool IsVisibleTo(EntityManager entityManager, int team, float3 position)
         {
-            if (!hasFog)
-            {
-                return true;
-            }
-
-            return FogMath.IsVisible(cells, info, new float2(position.x, position.z));
+            return FogQuery.IsVisible(entityManager, team, position);
         }
 
         private static bool TryGetTeam(EntityManager entityManager, Entity entity, out int team)

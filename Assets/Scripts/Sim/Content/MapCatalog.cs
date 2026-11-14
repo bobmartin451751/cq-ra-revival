@@ -1,3 +1,5 @@
+using System;
+using System.Collections.Generic;
 using Unity.Mathematics;
 
 namespace CQRa.Sim.Content
@@ -23,6 +25,26 @@ namespace CQRa.Sim.Content
     {
         Circle = 0,
         Polygon = 1,
+    }
+
+    public enum MapSizeTier : byte
+    {
+        Small = 0,
+        Medium = 1,
+        Large = 2,
+        Huge = 3,
+    }
+
+    public struct MapSpawn
+    {
+        public float2 Position;
+        public float Yaw;
+
+        public MapSpawn(float x, float z, float yaw = 0f)
+        {
+            Position = new float2(x, z);
+            Yaw = yaw;
+        }
     }
 
     /// <summary>
@@ -71,6 +93,10 @@ namespace CQRa.Sim.Content
         public string Id;
         public string Name;
         public string Description;
+        public MapSizeTier SizeTier;
+        public float WorldSize = 360f;
+        public int MinPlayers = 2;
+        public int MaxPlayers = 2;
         public int Seed;
         public float MaxHeight;
         public float NoiseScale;
@@ -78,12 +104,37 @@ namespace CQRa.Sim.Content
         public float BasinBlend;
         public float2 PlayerStart;
         public float2 AiStart;
+        public MapSpawn[] Spawns;
         public MapObstacle[] Obstacles;
         public WaterBody[] WaterBodies;
         public float2[] OrePositions;
         public float2[] CratePositions;
 
         public bool HasWater => WaterBodies != null && WaterBodies.Length > 0;
+
+        public MapSpawn SpawnFor(int team)
+        {
+            if (Spawns != null && team >= 0 && team < Spawns.Length)
+            {
+                return Spawns[team];
+            }
+
+            if (team == 0)
+            {
+                return new MapSpawn(PlayerStart.x, PlayerStart.y, 0f);
+            }
+
+            if (team == 1)
+            {
+                return new MapSpawn(AiStart.x, AiStart.y, 3.14159265f);
+            }
+
+            var angle = team * 6.2831853f / 8f;
+            var radius = BasinRadius * 0.72f;
+            return new MapSpawn(
+                math.cos(angle) * radius,
+                math.sin(angle) * radius);
+        }
     }
 
     /// <summary>
@@ -92,7 +143,7 @@ namespace CQRa.Sim.Content
     /// </summary>
     public static class MapCatalog
     {
-        public static readonly MapDefinition[] Maps =
+        private static readonly MapDefinition[] Authored =
         {
             new MapDefinition
             {
@@ -355,6 +406,342 @@ namespace CQRa.Sim.Content
             },
         };
 
+        private static readonly string[] FamilyNames =
+        {
+            "Ash Basin",
+            "Rusted Flats",
+            "Broken Ridge",
+            "Twin Shallows",
+            "Flooded Delta",
+        };
+
+        private static readonly string[] FamilyDescriptions =
+        {
+            "Industrial basin with ruins and a small-to-medium lake.",
+            "Open dry ground with long sight lines and little or no water.",
+            "High ridges and a central polygonal lake with short lanes.",
+            "Two separate lakes with split naval theaters.",
+            "Large irregular delta with deep inlets and heavy naval play.",
+        };
+
+        public static readonly MapDefinition[] Maps = BuildAll();
+
+        private static MapDefinition[] BuildAll()
+        {
+            var maps = new List<MapDefinition>(50);
+            maps.AddRange(Authored);
+            AddTier(maps, MapSizeTier.Small, 3, 5);
+            AddTier(maps, MapSizeTier.Medium, 12, 8);
+            AddTier(maps, MapSizeTier.Large, 12, 20);
+            AddTier(maps, MapSizeTier.Huge, 18, 32);
+            return maps.ToArray();
+        }
+
+        private static void AddTier(
+            List<MapDefinition> maps,
+            MapSizeTier tier,
+            int count,
+            int startIndex)
+        {
+            for (var i = 0; i < count; i++)
+            {
+                var index = startIndex + i;
+                var family = index % FamilyNames.Length;
+                maps.Add(CreateGeneratedMap(family, tier, index));
+            }
+        }
+
+        private static MapDefinition CreateGeneratedMap(int family, MapSizeTier tier, int index)
+        {
+            var worldSize = tier switch
+            {
+                MapSizeTier.Small => 220f,
+                MapSizeTier.Medium => 320f,
+                MapSizeTier.Large => 420f,
+                _ => 520f,
+            };
+
+            var maxPlayers = tier switch
+            {
+                MapSizeTier.Small => 2,
+                MapSizeTier.Medium => 4,
+                MapSizeTier.Large => 6,
+                _ => 8,
+            };
+
+            var minPlayers = tier switch
+            {
+                MapSizeTier.Small => 2,
+                MapSizeTier.Medium => 3,
+                MapSizeTier.Large => 5,
+                _ => 7,
+            };
+
+            var seed = 1200 + index * 137 + family * 29;
+            var spawnRing = worldSize * 0.37f;
+            var basinRadius = worldSize * 0.42f;
+            var spawns = new MapSpawn[maxPlayers];
+            for (var i = 0; i < maxPlayers; i++)
+            {
+                var angle = -math.PI * 0.5f + i * math.PI * 2f / maxPlayers;
+                spawns[i] = new MapSpawn(
+                    math.cos(angle) * spawnRing,
+                    math.sin(angle) * spawnRing);
+            }
+
+            var water = CreateWater(family, index, worldSize);
+            var obstacles = CreateObstacles(seed + 1, worldSize, spawns, water);
+            var ore = CreatePoints(seed + 2, 10 + (index % 3), worldSize, spawns, water, 0.30f, 0.40f);
+            var crates = CreatePoints(seed + 3, 5 + (index % 2), worldSize, spawns, water, 0.16f, 0.34f);
+
+            return new MapDefinition
+            {
+                Id = $"{FamilyNames[family].ToLowerInvariant().Replace(' ', '-')}-{index + 1:00}",
+                Name = $"{FamilyNames[family]} {index + 1:00}",
+                Description = FamilyDescriptions[family],
+                SizeTier = tier,
+                WorldSize = worldSize,
+                MinPlayers = minPlayers,
+                MaxPlayers = maxPlayers,
+                Seed = seed,
+                MaxHeight = 16f + family * 5f + (int)tier * 4f,
+                NoiseScale = 4.8f - family * 0.35f,
+                BasinRadius = basinRadius,
+                BasinBlend = worldSize * 0.07f,
+                PlayerStart = spawns[0].Position,
+                AiStart = spawns[1].Position,
+                Spawns = spawns,
+                WaterBodies = water,
+                Obstacles = obstacles,
+                OrePositions = ore,
+                CratePositions = crates,
+            };
+        }
+
+        private static WaterBody[] CreateWater(int family, int index, float worldSize)
+        {
+            switch (family)
+            {
+                case 1:
+                    if (index % 10 < 6)
+                    {
+                        return System.Array.Empty<WaterBody>();
+                    }
+
+                    return new[]
+                    {
+                        WaterBody.Circle(
+                            "Salt Pan",
+                            worldSize * 0.16f,
+                            -worldSize * 0.10f,
+                            worldSize * 0.075f,
+                            0.55f),
+                    };
+
+                case 2:
+                    return new[]
+                    {
+                        WaterBody.Polygon(
+                            "Ridge Lake",
+                            0.55f,
+                            PolygonPoints(
+                                0f,
+                                0f,
+                                worldSize * (0.125f + (index % 3) * 0.008f),
+                                10,
+                                index * 37)),
+                    };
+
+                case 3:
+                    return new[]
+                    {
+                        WaterBody.Circle(
+                            "South Lake",
+                            -worldSize * 0.20f,
+                            -worldSize * 0.15f,
+                            worldSize * (0.070f + (index % 2) * 0.008f),
+                            0.55f),
+                        WaterBody.Circle(
+                            "North Lake",
+                            worldSize * 0.20f,
+                            worldSize * 0.15f,
+                            worldSize * (0.070f + ((index + 1) % 2) * 0.008f),
+                            0.55f),
+                    };
+
+                case 4:
+                    return new[]
+                    {
+                        WaterBody.Polygon(
+                            "Delta",
+                            0.55f,
+                            PolygonPoints(
+                                -worldSize * 0.08f,
+                                0f,
+                                worldSize * (0.19f + (index % 3) * 0.012f),
+                                12,
+                                index * 53)),
+                    };
+
+                default:
+                    return new[]
+                    {
+                        WaterBody.Circle(
+                            "West Lake",
+                            -worldSize * 0.20f,
+                            0f,
+                            worldSize * (0.095f + (index % 3) * 0.008f),
+                            0.55f),
+                    };
+            }
+        }
+
+        private static float2[] PolygonPoints(
+            float centreX,
+            float centreZ,
+            float radius,
+            int count,
+            int seed)
+        {
+            var random = new System.Random(seed);
+            var points = new float2[count];
+            for (var i = 0; i < count; i++)
+            {
+                var angle = i * math.PI * 2f / count;
+                var jitter = 0.86f + (float)random.NextDouble() * 0.28f;
+                points[i] = new float2(
+                    centreX + math.cos(angle) * radius * jitter,
+                    centreZ + math.sin(angle) * radius * jitter);
+            }
+
+            return points;
+        }
+
+        private static MapObstacle[] CreateObstacles(
+            int seed,
+            float worldSize,
+            MapSpawn[] spawns,
+            WaterBody[] water)
+        {
+            var random = new System.Random(seed);
+            var obstacles = new List<MapObstacle>();
+            var attempts = 0;
+            while (obstacles.Count < 7 && attempts++ < 80)
+            {
+                var angle = (float)random.NextDouble() * math.PI * 2f;
+                var radius = worldSize * (0.16f + (float)random.NextDouble() * 0.24f);
+                var point = new float2(math.cos(angle) * radius, math.sin(angle) * radius);
+                if (ContainsWater(water, point) || TooCloseToSpawn(spawns, point, worldSize * 0.12f))
+                {
+                    continue;
+                }
+
+                obstacles.Add(new MapObstacle(
+                    point.x,
+                    point.y,
+                    worldSize * (0.014f + (float)random.NextDouble() * 0.012f),
+                    worldSize * (0.018f + (float)random.NextDouble() * 0.018f),
+                    random.Next()));
+            }
+
+            return obstacles.ToArray();
+        }
+
+        private static float2[] CreatePoints(
+            int seed,
+            int count,
+            float worldSize,
+            MapSpawn[] spawns,
+            WaterBody[] water,
+            float minRadius,
+            float maxRadius)
+        {
+            var random = new System.Random(seed);
+            var points = new List<float2>();
+            var attempts = 0;
+            while (points.Count < count && attempts++ < 160)
+            {
+                var angle = (float)random.NextDouble() * math.PI * 2f;
+                var radius = worldSize *
+                             (minRadius + (float)random.NextDouble() * (maxRadius - minRadius));
+                var point = new float2(math.cos(angle) * radius, math.sin(angle) * radius);
+                if (ContainsWater(water, point) || TooCloseToSpawn(spawns, point, worldSize * 0.09f))
+                {
+                    continue;
+                }
+
+                points.Add(point);
+            }
+
+            return points.ToArray();
+        }
+
+        private static bool TooCloseToSpawn(MapSpawn[] spawns, float2 point, float distance)
+        {
+            var distanceSq = distance * distance;
+            for (var i = 0; i < spawns.Length; i++)
+            {
+                if (math.distancesq(spawns[i].Position, point) < distanceSq)
+                {
+                    return true;
+                }
+            }
+
+            return false;
+        }
+
+        private static bool ContainsWater(WaterBody[] bodies, float2 point)
+        {
+            if (bodies == null)
+            {
+                return false;
+            }
+
+            for (var i = 0; i < bodies.Length; i++)
+            {
+                var body = bodies[i];
+                if (body.Kind == WaterShapeKind.Circle)
+                {
+                    if (math.distancesq(point, body.Centre) < body.Radius * body.Radius)
+                    {
+                        return true;
+                    }
+
+                    continue;
+                }
+
+                if (PointInPolygon(body.Points, point))
+                {
+                    return true;
+                }
+            }
+
+            return false;
+        }
+
+        private static bool PointInPolygon(float2[] points, float2 point)
+        {
+            if (points == null || points.Length < 3)
+            {
+                return false;
+            }
+
+            var inside = false;
+            for (var i = 0; i < points.Length; i++)
+            {
+                var j = (i + points.Length - 1) % points.Length;
+                var pi = points[i];
+                var pj = points[j];
+                if ((pi.y > point.y) != (pj.y > point.y) &&
+                    point.x < (pj.x - pi.x) * (point.y - pi.y) / (pj.y - pi.y) + pi.x)
+                {
+                    inside = !inside;
+                }
+            }
+
+            return inside;
+        }
+
         public static int Count => Maps.Length;
 
         public static MapDefinition Get(int index)
@@ -365,6 +752,24 @@ namespace CQRa.Sim.Content
             }
 
             return Maps[Clamp(index)];
+        }
+
+        public static int FindIndex(string id)
+        {
+            if (string.IsNullOrEmpty(id))
+            {
+                return -1;
+            }
+
+            for (var i = 0; i < Maps.Length; i++)
+            {
+                if (string.Equals(Maps[i].Id, id, System.StringComparison.OrdinalIgnoreCase))
+                {
+                    return i;
+                }
+            }
+
+            return -1;
         }
 
         public static int Clamp(int index)

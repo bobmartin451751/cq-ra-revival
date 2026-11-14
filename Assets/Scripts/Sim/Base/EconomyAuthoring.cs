@@ -146,11 +146,7 @@ namespace CQRa.Sim.Base
             }
 
             var entity = entityManager.CreateEntity(typeof(EconomyState));
-            entityManager.SetComponentData(entity, new EconomyState
-            {
-                Team0Credits = BuildCatalog.InitialCredits,
-                Team1Credits = BuildCatalog.InitialCredits,
-            });
+            entityManager.SetComponentData(entity, EconomyState.Create(BuildCatalog.InitialCredits));
         }
     }
 }

@@ -9,10 +9,11 @@ namespace CQRa.Tests.EditMode
     public sealed class Phase35Tests
     {
         [Test]
-        public void MapCatalog_HasFiveDistinctMaps()
+        public void MapCatalog_HasFiftyDistinctMaps()
         {
-            Assert.AreEqual(5, MapCatalog.Count);
+            Assert.AreEqual(50, MapCatalog.Count);
 
+            var byTier = new int[4];
             var ids = new HashSet<string>();
             var seeds = new HashSet<int>();
 
@@ -26,18 +27,24 @@ namespace CQRa.Tests.EditMode
                 Assert.IsFalse(string.IsNullOrEmpty(map.Description));
                 Assert.Greater(map.BasinRadius, 0f);
                 Assert.Greater(map.MaxHeight, 0f);
+                Assert.Greater(map.WorldSize, 0f);
+                byTier[(int)map.SizeTier]++;
             }
+
+            Assert.AreEqual(8, byTier[(int)MapSizeTier.Small]);
+            Assert.AreEqual(12, byTier[(int)MapSizeTier.Medium]);
+            Assert.AreEqual(12, byTier[(int)MapSizeTier.Large]);
+            Assert.AreEqual(18, byTier[(int)MapSizeTier.Huge]);
         }
 
         [Test]
         public void MapStartsAndResources_AreInsideThePlayableBasin()
         {
-            var limit = 160f;
-
             for (var i = 0; i < MapCatalog.Count; i++)
             {
                 MapRuntime.Select(i);
                 var map = MapCatalog.Get(i);
+                var limit = map.WorldSize * 0.48f;
 
                 Assert.Less(
                     math.length(map.PlayerStart),

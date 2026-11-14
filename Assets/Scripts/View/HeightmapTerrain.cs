@@ -74,6 +74,8 @@ namespace CQRa.View
             _noiseScale = map.NoiseScale;
             _basinRadius = map.BasinRadius;
             _basinBlend = map.BasinBlend;
+            _size = map.WorldSize;
+            _resolution = Mathf.Clamp(Mathf.RoundToInt(_size / 2.8f), 97, 241);
         }
 
         private void OnDestroy()

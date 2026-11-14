@@ -36,11 +36,6 @@ namespace CQRa.Sim.Base
                 return;
             }
 
-            var has0 = FogQuery.TryGet(entityManager, 0, out var fog0, out var fogInfo);
-            var has1 = FogQuery.TryGet(entityManager, 1, out var fog1, out _);
-            var cells0 = has0 ? FogQuery.GetCells(entityManager, fog0) : default;
-            var cells1 = has1 ? FogQuery.GetCells(entityManager, fog1) : default;
-
             var dead = new NativeList<Entity>(Allocator.Temp);
 
             for (var i = 0; i < towers.Length; i++)
@@ -57,18 +52,13 @@ namespace CQRa.Sim.Base
 
                 var info = entityManager.GetComponentData<BuildingInfo>(tower);
                 var position = entityManager.GetComponentData<LocalTransform>(tower).Position;
-                var teamCells = info.Team == 0 ? cells0 : cells1;
-                var hasFog = info.Team == 0 ? has0 : has1;
 
                 var target = FindTarget(
                     entityManager,
                     tower,
                     info.Team,
                     position,
-                    weapon.Range,
-                    hasFog,
-                    fogInfo,
-                    teamCells);
+                    weapon.Range);
 
                 if (target != Entity.Null && weapon.CooldownRemaining <= 0f)
                 {
@@ -122,10 +112,7 @@ namespace CQRa.Sim.Base
             Entity self,
             int team,
             float3 position,
-            float range,
-            bool hasFog,
-            in FogGridInfo fogInfo,
-            NativeArray<FogCell> fogCells)
+            float range)
         {
             using var query = entityManager.CreateEntityQuery(
                 ComponentType.ReadOnly<UnitTag>(),
@@ -146,7 +133,7 @@ namespace CQRa.Sim.Base
                 }
 
                 var info = entityManager.GetComponentData<UnitInfo>(candidate);
-                if (info.Team == team ||
+                if (MatchRuntime.AreAllied(info.Team, team) ||
                     entityManager.GetComponentData<Health>(candidate).Current <= 0f)
                 {
                     continue;
@@ -159,11 +146,7 @@ namespace CQRa.Sim.Base
                     continue;
                 }
 
-                if (hasFog &&
-                    !FogMath.IsVisible(
-                        fogCells,
-                        fogInfo,
-                        new float2(candidatePosition.x, candidatePosition.z)))
+                if (!FogQuery.IsVisible(entityManager, team, candidatePosition))
                 {
                     continue;
                 }

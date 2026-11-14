@@ -18,12 +18,13 @@ namespace CQRa.Sim.Base
     public static class BuildingFactory
     {
         public const int BuildingKindCount = 8;
+        public const int TeamCount = 8;
         public const int FactionVariantCount = 3;
         public const int BuildingMeshCount = BuildingKindCount * FactionVariantCount;
         public const int OreMeshIndex = BuildingMeshCount;
         public const int CrateMeshIndex = OreMeshIndex + 1;
         public const int MineMeshIndex = CrateMeshIndex + 1;
-        public const int OreMaterialIndex = BuildingKindCount * 2;
+        public const int OreMaterialIndex = BuildingKindCount * TeamCount;
         public const int CrateMaterialIndex = OreMaterialIndex + 1;
         public const int MineMaterialIndex = CrateMaterialIndex + 1;
         public const int HighlightMaterialIndex = MineMaterialIndex + 1;

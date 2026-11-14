@@ -1,59 +1,19 @@
 {
   "missions": [
-    {
-      "id": "m1",
-      "name": "First Contact",
-      "briefing": "A hostile commander has dug in across the basin. Establish your base, keep the harvesters running, and wipe them out.",
-      "difficulty": "Recruit",
-      "objective": "destroyAll",
-      "objectiveText": "Destroy every enemy unit and structure.",
-      "surviveSeconds": 0,
-      "playerFaction": "Ashfall",
-      "aiFaction": "Verdant"
-    },
-    {
-      "id": "m2",
-      "name": "Hold the Line",
-      "briefing": "Enemy pressure is building. Fortify the approach, protect your economy, and outlast the assault.",
-      "difficulty": "Veteran",
-      "objective": "survive",
-      "objectiveText": "Survive for 5 minutes.",
-      "surviveSeconds": 300,
-      "playerFaction": "Meridian",
-      "aiFaction": "Verdant"
-    },
-    {
-      "id": "m3",
-      "name": "Break Their Base",
-      "briefing": "Strike the heart of the enemy base. Destroy their Construction Yard and they cannot rebuild.",
-      "difficulty": "Hardened",
-      "objective": "destroyYard",
-      "objectiveText": "Destroy the enemy Construction Yard.",
-      "surviveSeconds": 0,
-      "playerFaction": "Ashfall",
-      "aiFaction": "Meridian"
-    },
-    {
-      "id": "m4",
-      "name": "Iron Tide",
-      "briefing": "The Syndicate is spending everything to break you. Hold the basin and keep your economy alive.",
-      "difficulty": "Hardened",
-      "objective": "survive",
-      "objectiveText": "Survive for 6 minutes.",
-      "surviveSeconds": 360,
-      "playerFaction": "Verdant",
-      "aiFaction": "Meridian"
-    },
-    {
-      "id": "m5",
-      "name": "The Last Compact",
-      "briefing": "Ashfall has committed its last field command. Break their yard and end the campaign.",
-      "difficulty": "Brutal",
-      "objective": "destroyYard",
-      "objectiveText": "Destroy the Ashfall Construction Yard.",
-      "surviveSeconds": 0,
-      "playerFaction": "Meridian",
-      "aiFaction": "Ashfall"
-    }
+    { "id": "m1", "name": "First Contact", "briefing": "A hostile commander has dug in across the basin. Establish your base, keep the harvesters running, and wipe them out.", "difficulty": "Recruit", "objective": "destroyAll", "objectiveText": "Destroy every enemy unit and structure.", "surviveSeconds": 0, "playerFaction": "Ashfall", "aiFaction": "Verdant", "mapId": "ash-basin", "teamCount": 2, "teamMode": "FreeForAll" },
+    { "id": "m2", "name": "Hold the Line", "briefing": "Enemy pressure is building. Fortify the approach, protect your economy, and outlast the assault.", "difficulty": "Veteran", "objective": "survive", "objectiveText": "Survive for 5 minutes.", "surviveSeconds": 300, "playerFaction": "Meridian", "aiFaction": "Verdant", "mapId": "rusted-flats", "teamCount": 2, "teamMode": "FreeForAll" },
+    { "id": "m3", "name": "Break Their Base", "briefing": "Strike the heart of the enemy base. Destroy their Construction Yard and they cannot rebuild.", "difficulty": "Hardened", "objective": "destroyYard", "objectiveText": "Destroy the enemy Construction Yard.", "surviveSeconds": 0, "playerFaction": "Ashfall", "aiFaction": "Meridian", "mapId": "broken-ridge", "teamCount": 2, "teamMode": "FreeForAll" },
+    { "id": "m4", "name": "Iron Tide", "briefing": "The Syndicate is spending everything to break you. Hold the basin and keep your economy alive.", "difficulty": "Hardened", "objective": "survive", "objectiveText": "Survive for 6 minutes.", "surviveSeconds": 360, "playerFaction": "Verdant", "aiFaction": "Meridian", "mapId": "twin-shallows", "teamCount": 2, "teamMode": "FreeForAll" },
+    { "id": "m5", "name": "The Last Compact", "briefing": "Ashfall has committed its last field command. Break their yard and end the campaign.", "difficulty": "Brutal", "objective": "destroyYard", "objectiveText": "Destroy the Ashfall Construction Yard.", "surviveSeconds": 0, "playerFaction": "Meridian", "aiFaction": "Ashfall", "mapId": "flooded-delta", "teamCount": 2, "teamMode": "FreeForAll" },
+    { "id": "m6", "name": "Industrial Push", "briefing": "Three commanders contest the Ashfall works. Secure the basin and break their production.", "difficulty": "Veteran", "objective": "destroyAll", "objectiveText": "Destroy every enemy unit and structure.", "surviveSeconds": 0, "playerFaction": "Ashfall", "aiFaction": "Verdant", "mapId": "ash-basin-11", "teamCount": 3, "teamMode": "FreeForAll" },
+    { "id": "m7", "name": "Dry Lightning", "briefing": "No water, no cover, no retreat. Cross the flats and hit the yard before reinforcements arrive.", "difficulty": "Veteran", "objective": "destroyYard", "objectiveText": "Destroy the enemy Construction Yard.", "surviveSeconds": 0, "playerFaction": "Verdant", "aiFaction": "Meridian", "mapId": "rusted-flats-12", "teamCount": 4, "teamMode": "FreeForAll" },
+    { "id": "m8", "name": "Ridge War", "briefing": "Three factions are fighting over the ridge lakes. Hold your shore and outlast them.", "difficulty": "Hardened", "objective": "survive", "objectiveText": "Survive for 7 minutes.", "surviveSeconds": 420, "playerFaction": "Meridian", "aiFaction": "Ashfall", "mapId": "broken-ridge-13", "teamCount": 4, "teamMode": "FreeForAll" },
+    { "id": "m9", "name": "Twin Blockade", "briefing": "Two lakes, two fleets, one objective. Break the blockade and take the yards.", "difficulty": "Hardened", "objective": "destroyYard", "objectiveText": "Destroy every enemy Construction Yard.", "surviveSeconds": 0, "playerFaction": "Ashfall", "aiFaction": "Verdant", "mapId": "twin-shallows-14", "teamCount": 4, "teamMode": "FreeForAll" },
+    { "id": "m10", "name": "Delta Run", "briefing": "The delta is flooded and contested. Use the water or lose the coast.", "difficulty": "Hardened", "objective": "destroyAll", "objectiveText": "Destroy every enemy unit and structure.", "surviveSeconds": 0, "playerFaction": "Verdant", "aiFaction": "Meridian", "mapId": "flooded-delta-15", "teamCount": 4, "teamMode": "FreeForAll" },
+    { "id": "m11", "name": "Long Front", "briefing": "A six-way front is collapsing. Hold the line while the others exhaust themselves.", "difficulty": "Hardened", "objective": "survive", "objectiveText": "Survive for 8 minutes.", "surviveSeconds": 480, "playerFaction": "Ashfall", "aiFaction": "Meridian", "mapId": "ash-basin-21", "teamCount": 6, "teamMode": "FreeForAll" },
+    { "id": "m12", "name": "Rust Bowl", "briefing": "Six armies, no water, and one dry bowl. Break the largest yard first.", "difficulty": "Brutal", "objective": "destroyYard", "objectiveText": "Destroy the enemy Construction Yards.", "surviveSeconds": 0, "playerFaction": "Verdant", "aiFaction": "Ashfall", "mapId": "rusted-flats-22", "teamCount": 6, "teamMode": "FreeForAll" },
+    { "id": "m13", "name": "Ring of Steel", "briefing": "The ridge lake is surrounded. Take the ring and close it.", "difficulty": "Brutal", "objective": "destroyAll", "objectiveText": "Destroy every enemy unit and structure.", "surviveSeconds": 0, "playerFaction": "Meridian", "aiFaction": "Verdant", "mapId": "broken-ridge-23", "teamCount": 6, "teamMode": "FreeForAll" },
+    { "id": "m14", "name": "Four Lakes", "briefing": "Six factions and two lakes. Split your fleet or lose the shore.", "difficulty": "Brutal", "objective": "destroyYard", "objectiveText": "Destroy every enemy Construction Yard.", "surviveSeconds": 0, "playerFaction": "Ashfall", "aiFaction": "Verdant", "mapId": "twin-shallows-24", "teamCount": 6, "teamMode": "FreeForAll" },
+    { "id": "m15", "name": "The Last Compact", "briefing": "Eight commanders enter the delta. One alliance leaves. End the campaign.", "difficulty": "Brutal", "objective": "destroyAll", "objectiveText": "Destroy every enemy unit and structure.", "surviveSeconds": 0, "playerFaction": "Meridian", "aiFaction": "Ashfall", "mapId": "broken-ridge-33", "teamCount": 8, "teamMode": "FreeForAll" }
   ]
 }

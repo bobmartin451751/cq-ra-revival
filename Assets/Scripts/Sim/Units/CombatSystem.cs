@@ -62,12 +62,6 @@ namespace CQRa.Sim.Units
                 return;
             }
 
-            var hasFog0 = FogQuery.TryGet(entityManager, 0, out var fog0, out var fogInfo);
-            var hasFog1 = FogQuery.TryGet(entityManager, 1, out var fog1, out _);
-            var hasFog = hasFog0 && hasFog1;
-            var fogTeam0 = hasFog0 ? FogQuery.GetCells(entityManager, fog0) : default;
-            var fogTeam1 = hasFog1 ? FogQuery.GetCells(entityManager, fog1) : default;
-
             var dt = SystemAPI.Time.DeltaTime;
             var dead = new NativeList<Entity>(Allocator.Temp);
 
@@ -102,11 +96,7 @@ namespace CQRa.Sim.Units
                         entityManager,
                         state.Target,
                         info.Team,
-                        state.Explicit == 0,
-                        hasFog,
-                        fogInfo,
-                        fogTeam0,
-                        fogTeam1))
+                        state.Explicit == 0))
                 {
                     state.Target = Entity.Null;
                     state.Explicit = 0;
@@ -138,11 +128,7 @@ namespace CQRa.Sim.Units
                         entity,
                         info.Team,
                         position,
-                        weapon.AcquireRange,
-                        hasFog,
-                        fogInfo,
-                        fogTeam0,
-                        fogTeam1);
+                        weapon.AcquireRange);
                     state.Explicit = 0;
                 }
 
@@ -250,11 +236,7 @@ namespace CQRa.Sim.Units
             EntityManager entityManager,
             Entity target,
             int team,
-            bool requireVisible,
-            bool hasFog,
-            in FogGridInfo fogInfo,
-            NativeArray<FogCell> fogTeam0,
-            NativeArray<FogCell> fogTeam1)
+            bool requireVisible)
         {
             if (target == Entity.Null ||
                 !entityManager.Exists(target) ||
@@ -265,7 +247,7 @@ namespace CQRa.Sim.Units
 
             if (entityManager.GetComponentData<Health>(target).Current <= 0f ||
                 !TryGetTeam(entityManager, target, out var targetTeam) ||
-                targetTeam == team)
+                MatchRuntime.AreAllied(team, targetTeam))
             {
                 return false;
             }
@@ -276,24 +258,7 @@ namespace CQRa.Sim.Units
             }
 
             var targetPosition = entityManager.GetComponentData<LocalTransform>(target).Position;
-            return IsVisibleTo(hasFog, fogInfo, fogTeam0, fogTeam1, team, targetPosition);
-        }
-
-        private static bool IsVisibleTo(
-            bool hasFog,
-            in FogGridInfo info,
-            NativeArray<FogCell> team0,
-            NativeArray<FogCell> team1,
-            int team,
-            float3 position)
-        {
-            if (!hasFog)
-            {
-                return true;
-            }
-
-            var cells = team == 0 ? team0 : team1;
-            return FogMath.IsVisible(cells, info, new float2(position.x, position.z));
+            return FogQuery.IsVisible(entityManager, team, targetPosition);
         }
 
         private static bool TryGetTeam(EntityManager entityManager, Entity entity, out int team)
@@ -320,11 +285,7 @@ namespace CQRa.Sim.Units
             Entity self,
             int team,
             float3 position,
-            float acquireRange,
-            bool hasFog,
-            in FogGridInfo fogInfo,
-            NativeArray<FogCell> fogTeam0,
-            NativeArray<FogCell> fogTeam1)
+            float acquireRange)
         {
             var best = Entity.Null;
             var bestDistanceSq = acquireRange * acquireRange;
@@ -338,14 +299,14 @@ namespace CQRa.Sim.Units
                 }
 
                 if (!TryGetTeam(entityManager, candidate, out var candidateTeam) ||
-                    candidateTeam == team ||
+                    MatchRuntime.AreAllied(team, candidateTeam) ||
                     entityManager.GetComponentData<Health>(candidate).Current <= 0f)
                 {
                     continue;
                 }
 
                 var candidatePosition = entityManager.GetComponentData<LocalTransform>(candidate).Position;
-                if (!IsVisibleTo(hasFog, fogInfo, fogTeam0, fogTeam1, team, candidatePosition))
+                if (!FogQuery.IsVisible(entityManager, team, candidatePosition))
                 {
                     continue;
                 }
@@ -403,49 +364,58 @@ namespace CQRa.Sim.Units
 
             using var entities = targetQuery.ToEntityArray(Allocator.Temp);
 
-            var team0 = 0;
-            var team1 = 0;
+            var alive = new int[MatchRuntime.MaxTeams];
             for (var i = 0; i < entities.Length; i++)
             {
                 if (entityManager.GetComponentData<Health>(entities[i]).Current <= 0f ||
-                    !TryGetTeam(entityManager, entities[i], out var team))
+                    !TryGetTeam(entityManager, entities[i], out var team) ||
+                    team < 0 ||
+                    team >= MatchRuntime.TeamCount)
                 {
                     continue;
                 }
 
-                if (team == 0)
-                {
-                    team0++;
-                }
-                else if (team == 1)
-                {
-                    team1++;
-                }
+                alive[team]++;
             }
 
             var state = new MatchState
             {
-                Team0Alive = team0,
-                Team1Alive = team1,
                 GameOver = 0,
                 Winner = 255,
             };
 
-            if (team0 > 0 && team1 > 0)
+            var active = 0;
+            var firstAlliance = -1;
+            var winningTeam = 255;
+            var multipleAlliances = false;
+
+            for (var team = 0; team < MatchRuntime.TeamCount; team++)
             {
-                // Live match (also resets a finished test/restart scenario).
+                state.SetAlive(team, alive[team]);
+                if (alive[team] <= 0)
+                {
+                    continue;
+                }
+
+                active++;
+                var alliance = MatchRuntime.AllianceFor(team);
+                if (firstAlliance < 0)
+                {
+                    firstAlliance = alliance;
+                    winningTeam = team;
+                }
+                else if (alliance != firstAlliance)
+                {
+                    multipleAlliances = true;
+                }
             }
-            else if (team0 > 0)
+
+            if (active > 0 && !multipleAlliances)
             {
                 state.GameOver = 1;
-                state.Winner = 0;
+                state.Winner = (byte)winningTeam;
             }
-            else if (team1 > 0)
-            {
-                state.GameOver = 1;
-                state.Winner = 1;
-            }
-            else
+            else if (active == 0)
             {
                 state.GameOver = 1;
                 state.Winner = 255;

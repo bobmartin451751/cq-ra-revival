@@ -101,10 +101,41 @@ namespace CQRa.Sim.Base
     {
         public int Team0Credits;
         public int Team1Credits;
+        public int Team2Credits;
+        public int Team3Credits;
+        public int Team4Credits;
+        public int Team5Credits;
+        public int Team6Credits;
+        public int Team7Credits;
         public int Team0PowerMade;
         public int Team0PowerUsed;
         public int Team1PowerMade;
         public int Team1PowerUsed;
+        public int Team2PowerMade;
+        public int Team2PowerUsed;
+        public int Team3PowerMade;
+        public int Team3PowerUsed;
+        public int Team4PowerMade;
+        public int Team4PowerUsed;
+        public int Team5PowerMade;
+        public int Team5PowerUsed;
+        public int Team6PowerMade;
+        public int Team6PowerUsed;
+        public int Team7PowerMade;
+        public int Team7PowerUsed;
+
+        public const int TeamCount = 8;
+
+        public static EconomyState Create(int credits)
+        {
+            var state = default(EconomyState);
+            for (var team = 0; team < TeamCount; team++)
+            {
+                Economy.SetCredits(ref state, team, credits);
+            }
+
+            return state;
+        }
     }
 
     public enum HarvesterPhase : byte
@@ -245,18 +276,32 @@ namespace CQRa.Sim.Base
 
         public static int GetCredits(in EconomyState state, int team)
         {
-            return team == 0 ? state.Team0Credits : state.Team1Credits;
+            switch (team)
+            {
+                case 0: return state.Team0Credits;
+                case 1: return state.Team1Credits;
+                case 2: return state.Team2Credits;
+                case 3: return state.Team3Credits;
+                case 4: return state.Team4Credits;
+                case 5: return state.Team5Credits;
+                case 6: return state.Team6Credits;
+                case 7: return state.Team7Credits;
+                default: return 0;
+            }
         }
 
         public static void SetCredits(ref EconomyState state, int team, int value)
         {
-            if (team == 0)
+            switch (team)
             {
-                state.Team0Credits = value;
-            }
-            else
-            {
-                state.Team1Credits = value;
+                case 0: state.Team0Credits = value; break;
+                case 1: state.Team1Credits = value; break;
+                case 2: state.Team2Credits = value; break;
+                case 3: state.Team3Credits = value; break;
+                case 4: state.Team4Credits = value; break;
+                case 5: state.Team5Credits = value; break;
+                case 6: state.Team6Credits = value; break;
+                case 7: state.Team7Credits = value; break;
             }
         }
 
@@ -278,12 +323,49 @@ namespace CQRa.Sim.Base
 
         public static int GetPowerMade(in EconomyState state, int team)
         {
-            return team == 0 ? state.Team0PowerMade : state.Team1PowerMade;
+            switch (team)
+            {
+                case 0: return state.Team0PowerMade;
+                case 1: return state.Team1PowerMade;
+                case 2: return state.Team2PowerMade;
+                case 3: return state.Team3PowerMade;
+                case 4: return state.Team4PowerMade;
+                case 5: return state.Team5PowerMade;
+                case 6: return state.Team6PowerMade;
+                case 7: return state.Team7PowerMade;
+                default: return 0;
+            }
         }
 
         public static int GetPowerUsed(in EconomyState state, int team)
         {
-            return team == 0 ? state.Team0PowerUsed : state.Team1PowerUsed;
+            switch (team)
+            {
+                case 0: return state.Team0PowerUsed;
+                case 1: return state.Team1PowerUsed;
+                case 2: return state.Team2PowerUsed;
+                case 3: return state.Team3PowerUsed;
+                case 4: return state.Team4PowerUsed;
+                case 5: return state.Team5PowerUsed;
+                case 6: return state.Team6PowerUsed;
+                case 7: return state.Team7PowerUsed;
+                default: return 0;
+            }
+        }
+
+        public static void SetPower(ref EconomyState state, int team, int made, int used)
+        {
+            switch (team)
+            {
+                case 0: state.Team0PowerMade = made; state.Team0PowerUsed = used; break;
+                case 1: state.Team1PowerMade = made; state.Team1PowerUsed = used; break;
+                case 2: state.Team2PowerMade = made; state.Team2PowerUsed = used; break;
+                case 3: state.Team3PowerMade = made; state.Team3PowerUsed = used; break;
+                case 4: state.Team4PowerMade = made; state.Team4PowerUsed = used; break;
+                case 5: state.Team5PowerMade = made; state.Team5PowerUsed = used; break;
+                case 6: state.Team6PowerMade = made; state.Team6PowerUsed = used; break;
+                case 7: state.Team7PowerMade = made; state.Team7PowerUsed = used; break;
+            }
         }
     }
 }

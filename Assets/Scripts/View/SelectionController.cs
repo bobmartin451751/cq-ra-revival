@@ -361,7 +361,7 @@ namespace CQRa.View
 
             var entityManager = world.EntityManager;
             if (!TryGetTeam(entityManager, target, out var targetTeam) ||
-                targetTeam == BuildCatalog.PlayerTeam)
+                MatchRuntime.AreAllied(targetTeam, BuildCatalog.PlayerTeam))
             {
                 return false;
             }
@@ -1442,9 +1442,15 @@ namespace CQRa.View
 
             if (ReadMatchState(out var match))
             {
+                var alive = 0;
+                for (var team = 0; team < MatchRuntime.TeamCount; team++)
+                {
+                    alive += match.AliveFor(team) > 0 ? 1 : 0;
+                }
+
                 GUI.Label(
                     new Rect(x + 12f, 78f, SidebarWidth - 24f, 22f),
-                    $"Red: {match.Team0Alive}   Blue: {match.Team1Alive}",
+                    $"Teams: {alive}/{MatchRuntime.TeamCount}   You: {match.Team0Alive}",
                     _hintStyle);
             }
 
@@ -1825,7 +1831,7 @@ namespace CQRa.View
                     ? entityManager.GetComponentData<UnitInfo>(entity).Team
                     : entityManager.GetComponentData<BuildingInfo>(entity).Team;
 
-                if (team != 0 && !IsVisibleToPlayer(position))
+                if (!MatchRuntime.AreAllied(team, 0) && !IsVisibleToPlayer(position))
                 {
                     return;
                 }
@@ -1843,9 +1849,7 @@ namespace CQRa.View
                     4f,
                     4f);
 
-                GUI.color = team == 0
-                    ? new Color(0.85f, 0.22f, 0.16f)
-                    : new Color(0.28f, 0.55f, 0.78f);
+                GUI.color = CQRa.Sim.Units.TeamPalette.For(team);
                 GUI.DrawTexture(dot, Texture2D.whiteTexture);
             });
 

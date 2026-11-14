@@ -23,11 +23,7 @@ namespace CQRa.Sim.Base
             if (economyQuery.IsEmptyIgnoreFilter)
             {
                 economyEntity = entityManager.CreateEntity(typeof(EconomyState));
-                state = new EconomyState
-                {
-                    Team0Credits = BuildCatalog.InitialCredits,
-                    Team1Credits = BuildCatalog.InitialCredits,
-                };
+                state = EconomyState.Create(BuildCatalog.InitialCredits);
             }
             else
             {
@@ -35,10 +31,8 @@ namespace CQRa.Sim.Base
                 state = entityManager.GetComponentData<EconomyState>(economyEntity);
             }
 
-            var made0 = 0;
-            var used0 = 0;
-            var made1 = 0;
-            var used1 = 0;
+            var made = new int[EconomyState.TeamCount];
+            var used = new int[EconomyState.TeamCount];
 
             using var buildingQuery = entityManager.CreateEntityQuery(ComponentType.ReadOnly<BuildingInfo>());
             using var buildings = buildingQuery.ToEntityArray(Allocator.Temp);
@@ -46,22 +40,19 @@ namespace CQRa.Sim.Base
             for (var i = 0; i < buildings.Length; i++)
             {
                 var info = entityManager.GetComponentData<BuildingInfo>(buildings[i]);
-                if (info.Team == 0)
+                if (info.Team < 0 || info.Team >= EconomyState.TeamCount)
                 {
-                    made0 += info.PowerProduced;
-                    used0 += info.PowerUsed;
+                    continue;
                 }
-                else if (info.Team == 1)
-                {
-                    made1 += info.PowerProduced;
-                    used1 += info.PowerUsed;
-                }
+
+                made[info.Team] += info.PowerProduced;
+                used[info.Team] += info.PowerUsed;
             }
 
-            state.Team0PowerMade = made0;
-            state.Team0PowerUsed = used0;
-            state.Team1PowerMade = made1;
-            state.Team1PowerUsed = used1;
+            for (var team = 0; team < EconomyState.TeamCount; team++)
+            {
+                Economy.SetPower(ref state, team, made[team], used[team]);
+            }
 
             entityManager.SetComponentData(economyEntity, state);
         }

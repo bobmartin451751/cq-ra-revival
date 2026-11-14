@@ -18,8 +18,22 @@ namespace CQRa.Sim.AI
 
         public static void StartMatch(EntityManager entityManager, AiDifficulty difficulty)
         {
+            StartMatch(entityManager, MatchRuntime.TeamCount, MatchRuntime.Mode, difficulty);
+        }
+
+        public static void StartMatch(
+            EntityManager entityManager,
+            int teamCount,
+            TeamMode mode,
+            AiDifficulty difficulty)
+        {
+            MatchRuntime.Configure(teamCount, mode);
             ClearCommanders(entityManager);
-            CreateCommander(entityManager, AiTeam, difficulty);
+
+            for (var team = 1; team < MatchRuntime.TeamCount; team++)
+            {
+                CreateCommander(entityManager, team, difficulty);
+            }
         }
 
         public static Entity CreateCommander(
@@ -74,6 +88,7 @@ namespace CQRa.Sim.AI
         /// </summary>
         public static void ResetRuntimeState(EntityManager entityManager)
         {
+            MatchRuntime.Reset();
             ClearCommanders(entityManager);
             DestroyAll<UnitTag>(entityManager);
             DestroyAll<BuildingTag>(entityManager);
@@ -101,12 +116,12 @@ namespace CQRa.Sim.AI
         /// <summary>Player-facing result label for a MatchState winner value.</summary>
         public static string ResultText(int winner)
         {
-            if (winner == PlayerTeam)
+            if (winner == 255)
             {
-                return "VICTORY";
+                return "DRAW";
             }
 
-            return winner == AiTeam ? "DEFEAT" : "DRAW";
+            return MatchRuntime.AreAllied(winner, PlayerTeam) ? "VICTORY" : "DEFEAT";
         }
     }
 }

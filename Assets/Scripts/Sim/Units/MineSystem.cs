@@ -63,7 +63,7 @@ namespace CQRa.Sim.Units
                 {
                     var unit = units[u];
                     var info = entityManager.GetComponentData<UnitInfo>(unit);
-                    if (info.Team == mine.Team ||
+                    if (MatchRuntime.AreAllied(info.Team, mine.Team) ||
                         entityManager.GetComponentData<Health>(unit).Current <= 0f)
                     {
                         continue;
@@ -88,7 +88,7 @@ namespace CQRa.Sim.Units
                 {
                     var unit = units[u];
                     var info = entityManager.GetComponentData<UnitInfo>(unit);
-                    if (info.Team == mine.Team)
+                    if (MatchRuntime.AreAllied(info.Team, mine.Team))
                     {
                         continue;
                     }

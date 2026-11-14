@@ -41,8 +41,47 @@ namespace CQRa.Sim.Units
     {
         public int Team0Alive;
         public int Team1Alive;
+        public int Team2Alive;
+        public int Team3Alive;
+        public int Team4Alive;
+        public int Team5Alive;
+        public int Team6Alive;
+        public int Team7Alive;
         public byte GameOver;
-        public byte Winner; // 0/1 when a team wins, 255 for a draw or in progress
+        public byte Winner; // winning team index, 255 for a draw or in progress
+
+        public const int TeamCount = 8;
+
+        public int AliveFor(int team)
+        {
+            switch (team)
+            {
+                case 0: return Team0Alive;
+                case 1: return Team1Alive;
+                case 2: return Team2Alive;
+                case 3: return Team3Alive;
+                case 4: return Team4Alive;
+                case 5: return Team5Alive;
+                case 6: return Team6Alive;
+                case 7: return Team7Alive;
+                default: return 0;
+            }
+        }
+
+        public void SetAlive(int team, int value)
+        {
+            switch (team)
+            {
+                case 0: Team0Alive = value; break;
+                case 1: Team1Alive = value; break;
+                case 2: Team2Alive = value; break;
+                case 3: Team3Alive = value; break;
+                case 4: Team4Alive = value; break;
+                case 5: Team5Alive = value; break;
+                case 6: Team6Alive = value; break;
+                case 7: Team7Alive = value; break;
+            }
+        }
     }
 
     /// <summary>Static per-kind combat tuning. One place to balance Phase 4.</summary>

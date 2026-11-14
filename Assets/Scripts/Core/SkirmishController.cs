@@ -29,6 +29,8 @@ namespace CQRa.Core
         private AiDifficulty _difficulty = AiDifficulty.Veteran;
         private FactionId _playerFaction = FactionId.Ashfall;
         private FactionId _aiFaction = FactionId.Verdant;
+        private int _teamCount = 2;
+        private TeamMode _teamMode = TeamMode.FreeForAll;
         private bool _active;
         private bool _matchOver;
         private int _winner = 255;
@@ -37,6 +39,10 @@ namespace CQRa.Core
         private int _menuMode; // 0 = skirmish, 1 = campaign
         private int _selectedMission;
         private int _selectedMap;
+        private int _mapPage;
+        private int _missionPage;
+        private const int MapsPerPage = 6;
+        private const int MissionsPerPage = 5;
         private bool _campaignActive;
         private bool _missionWon;
         private bool _enemyYardSeen;
@@ -49,6 +55,8 @@ namespace CQRa.Core
         private static AiDifficulty _pendingDifficulty;
         private static FactionId _pendingPlayerFaction;
         private static FactionId _pendingAiFaction;
+        private static int _pendingTeamCount = 2;
+        private static TeamMode _pendingTeamMode = TeamMode.FreeForAll;
 
         private GUIStyle _label;
         private GUIStyle _title;
@@ -78,6 +86,11 @@ namespace CQRa.Core
             _captureRun = HasArg("-screenshot");
             MissionCatalog.Load();
             _selectedMap = MapRuntime.SelectedIndex;
+            if (_captureRun)
+            {
+                _teamCount = Mathf.Clamp(ReadIntArg("-teams", 2), 2, 8);
+                _teamMode = HasArg("-teammode") ? TeamMode.Teams : TeamMode.FreeForAll;
+            }
 
             var world = World.DefaultGameObjectInjectionWorld;
             if (world != null && world.IsCreated)
@@ -109,6 +122,8 @@ namespace CQRa.Core
                 _difficulty = _pendingDifficulty;
                 _playerFaction = _pendingPlayerFaction;
                 _aiFaction = _pendingAiFaction;
+                _teamCount = _pendingTeamCount;
+                _teamMode = _pendingTeamMode;
                 _campaignActive = false;
                 BeginMatch(true);
             }
@@ -163,8 +178,9 @@ namespace CQRa.Core
         private void UpdateCampaignMission(EntityManager entityManager, in MatchState match)
         {
             _missionElapsed += Time.deltaTime;
+            var playerWon = match.GameOver != 0 && MatchRuntime.AreAllied(match.Winner, SkirmishCommands.PlayerTeam);
 
-            if (match.GameOver != 0 && match.Winner == SkirmishCommands.AiTeam)
+            if (match.GameOver != 0 && !playerWon)
             {
                 EndMission(false);
                 return;
@@ -173,7 +189,7 @@ namespace CQRa.Core
             switch (_missionObjective)
             {
                 case "destroyAll":
-                    if (match.GameOver != 0 && match.Winner == SkirmishCommands.PlayerTeam)
+                    if (playerWon)
                     {
                         EndMission(true);
                     }
@@ -189,17 +205,17 @@ namespace CQRa.Core
                     break;
 
                 case "destroyYard":
-                    var yard = BaseCommands.FindConstructionYard(entityManager, SkirmishCommands.AiTeam);
-                    if (yard != Entity.Null)
+                    var enemyYard = FindEnemyYard(entityManager);
+                    if (enemyYard != Entity.Null)
                     {
                         _enemyYardSeen = true;
                     }
 
-                    if (match.GameOver != 0 && match.Winner == SkirmishCommands.PlayerTeam)
+                    if (playerWon)
                     {
                         EndMission(true);
                     }
-                    else if (_enemyYardSeen && yard == Entity.Null)
+                    else if (_enemyYardSeen && enemyYard == Entity.Null)
                     {
                         EndMission(true);
                     }
@@ -231,6 +247,25 @@ namespace CQRa.Core
             EndMatch(won ? SkirmishCommands.PlayerTeam : SkirmishCommands.AiTeam);
         }
 
+        private static Entity FindEnemyYard(EntityManager entityManager)
+        {
+            for (var team = 0; team < MatchRuntime.TeamCount; team++)
+            {
+                if (MatchRuntime.AreAllied(team, SkirmishCommands.PlayerTeam))
+                {
+                    continue;
+                }
+
+                var yard = BaseCommands.FindConstructionYard(entityManager, team);
+                if (yard != Entity.Null)
+                {
+                    return yard;
+                }
+            }
+
+            return Entity.Null;
+        }
+
         private void BeginMission(int index)
         {
             var missions = MissionCatalog.Missions;
@@ -239,17 +274,30 @@ namespace CQRa.Core
                 return;
             }
 
-            // Campaign missions use the original basin map.
-            if (MapRuntime.SelectedIndex != 0)
+            // Campaign missions load the map assigned to the mission.
+            var mission = missions[index];
+            var mapIndex = MapCatalog.FindIndex(mission.mapId);
+            if (mapIndex < 0)
             {
-                MapRuntime.Select(0);
+                mapIndex = 0;
+            }
+
+            if (MapRuntime.SelectedIndex != mapIndex)
+            {
+                MapRuntime.Select(mapIndex);
                 _pendingMission = index;
                 Restart();
                 return;
             }
 
-            _selectedMap = 0;
-            var mission = missions[index];
+            _selectedMap = mapIndex;
+            _teamCount = Mathf.Clamp(
+                mission.teamCount,
+                2,
+                MapCatalog.Get(mapIndex).MaxPlayers);
+            _teamMode = System.Enum.TryParse(mission.teamMode, true, out TeamMode parsedMode)
+                ? parsedMode
+                : TeamMode.FreeForAll;
             _selectedMission = index;
             _difficulty = MissionCatalog.DifficultyFor(mission);
             _playerFaction = FactionCatalog.Parse(mission.playerFaction);
@@ -272,6 +320,8 @@ namespace CQRa.Core
             _matchOver = false;
             Time.timeScale = 1f;
 
+            MatchRuntime.Configure(_teamCount, _teamMode);
+
             if (_selection != null)
             {
                 _selection.enabled = true;
@@ -280,9 +330,19 @@ namespace CQRa.Core
             if (_cameraRig != null)
             {
                 _cameraRig.enabled = true;
+                var start = MapRuntime.Current.SpawnFor(0).Position;
+                _cameraRig.SetPose(new Vector3(start.x, 0f, start.y), 0f, 46f, 115f);
             }
 
-            FactionRuntime.Set(_playerFaction, _aiFaction);
+            var factions = new FactionId[MatchRuntime.MaxTeams];
+            factions[0] = _playerFaction;
+            factions[1] = _aiFaction;
+            for (var team = 2; team < factions.Length; team++)
+            {
+                factions[team] = FactionCatalog.All[(team - 1) % FactionCatalog.All.Length];
+            }
+
+            FactionRuntime.SetAll(factions);
 
             var baseRenderer = UnityEngine.Object.FindFirstObjectByType<BaseRenderer>();
             if (baseRenderer != null)
@@ -303,10 +363,14 @@ namespace CQRa.Core
             var world = World.DefaultGameObjectInjectionWorld;
             if (world != null && world.IsCreated)
             {
-                SkirmishCommands.StartMatch(world.EntityManager, _difficulty);
+                SkirmishCommands.StartMatch(
+                    world.EntityManager,
+                    _teamCount,
+                    _teamMode,
+                    _difficulty);
             }
 
-            Debug.Log($"[Skirmish] match started vs {_difficulty} AI");
+            Debug.Log($"[Skirmish] match started | {_teamCount} teams | {_teamMode} | {_difficulty} AI");
         }
 
         private void OnGUI()
@@ -377,7 +441,7 @@ namespace CQRa.Core
             GUI.color = previous;
 
             var width = 540f;
-            var height = 570f;
+            var height = 700f;
             var x = (Screen.width - width) * 0.5f;
             var y = (Screen.height - height) * 0.5f;
             var panel = new Rect(x, y, width, height);
@@ -425,6 +489,7 @@ namespace CQRa.Core
 
         private void DrawSkirmishMenu(float x, float y, float width)
         {
+            EnsureSelectedMap();
             GUI.Label(new Rect(x + 30f, y + 150f, width - 60f, 24f), "DIFFICULTY", _label);
 
             var difficulties = new[]
@@ -456,11 +521,56 @@ namespace CQRa.Core
             }
 
             GUI.Label(
-                new Rect(x + 30f, y + 216f, width - 60f, 32f),
+                new Rect(x + 30f, y + 216f, width - 60f, 30f),
                 Describe(_difficulty),
                 _label);
 
-            GUI.Label(new Rect(x + 30f, y + 252f, width - 60f, 22f), "FACTION", _label);
+            GUI.Label(new Rect(x + 30f, y + 250f, width - 60f, 22f), "PLAYERS", _label);
+
+            for (var i = 0; i < 7; i++)
+            {
+                var count = i + 2;
+                var selected = count == _teamCount;
+                var previousColor = GUI.backgroundColor;
+                GUI.backgroundColor = selected
+                    ? new Color(0.72f, 0.48f, 0.20f)
+                    : new Color(0.28f, 0.26f, 0.22f);
+
+                if (GUI.Button(
+                        new Rect(x + 30f + i * 68f, y + 274f, 64f, 30f),
+                        count.ToString(),
+                        _button))
+                {
+                    _teamCount = count;
+                    EnsureSelectedMap();
+                }
+
+                GUI.backgroundColor = previousColor;
+            }
+
+            GUI.Label(new Rect(x + 30f, y + 312f, width - 60f, 22f), "MODE", _label);
+
+            var modes = new[] { TeamMode.FreeForAll, TeamMode.Teams };
+            for (var i = 0; i < modes.Length; i++)
+            {
+                var selected = modes[i] == _teamMode;
+                var previousColor = GUI.backgroundColor;
+                GUI.backgroundColor = selected
+                    ? new Color(0.72f, 0.48f, 0.20f)
+                    : new Color(0.28f, 0.26f, 0.22f);
+
+                if (GUI.Button(
+                        new Rect(x + 30f + i * 244f, y + 336f, 234f, 30f),
+                        modes[i] == TeamMode.FreeForAll ? "FREE-FOR-ALL" : "TEAMS",
+                        _button))
+                {
+                    _teamMode = modes[i];
+                }
+
+                GUI.backgroundColor = previousColor;
+            }
+
+            GUI.Label(new Rect(x + 30f, y + 374f, width - 60f, 22f), "FACTION", _label);
 
             for (var i = 0; i < FactionCatalog.All.Length; i++)
             {
@@ -472,7 +582,7 @@ namespace CQRa.Core
                     : new Color(0.28f, 0.26f, 0.22f);
 
                 if (GUI.Button(
-                        new Rect(x + 30f + i * 162f, y + 276f, 152f, 30f),
+                        new Rect(x + 30f + i * 162f, y + 398f, 152f, 30f),
                         FactionCatalog.Name(faction),
                         _button))
                 {
@@ -484,18 +594,40 @@ namespace CQRa.Core
             }
 
             GUI.Label(
-                new Rect(x + 30f, y + 310f, width - 60f, 34f),
+                new Rect(x + 30f, y + 432f, width - 60f, 34f),
                 $"{FactionCatalog.Name(_playerFaction)} vs {FactionCatalog.Name(_aiFaction)}\n" +
                 FactionCatalog.Description(_playerFaction),
                 _label);
 
-            GUI.Label(new Rect(x + 30f, y + 348f, width - 60f, 22f), "MAP", _label);
+            GUI.Label(new Rect(x + 30f, y + 472f, width - 60f, 22f), "MAP", _label);
+
+            var filteredCount = FilteredMapCount();
+            var pages = Mathf.Max(1, Mathf.CeilToInt(filteredCount / (float)MapsPerPage));
+            _mapPage = Mathf.Clamp(_mapPage, 0, pages - 1);
+
+            if (GUI.Button(new Rect(x + width - 118f, y + 470f, 40f, 26f), "<", _button))
+            {
+                _mapPage = _mapPage > 0 ? _mapPage - 1 : pages - 1;
+            }
+
+            if (GUI.Button(new Rect(x + width - 74f, y + 470f, 40f, 26f), ">", _button))
+            {
+                _mapPage = _mapPage + 1 < pages ? _mapPage + 1 : 0;
+            }
 
             var mapWidth = (width - 60f - 16f) / 3f;
-            for (var i = 0; i < MapCatalog.Count; i++)
+            var first = _mapPage * MapsPerPage;
+            for (var slot = 0; slot < MapsPerPage; slot++)
             {
-                var map = MapCatalog.Get(i);
-                var selected = i == _selectedMap;
+                var filtered = first + slot;
+                if (filtered >= filteredCount)
+                {
+                    break;
+                }
+
+                var mapIndex = FilteredMapAt(filtered);
+                var map = MapCatalog.Get(mapIndex);
+                var selected = mapIndex == _selectedMap;
                 var previousColor = GUI.backgroundColor;
                 GUI.backgroundColor = selected
                     ? new Color(0.72f, 0.48f, 0.20f)
@@ -503,26 +635,36 @@ namespace CQRa.Core
 
                 if (GUI.Button(
                         new Rect(
-                            x + 30f + (i % 3) * (mapWidth + 8f),
-                            y + 372f + (i / 3) * 34f,
+                            x + 30f + (slot % 3) * (mapWidth + 8f),
+                            y + 498f + (slot / 3) * 34f,
                             mapWidth,
                             30f),
                         map.Name,
                         _button))
                 {
-                    _selectedMap = i;
+                    _selectedMap = mapIndex;
                 }
 
                 GUI.backgroundColor = previousColor;
             }
 
+            if (filteredCount == 0)
+            {
+                GUI.Label(
+                    new Rect(x + 30f, y + 500f, width - 60f, 26f),
+                    "No maps support this player count yet.",
+                    _label);
+            }
+
             GUI.Label(
-                new Rect(x + 30f, y + 442f, width - 60f, 28f),
+                new Rect(x + 30f, y + 568f, width - 60f, 28f),
+                $"{_mapPage + 1}/{pages}  [{MapCatalog.Get(_selectedMap).SizeTier} " +
+                $"{MapCatalog.Get(_selectedMap).MinPlayers}-{MapCatalog.Get(_selectedMap).MaxPlayers}p]  " +
                 MapCatalog.Get(_selectedMap).Description,
                 _label);
 
             if (GUI.Button(
-                    new Rect(x + 30f, y + 476f, width - 60f, 44f),
+                    new Rect(x + 30f, y + 600f, width - 60f, 44f),
                     "START MATCH",
                     _button))
             {
@@ -536,6 +678,8 @@ namespace CQRa.Core
                     _pendingDifficulty = _difficulty;
                     _pendingPlayerFaction = _playerFaction;
                     _pendingAiFaction = _aiFaction;
+                    _pendingTeamCount = _teamCount;
+                    _pendingTeamMode = _teamMode;
                     Restart();
                 }
                 else
@@ -545,9 +689,69 @@ namespace CQRa.Core
             }
 
             GUI.Label(
-                new Rect(x + 30f, y + 528f, width - 60f, 24f),
+                new Rect(x + 30f, y + 654f, width - 60f, 24f),
                 "WASD/edges pan Â· wheel zoom Â· Q/E rotate",
                 _label);
+        }
+
+        private int FilteredMapCount()
+        {
+            var count = 0;
+            for (var i = 0; i < MapCatalog.Count; i++)
+            {
+                var map = MapCatalog.Get(i);
+                if (map.MinPlayers <= _teamCount && map.MaxPlayers >= _teamCount)
+                {
+                    count++;
+                }
+            }
+
+            return count;
+        }
+
+        private int FilteredMapAt(int filteredIndex)
+        {
+            var seen = 0;
+            for (var i = 0; i < MapCatalog.Count; i++)
+            {
+                var map = MapCatalog.Get(i);
+                if (map.MinPlayers > _teamCount || map.MaxPlayers < _teamCount)
+                {
+                    continue;
+                }
+
+                if (seen == filteredIndex)
+                {
+                    return i;
+                }
+
+                seen++;
+            }
+
+            return 0;
+        }
+
+        private void EnsureSelectedMap()
+        {
+            var selected = MapCatalog.Get(_selectedMap);
+            if (selected.MinPlayers <= _teamCount && selected.MaxPlayers >= _teamCount)
+            {
+                return;
+            }
+
+            for (var i = 0; i < MapCatalog.Count; i++)
+            {
+                var map = MapCatalog.Get(i);
+                if (map.MinPlayers <= _teamCount && map.MaxPlayers >= _teamCount)
+                {
+                    _selectedMap = i;
+                    _mapPage = i / MapsPerPage;
+                    return;
+                }
+            }
+
+            _selectedMap = 0;
+            _mapPage = 0;
         }
 
         private void DrawCampaignMenu(float x, float y, float width)
@@ -561,7 +765,22 @@ namespace CQRa.Core
 
             GUI.Label(new Rect(x + 30f, y + 150f, width - 60f, 22f), "MISSIONS", _label);
 
-            for (var i = 0; i < missions.Length && i < 5; i++)
+            var missionPages = Mathf.Max(1, Mathf.CeilToInt(missions.Length / (float)MissionsPerPage));
+            _missionPage = Mathf.Clamp(_missionPage, 0, missionPages - 1);
+
+            if (GUI.Button(new Rect(x + width - 118f, y + 148f, 40f, 26f), "<", _button))
+            {
+                _missionPage = _missionPage > 0 ? _missionPage - 1 : missionPages - 1;
+            }
+
+            if (GUI.Button(new Rect(x + width - 74f, y + 148f, 40f, 26f), ">", _button))
+            {
+                _missionPage = _missionPage + 1 < missionPages ? _missionPage + 1 : 0;
+            }
+
+            var missionFirst = _missionPage * MissionsPerPage;
+            var missionLast = Mathf.Min(missions.Length, missionFirst + MissionsPerPage);
+            for (var i = missionFirst; i < missionLast; i++)
             {
                 var unlocked = MissionCatalog.IsUnlocked(i);
                 var completed = MissionCatalog.IsCompleted(i);
@@ -582,8 +801,9 @@ namespace CQRa.Core
                     GUI.backgroundColor = new Color(0.28f, 0.26f, 0.22f);
                 }
 
+                var row = i - missionFirst;
                 if (GUI.Button(
-                        new Rect(x + 30f, y + 176f + i * 36f, width - 60f, 32f),
+                        new Rect(x + 30f, y + 176f + row * 36f, width - 60f, 32f),
                         label,
                         _button) && unlocked)
                 {
@@ -598,14 +818,16 @@ namespace CQRa.Core
             var aiFaction = FactionCatalog.Parse(
                 mission.aiFaction,
                 FactionCatalog.DefaultOpponent(playerFaction));
+            var missionMap = MapCatalog.Get(MapCatalog.FindIndex(mission.mapId));
             GUI.Label(
-                new Rect(x + 30f, y + 326f, width - 60f, 80f),
+                new Rect(x + 30f, y + 366f, width - 60f, 82f),
                 $"{FactionCatalog.Name(playerFaction)} vs {FactionCatalog.Name(aiFaction)}\n" +
+                $"Map: {missionMap?.Name ?? "Ash Basin"}  |  {mission.teamCount} players\n" +
                 mission.briefing,
                 _label);
 
             if (GUI.Button(
-                    new Rect(x + 30f, y + 410f, width - 60f, 40f),
+                    new Rect(x + 30f, y + 456f, width - 60f, 40f),
                     "START MISSION",
                     _button) &&
                 MissionCatalog.IsUnlocked(_selectedMission))
@@ -748,6 +970,22 @@ namespace CQRa.Core
             }
 
             return false;
+        }
+
+        private static int ReadIntArg(string flag, int fallback)
+        {
+            var args = Environment.GetCommandLineArgs();
+            for (var i = 0; i < args.Length - 1; i++)
+            {
+                if (!string.Equals(args[i], flag, StringComparison.OrdinalIgnoreCase))
+                {
+                    continue;
+                }
+
+                return int.TryParse(args[i + 1], out var value) ? value : fallback;
+            }
+
+            return fallback;
         }
     }
 }

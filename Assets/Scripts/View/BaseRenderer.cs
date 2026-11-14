@@ -39,13 +39,13 @@ namespace CQRa.View
 
             _materials = new Material[BuildingFactory.MaterialCount];
             var structure = new Color(0.36f, 0.35f, 0.31f);
-            var teamColors = new[]
+            var teamColors = new Color[BuildingFactory.TeamCount];
+            for (var team = 0; team < teamColors.Length; team++)
             {
-                new Color(0.62f, 0.18f, 0.12f),
-                new Color(0.24f, 0.40f, 0.52f),
-            };
+                teamColors[team] = CQRa.Sim.Units.TeamPalette.For(team);
+            }
 
-            for (var team = 0; team < 2; team++)
+            for (var team = 0; team < BuildingFactory.TeamCount; team++)
             {
                 for (var kind = 0; kind < BuildingFactory.BuildingKindCount; kind++)
                 {
@@ -113,10 +113,11 @@ namespace CQRa.View
                 return;
             }
 
-            for (var team = 0; team < 2; team++)
+            for (var team = 0; team < BuildingFactory.TeamCount; team++)
             {
                 var faction = CQRa.Sim.Factions.FactionRuntime.ForTeam(team);
                 var color = FactionColor(faction);
+                color = Color.Lerp(color, CQRa.Sim.Units.TeamPalette.For(team), 0.45f);
 
                 for (var kind = 0; kind < BuildingFactory.BuildingKindCount; kind++)
                 {

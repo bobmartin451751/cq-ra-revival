@@ -93,27 +93,57 @@ namespace CQRa.Sim.Factions
     /// <summary>Per-match team-to-faction mapping.</summary>
     public static class FactionRuntime
     {
-        private static FactionId _player = FactionId.Ashfall;
-        private static FactionId _ai = FactionId.Ashfall;
+        private static readonly FactionId[] Teams = new FactionId[8];
 
-        public static FactionId Player => _player;
-        public static FactionId Ai => _ai;
+        static FactionRuntime()
+        {
+            Reset();
+        }
+
+        public static FactionId Player => Teams[0];
+        public static FactionId Ai => Teams[1];
 
         public static void Set(FactionId player, FactionId ai)
         {
-            _player = player;
-            _ai = ai;
+            Teams[0] = player;
+            for (var i = 1; i < Teams.Length; i++)
+            {
+                Teams[i] = ai;
+            }
+        }
+
+        public static void SetAll(params FactionId[] factions)
+        {
+            for (var i = 0; i < Teams.Length; i++)
+            {
+                Teams[i] = i < factions.Length ? factions[i] : FactionId.Ashfall;
+            }
+        }
+
+        public static void SetTeam(int team, FactionId faction)
+        {
+            if (team >= 0 && team < Teams.Length)
+            {
+                Teams[team] = faction;
+            }
         }
 
         public static void Reset()
         {
-            _player = FactionId.Ashfall;
-            _ai = FactionId.Ashfall;
+            for (var i = 0; i < Teams.Length; i++)
+            {
+                Teams[i] = i == 0 ? FactionId.Ashfall : FactionId.Ashfall;
+            }
         }
 
         public static FactionId ForTeam(int team)
         {
-            return team == 0 ? _player : _ai;
+            if (team < 0 || team >= Teams.Length)
+            {
+                return FactionId.Ashfall;
+            }
+
+            return Teams[team];
         }
 
         public static FactionModifiers StatsForTeam(int team)

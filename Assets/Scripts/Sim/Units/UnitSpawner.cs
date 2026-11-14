@@ -29,7 +29,7 @@ namespace CQRa.Sim.Units
         private RenderMeshArray _renderMeshArray;
 
         public int SpawnedCount { get; private set; }
-        public int TeamCount => 2;
+        public int TeamCount => CQRa.Sim.Units.MatchRuntime.TeamCount;
         public bool SpawnOnStart
         {
             get => _spawnOnStart;
@@ -126,10 +126,11 @@ namespace CQRa.Sim.Units
             for (var team = 0; team < TeamCount; team++)
             {
                 var map = MapRuntime.Current;
-                var start = team == 0 ? map.PlayerStart : map.AiStart;
+                var spawn = map.SpawnFor(team);
+                var start = spawn.Position;
                 var forward = math.normalizesafe(new float2(-start.x, -start.y), new float2(0f, 1f));
                 var right = new float2(forward.y, -forward.x);
-                var yaw = math.atan2(forward.x, forward.y);
+                var yaw = spawn.Yaw != 0f ? spawn.Yaw : math.atan2(forward.x, forward.y);
                 var index = 0;
 
                 index = SpawnKind(entityManager, team, UnitKind.Harvester, _harvestersPerTeam, index, start, forward, right, yaw);
@@ -260,6 +261,7 @@ namespace CQRa.Sim.Units
                 _ => new Color(0.64f, 0.22f, 0.14f),
             };
 
+            teamColor = Color.Lerp(teamColor, TeamPalette.For(team), 0.45f);
             return Color.Lerp(kindColor, teamColor, 0.60f);
         }
     }

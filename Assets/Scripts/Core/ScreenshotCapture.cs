@@ -449,7 +449,7 @@ namespace CQRa.Core
             var entityManager = world.EntityManager;
             var level = (AiDifficulty)math.clamp(_aiLevel, 0, 3);
 
-            for (var team = 0; team < 2; team++)
+            for (var team = 0; team < MatchRuntime.TeamCount; team++)
             {
                 if (HasCommander(entityManager, team))
                 {

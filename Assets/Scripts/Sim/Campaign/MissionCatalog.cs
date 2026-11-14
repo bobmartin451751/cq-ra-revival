@@ -16,6 +16,9 @@ namespace CQRa.Sim.Campaign
         public float surviveSeconds;
         public string playerFaction;
         public string aiFaction;
+        public string mapId;
+        public int teamCount = 2;
+        public string teamMode = "FreeForAll";
     }
 
     [Serializable]
@@ -26,7 +29,7 @@ namespace CQRa.Sim.Campaign
 
     /// <summary>
     /// Loads hand-authored campaign missions from Resources/Data/missions.json and falls
-    /// back to five built-in missions when the asset is missing.
+    /// back to fifteen built-in missions when the asset is missing.
     /// </summary>
     public static class MissionCatalog
     {
@@ -42,6 +45,8 @@ namespace CQRa.Sim.Campaign
                 briefing = "A hostile commander has dug in across the basin. Establish your base and wipe them out.",
                 playerFaction = "Ashfall",
                 aiFaction = "Verdant",
+                mapId = "ash-basin",
+                teamCount = 2,
             },
             new MissionDto
             {
@@ -51,6 +56,8 @@ namespace CQRa.Sim.Campaign
                 briefing = "Enemy pressure is building. Fortify, keep your harvesters running, and outlast the assault.",
                 playerFaction = "Meridian",
                 aiFaction = "Verdant",
+                mapId = "rusted-flats",
+                teamCount = 2,
             },
             new MissionDto
             {
@@ -60,6 +67,8 @@ namespace CQRa.Sim.Campaign
                 briefing = "Strike the heart of the enemy base. Kill their Construction Yard and they cannot rebuild.",
                 playerFaction = "Ashfall",
                 aiFaction = "Meridian",
+                mapId = "broken-ridge",
+                teamCount = 2,
             },
             new MissionDto
             {
@@ -69,6 +78,8 @@ namespace CQRa.Sim.Campaign
                 briefing = "The Syndicate is spending everything to break you. Hold the basin and keep your economy alive.",
                 playerFaction = "Verdant",
                 aiFaction = "Meridian",
+                mapId = "twin-shallows",
+                teamCount = 2,
             },
             new MissionDto
             {
@@ -78,6 +89,118 @@ namespace CQRa.Sim.Campaign
                 briefing = "Ashfall has committed its last field command. Break their yard and end the campaign.",
                 playerFaction = "Meridian",
                 aiFaction = "Ashfall",
+                mapId = "flooded-delta",
+                teamCount = 2,
+            },
+            new MissionDto
+            {
+                id = "m6", name = "Industrial Push", difficulty = "Veteran",
+                objective = "destroyAll",
+                objectiveText = "Destroy every enemy unit and structure.",
+                briefing = "Three commanders contest the Ashfall works. Secure the basin and break their production.",
+                playerFaction = "Ashfall",
+                aiFaction = "Verdant",
+                mapId = "ash-basin-11",
+                teamCount = 3,
+            },
+            new MissionDto
+            {
+                id = "m7", name = "Dry Lightning", difficulty = "Veteran",
+                objective = "destroyYard",
+                objectiveText = "Destroy the enemy Construction Yard.",
+                briefing = "No water, no cover, no retreat. Cross the flats and hit the yard before reinforcements arrive.",
+                playerFaction = "Verdant",
+                aiFaction = "Meridian",
+                mapId = "rusted-flats-12",
+                teamCount = 4,
+            },
+            new MissionDto
+            {
+                id = "m8", name = "Ridge War", difficulty = "Hardened",
+                objective = "survive", surviveSeconds = 420f,
+                objectiveText = "Survive for 7 minutes.",
+                briefing = "Three factions are fighting over the ridge lakes. Hold your shore and outlast them.",
+                playerFaction = "Meridian",
+                aiFaction = "Ashfall",
+                mapId = "broken-ridge-13",
+                teamCount = 4,
+            },
+            new MissionDto
+            {
+                id = "m9", name = "Twin Blockade", difficulty = "Hardened",
+                objective = "destroyYard",
+                objectiveText = "Destroy every enemy Construction Yard.",
+                briefing = "Two lakes, two fleets, one objective. Break the blockade and take the yards.",
+                playerFaction = "Ashfall",
+                aiFaction = "Verdant",
+                mapId = "twin-shallows-14",
+                teamCount = 4,
+            },
+            new MissionDto
+            {
+                id = "m10", name = "Delta Run", difficulty = "Hardened",
+                objective = "destroyAll",
+                objectiveText = "Destroy every enemy unit and structure.",
+                briefing = "The delta is flooded and contested. Use the water or lose the coast.",
+                playerFaction = "Verdant",
+                aiFaction = "Meridian",
+                mapId = "flooded-delta-15",
+                teamCount = 4,
+            },
+            new MissionDto
+            {
+                id = "m11", name = "Long Front", difficulty = "Hardened",
+                objective = "survive", surviveSeconds = 480f,
+                objectiveText = "Survive for 8 minutes.",
+                briefing = "A six-way front is collapsing. Hold the line while the others exhaust themselves.",
+                playerFaction = "Ashfall",
+                aiFaction = "Meridian",
+                mapId = "ash-basin-21",
+                teamCount = 6,
+            },
+            new MissionDto
+            {
+                id = "m12", name = "Rust Bowl", difficulty = "Brutal",
+                objective = "destroyYard",
+                objectiveText = "Destroy the enemy Construction Yards.",
+                briefing = "Six armies, no water, and one dry bowl. Break the largest yard first.",
+                playerFaction = "Verdant",
+                aiFaction = "Ashfall",
+                mapId = "rusted-flats-22",
+                teamCount = 6,
+            },
+            new MissionDto
+            {
+                id = "m13", name = "Ring of Steel", difficulty = "Brutal",
+                objective = "destroyAll",
+                objectiveText = "Destroy every enemy unit and structure.",
+                briefing = "The ridge lake is surrounded. Take the ring and close it.",
+                playerFaction = "Meridian",
+                aiFaction = "Verdant",
+                mapId = "broken-ridge-23",
+                teamCount = 6,
+            },
+            new MissionDto
+            {
+                id = "m14", name = "Four Lakes", difficulty = "Brutal",
+                objective = "destroyYard",
+                objectiveText = "Destroy every enemy Construction Yard.",
+                briefing = "Six factions and two lakes. Split your fleet or lose the shore.",
+                playerFaction = "Ashfall",
+                aiFaction = "Verdant",
+                mapId = "twin-shallows-24",
+                teamCount = 6,
+            },
+            new MissionDto
+            {
+                id = "m15", name = "The Last Compact", difficulty = "Brutal",
+                objective = "destroyAll",
+                objectiveText = "Destroy every enemy unit and structure.",
+                briefing = "Eight commanders enter the delta. One alliance leaves. End the campaign.",
+                playerFaction = "Meridian",
+                aiFaction = "Ashfall",
+                mapId = "broken-ridge-33",
+                teamCount = 8,
             },
         };
 

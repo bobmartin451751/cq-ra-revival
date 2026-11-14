@@ -137,7 +137,7 @@ namespace CQRa.Sim.Units
     /// <summary>Layout of the shared material array used by every unit.</summary>
     public static class UnitMaterials
     {
-        public const int TeamCount = 2;
+        public const int TeamCount = 8;
         public const int KindCount = 13;
         public const int HighlightIndex = TeamCount * KindCount;
         public const int Count = HighlightIndex + 1;
