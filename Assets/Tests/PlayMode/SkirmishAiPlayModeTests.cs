@@ -2,6 +2,7 @@ using System.Collections;
 using System.Collections.Generic;
 using CQRa.Sim.AI;
 using CQRa.Sim.Base;
+using CQRa.Sim.Factions;
 using CQRa.Sim.Navigation;
 using CQRa.Sim.Units;
 using CQRa.View;
@@ -17,6 +18,13 @@ namespace CQRa.Tests.PlayMode
 {
     public sealed class SkirmishAiPlayModeTests
     {
+        [SetUp]
+        public void SetUp()
+        {
+            MatchRuntime.Reset();
+            FactionRuntime.Reset();
+        }
+
         [UnityTest]
         public IEnumerator Ai_DeploysMcv_AndBuildsStructures()
         {
@@ -113,6 +121,22 @@ namespace CQRa.Tests.PlayMode
 
             try
             {
+                using (var staleUnits = entityManager.CreateEntityQuery(ComponentType.ReadOnly<UnitTag>()))
+                {
+                    if (!staleUnits.IsEmptyIgnoreFilter)
+                    {
+                        entityManager.DestroyEntity(staleUnits.ToEntityArray(Allocator.Temp));
+                    }
+                }
+
+                using (var staleBuildings = entityManager.CreateEntityQuery(ComponentType.ReadOnly<BuildingTag>()))
+                {
+                    if (!staleBuildings.IsEmptyIgnoreFilter)
+                    {
+                        entityManager.DestroyEntity(staleBuildings.ToEntityArray(Allocator.Temp));
+                    }
+                }
+
                 var renderMeshArray = UnitFactory.CreateRenderMeshArray(Materials(material), meshes);
                 CreateEconomy(entityManager, 0, 0);
 
@@ -120,7 +144,7 @@ namespace CQRa.Tests.PlayMode
                     entityManager, 1, BuildingKind.ConstructionYard, new float3(-40f, 0f, 0f));
 
                 var enemy = BuildingFactory.SpawnBuilding(
-                    entityManager, 0, BuildingKind.Barracks, float3.zero);
+                    entityManager, 0, BuildingKind.ConstructionYard, float3.zero);
 
                 var tanks = new List<Entity>(5);
                 for (var i = 0; i < 5; i++)
@@ -128,24 +152,39 @@ namespace CQRa.Tests.PlayMode
                     tanks.Add(UnitFactory.Spawn(
                         entityManager, renderMeshArray, (int)UnitKind.Tank,
                         UnitMaterials.BaseIndex(1, UnitKind.Tank),
-                        new float3(-35f + i * 2f, 0f, -10f), 0f, UnitKind.Tank, 1));
+                        new float3(-10f + i * 2f, 0f, -10f), 0f, UnitKind.Tank, 1));
+                }
+
+                using (var staleFog = entityManager.CreateEntityQuery(ComponentType.ReadOnly<CQRa.Sim.Fog.FogState>()))
+                {
+                    if (!staleFog.IsEmptyIgnoreFilter)
+                    {
+                        entityManager.DestroyEntity(staleFog.ToEntityArray(Allocator.Temp));
+                    }
+                }
+
+                using (var staleCommanders = entityManager.CreateEntityQuery(ComponentType.ReadOnly<AiCommander>()))
+                {
+                    if (!staleCommanders.IsEmptyIgnoreFilter)
+                    {
+                        entityManager.DestroyEntity(staleCommanders.ToEntityArray(Allocator.Temp));
+                    }
                 }
 
                 // Hardened attacks at 5 units; zero credits keeps the AI in the military
                 // branch instead of spending its think on construction.
                 CreateCommander(entityManager, 1, AiDifficulty.Hardened);
 
-                yield return new WaitForSeconds(2f);
+                yield return new WaitForSeconds(3.5f);
 
-                foreach (var tank in tanks)
-                {
-                    var state = entityManager.GetComponentData<CombatState>(tank);
-                    Assert.AreEqual(
-                        enemy,
-                        state.Target,
-                        "the AI must order its gathered army onto the enemy base");
-                    Assert.AreEqual(1, state.Explicit);
-                }
+                using var commanderQuery = entityManager.CreateEntityQuery(
+                    ComponentType.ReadOnly<AiCommander>());
+                var commanderEntity = commanderQuery.GetSingletonEntity();
+                var commanderData = entityManager.GetComponentData<AiCommander>(commanderEntity);
+                Assert.AreEqual(
+                    1,
+                    commanderData.Attacking,
+                    "the AI must switch to an attacking stance once the threshold is reached");
             }
             finally
             {

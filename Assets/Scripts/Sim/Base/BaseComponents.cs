@@ -16,11 +16,20 @@ namespace CQRa.Sim.Base
         Dock = 7,
         Airfield = 8,
         AntiAir = 9,
+        Bunker = 10,
     }
 
     /// <summary>Marks a static player building.</summary>
     public struct BuildingTag : IComponentData
     {
+    }
+
+    /// <summary>Infantry garrison capacity and defensive fire.</summary>
+    public struct Garrison : IComponentData
+    {
+        public int Capacity;
+        public float BaseDamage;
+        public float DamagePerOccupant;
     }
 
     /// <summary>Links a dock to the water body where its ships launch.</summary>
@@ -197,6 +206,7 @@ namespace CQRa.Sim.Base
             BuildingKind.Dock,
             BuildingKind.Airfield,
             BuildingKind.AntiAir,
+            BuildingKind.Bunker,
         };
 
         public static bool IsAvailable(BuildingKind kind)
@@ -254,6 +264,8 @@ namespace CQRa.Sim.Base
                     return "Airfield";
                 case BuildingKind.AntiAir:
                     return "AA Gun";
+                case BuildingKind.Bunker:
+                    return "Bunker";
                 default:
                     return "Construction Yard";
             }

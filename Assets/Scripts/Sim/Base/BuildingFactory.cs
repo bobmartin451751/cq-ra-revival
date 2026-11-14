@@ -17,7 +17,7 @@ namespace CQRa.Sim.Base
     /// </summary>
     public static class BuildingFactory
     {
-        public const int BuildingKindCount = 10;
+        public const int BuildingKindCount = 11;
         public const int TeamCount = 8;
         public const int FactionVariantCount = 3;
         public const int BuildingMeshCount = BuildingKindCount * FactionVariantCount;
@@ -149,6 +149,28 @@ namespace CQRa.Sim.Base
                 entityManager.AddComponentData(entity, new WeaponTargeting
                 {
                     Mask = TargetClass.Air,
+                });
+            }
+
+            if (kind == BuildingKind.Bunker)
+            {
+                entityManager.AddComponentData(entity, new Garrison
+                {
+                    Capacity = 5,
+                    BaseDamage = 6f,
+                    DamagePerOccupant = 7f,
+                });
+                entityManager.AddBuffer<CargoUnit>(entity);
+                entityManager.AddComponentData(entity, new DefenseWeapon
+                {
+                    Damage = 6f,
+                    Range = 24f,
+                    Cooldown = 0.65f,
+                    CooldownRemaining = 0f,
+                });
+                entityManager.AddComponentData(entity, new WeaponTargeting
+                {
+                    Mask = TargetClass.Ground,
                 });
             }
 

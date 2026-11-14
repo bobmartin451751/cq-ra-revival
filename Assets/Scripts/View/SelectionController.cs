@@ -211,6 +211,11 @@ namespace CQRa.View
                     ArmBuild(8);
                 }
 
+                if (keyboard.digit0Key.wasPressedThisFrame)
+                {
+                    ArmBuild(9);
+                }
+
                 if (keyboard.zKey.wasPressedThisFrame)
                 {
                     TryProduce(UnitKind.Infantry);
@@ -297,6 +302,7 @@ namespace CQRa.View
                     }
                 }
                 else if (!TryLoadTransport(screenPosition) &&
+                         !TryGarrisonAtPoint(screenPosition) &&
                          !TryIssueAttackOrder(screenPosition) &&
                          !TrySetRally(screenPosition))
                 {
@@ -427,9 +433,66 @@ namespace CQRa.View
             for (var i = 0; i < _selected.Count; i++)
             {
                 total += TransportCommands.TryUnload(entityManager, _selected[i]);
+                total += GarrisonCommands.TryEject(entityManager, _selected[i]);
             }
 
-            ShowMessage(total > 0 ? $"Unloaded {total} unit(s)" : "No transport cargo selected");
+            ShowMessage(total > 0 ? $"Unloaded {total} unit(s)" : "No cargo selected");
+        }
+
+        private bool TryGarrisonAtPoint(Vector2 screenPosition)
+        {
+            if (!TryPickSelectable(screenPosition, false, out var building))
+            {
+                return false;
+            }
+
+            var world = World.DefaultGameObjectInjectionWorld;
+            if (world == null || !world.IsCreated)
+            {
+                return false;
+            }
+
+            var entityManager = world.EntityManager;
+            if (!entityManager.Exists(building) ||
+                !entityManager.HasComponent<Garrison>(building) ||
+                !entityManager.HasComponent<BuildingInfo>(building))
+            {
+                return false;
+            }
+
+            var buildingInfo = entityManager.GetComponentData<BuildingInfo>(building);
+            if (!MatchRuntime.AreAllied(buildingInfo.Team, BuildCatalog.PlayerTeam))
+            {
+                return false;
+            }
+
+            var entered = 0;
+            var failure = GarrisonFailure.None;
+            for (var i = _selected.Count - 1; i >= 0; i--)
+            {
+                var unit = _selected[i];
+                if (!entityManager.Exists(unit))
+                {
+                    continue;
+                }
+
+                if (GarrisonCommands.TryEnter(entityManager, building, unit, out failure))
+                {
+                    entered++;
+                    _selected.RemoveAt(i);
+                }
+            }
+
+            if (entered > 0)
+            {
+                ShowMessage($"Garrisoned {entered} infantry");
+                return true;
+            }
+
+            ShowMessage(failure == GarrisonFailure.Full
+                ? "Bunker is full"
+                : "Select infantry to garrison");
+            return failure != GarrisonFailure.None;
         }
 
         /// <summary>
@@ -1608,6 +1671,16 @@ namespace CQRa.View
                     $"Cargo: {payload.Length}  (max {cargo.InfantryCapacity})  [E] unload",
                     _hintStyle);
             }
+            else if (entityManager.HasComponent<Garrison>(entity) &&
+                     entityManager.HasBuffer<CargoUnit>(entity))
+            {
+                var garrison = entityManager.GetComponentData<Garrison>(entity);
+                var payload = entityManager.GetBuffer<CargoUnit>(entity, true);
+                GUI.Label(
+                    new Rect(x + 12f, 306f, SidebarWidth - 24f, 22f),
+                    $"Garrison: {payload.Length}/{garrison.Capacity}  [E] eject",
+                    _hintStyle);
+            }
         }
 
         private void DrawCommandButtons(float x)
@@ -1860,7 +1933,8 @@ namespace CQRa.View
                 }
 
                 var spec = BuildCatalog.Get(kind);
-                var label = $"[{i + 1}] {BuildCatalog.DisplayName(kind)}    {spec.Cost}";
+                var key = i == 9 ? "0" : (i + 1).ToString();
+                var label = $"[{key}] {BuildCatalog.DisplayName(kind)}    {spec.Cost}";
 
                 var previous = GUI.backgroundColor;
                 if (_armedBuild == i)

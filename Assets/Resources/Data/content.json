@@ -229,6 +229,7 @@
     { "kind": "Wall", "cost": 50, "powerProduced": 0, "powerUsed": 0, "radius": 2.2, "navRadius": 2.2, "health": 250, "vision": 6 },
     { "kind": "Dock", "cost": 800, "powerProduced": 0, "powerUsed": 40, "radius": 9, "navRadius": 9, "health": 700, "vision": 30 },
     { "kind": "Airfield", "cost": 1100, "powerProduced": 0, "powerUsed": 50, "radius": 12, "navRadius": 12, "health": 900, "vision": 34 },
-    { "kind": "AntiAir", "cost": 450, "powerProduced": 0, "powerUsed": 10, "radius": 3, "navRadius": 3, "health": 380, "vision": 26 }
+    { "kind": "AntiAir", "cost": 450, "powerProduced": 0, "powerUsed": 10, "radius": 3, "navRadius": 3, "health": 380, "vision": 26 },
+    { "kind": "Bunker", "cost": 500, "powerProduced": 0, "powerUsed": 0, "radius": 4, "navRadius": 4, "health": 650, "vision": 26 }
   ]
 }

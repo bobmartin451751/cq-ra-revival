@@ -571,6 +571,17 @@ namespace CQRa.View
                 new MeshPart(Box(new Vector3(0.35f, 0.35f, 2.8f)), new Vector3(0.7f, 3.7f, 0f)));
         }
 
+        /// <summary>Low reinforced bunker with firing slits.</summary>
+        public static Mesh Bunker()
+        {
+            return Merge(
+                new MeshPart(Box(new Vector3(7f, 2.4f, 6f)), new Vector3(0f, 1.2f, 0f)),
+                new MeshPart(Box(new Vector3(5.5f, 1.2f, 4.5f)), new Vector3(0f, 2.8f, 0f)),
+                new MeshPart(Box(new Vector3(4.5f, 0.6f, 0.45f)), new Vector3(0f, 2.0f, 3.05f)),
+                new MeshPart(Box(new Vector3(0.45f, 0.6f, 3.5f)), new Vector3(3.55f, 2.0f, 0f)),
+                new MeshPart(Box(new Vector3(1.2f, 1.2f, 1.2f)), new Vector3(-3f, 2.5f, -2f)));
+        }
+
         /// <summary>Base mesh for a building kind, before faction trim.</summary>
         public static Mesh Building(BuildingKind kind)
         {
@@ -586,6 +597,7 @@ namespace CQRa.View
                 case BuildingKind.Dock: return Dock();
                 case BuildingKind.Airfield: return Airfield();
                 case BuildingKind.AntiAir: return AntiAir();
+                case BuildingKind.Bunker: return Bunker();
                 default: return ConstructionYard();
             }
         }
@@ -659,6 +671,7 @@ namespace CQRa.View
                 case BuildingKind.Dock: return 10.4f;
                 case BuildingKind.Airfield: return 10.5f;
                 case BuildingKind.AntiAir: return 4.2f;
+                case BuildingKind.Bunker: return 3.4f;
                 default: return 8.0f;
             }
         }
@@ -677,6 +690,7 @@ namespace CQRa.View
                 case BuildingKind.Dock: return 9f;
                 case BuildingKind.Airfield: return 12f;
                 case BuildingKind.AntiAir: return 3f;
+                case BuildingKind.Bunker: return 4f;
                 default: return 7f;
             }
         }
