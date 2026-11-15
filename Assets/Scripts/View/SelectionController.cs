@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using CQRa.Core;
 using CQRa.Sim.Base;
 using CQRa.Sim.Factions;
 using CQRa.Sim.Fog;
@@ -382,6 +383,8 @@ namespace CQRa.View
             {
                 _moveMarker.Show(new Vector3(destination.x, destination.y, destination.z));
             }
+
+            AudioDirector.Play(AudioCue.Move);
         }
 
         private bool TryLoadTransport(Vector2 screenPosition)
@@ -578,6 +581,8 @@ namespace CQRa.View
                 return false;
             }
 
+            AudioDirector.Play(AudioCue.Attack);
+
             if (_moveMarker != null)
             {
                 var position = entityManager.GetComponentData<LocalTransform>(target).Position;
@@ -612,6 +617,7 @@ namespace CQRa.View
 
             _armedBuild = index;
             _armedCommand = ArmedCommand.None;
+            AudioDirector.Play(AudioCue.Click);
             ShowMessage($"Placing {BuildCatalog.DisplayName(kind)} - left-click to place, Esc to cancel");
         }
 
@@ -654,6 +660,7 @@ namespace CQRa.View
                     _selectedProducer,
                     out var failure))
             {
+                AudioDirector.Play(AudioCue.Click);
                 ShowMessage($"{spec.Label} queued  (-{spec.Cost})");
             }
             else

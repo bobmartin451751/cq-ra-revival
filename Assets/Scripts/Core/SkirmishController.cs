@@ -231,6 +231,18 @@ namespace CQRa.Core
         {
             _matchOver = true;
             _winner = winner;
+            if (winner == 255)
+            {
+                AudioDirector.Play(AudioCue.Defeat);
+            }
+            else
+            {
+                AudioDirector.Play(
+                    MatchRuntime.AreAllied(winner, SkirmishCommands.PlayerTeam)
+                        ? AudioCue.Victory
+                        : AudioCue.Defeat);
+            }
+
             Time.timeScale = 0f;
 
             if (_selection != null)

@@ -259,6 +259,7 @@ namespace CQRa.Sim.Units
             {
                 dead.Add(target);
                 MatchStatsCommands.AddKill(entityManager, team, target);
+                CQRa.Core.AudioDirector.PlayAt(CQRa.Core.AudioCue.Explosion, targetPosition);
 
                 if (entityManager.HasComponent<Veterancy>(attacker))
                 {

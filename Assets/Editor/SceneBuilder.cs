@@ -36,6 +36,7 @@ namespace CQRa.EditorTools
                 var camera = CreateCamera(terrain);
                 CreateSun();
                 CreateFillLight();
+                CreateAudio();
                 CreateWater();
 
                 var scenery = CreateScenery(terrain);
@@ -190,6 +191,12 @@ namespace CQRa.EditorTools
             light.color = new Color(0.80f, 0.70f, 0.56f);
             light.intensity = 0.85f;
             light.shadows = LightShadows.None;
+        }
+
+        private static void CreateAudio()
+        {
+            var go = new GameObject("Audio");
+            go.AddComponent<CQRa.Core.AudioDirector>();
         }
 
         private static UnitSpawner CreateUnits(HeightmapTerrain terrain)
