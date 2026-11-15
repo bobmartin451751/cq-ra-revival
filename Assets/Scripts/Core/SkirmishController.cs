@@ -255,6 +255,7 @@ namespace CQRa.Core
         private void EndMission(bool won)
         {
             _missionWon = won;
+            PersistHeroProgress();
             if (won)
             {
                 MissionCatalog.MarkCompleted(_selectedMission);
@@ -417,6 +418,41 @@ namespace CQRa.Core
             weapon.Damage *= 1.25f;
             entityManager.SetComponentData(hero, weapon);
             entityManager.AddComponentData(hero, new Hero { Flag = 1 });
+
+            if (entityManager.HasComponent<Veterancy>(hero))
+            {
+                var veterancy = entityManager.GetComponentData<Veterancy>(hero);
+                veterancy.Kills = HeroProgress.Kills(_playerFaction);
+                veterancy.Rank = 0;
+                entityManager.SetComponentData(hero, veterancy);
+            }
+        }
+
+        private void PersistHeroProgress()
+        {
+            var world = World.DefaultGameObjectInjectionWorld;
+            if (world == null || !world.IsCreated)
+            {
+                return;
+            }
+
+            var entityManager = world.EntityManager;
+            using var query = entityManager.CreateEntityQuery(
+                ComponentType.ReadOnly<Hero>(),
+                ComponentType.ReadOnly<UnitInfo>(),
+                ComponentType.ReadOnly<Veterancy>());
+            using var heroes = query.ToEntityArray(Unity.Collections.Allocator.Temp);
+            for (var i = 0; i < heroes.Length; i++)
+            {
+                var info = entityManager.GetComponentData<UnitInfo>(heroes[i]);
+                if (info.Team == SkirmishCommands.PlayerTeam)
+                {
+                    HeroProgress.Save(
+                        _playerFaction,
+                        entityManager.GetComponentData<Veterancy>(heroes[i]).Kills);
+                    return;
+                }
+            }
         }
 
         private void OnGUI()
@@ -927,7 +963,8 @@ namespace CQRa.Core
                 new Rect(x + 104f, y + 366f, width - 134f, 82f),
                 $"{FactionCatalog.Name(playerFaction)} vs {FactionCatalog.Name(aiFaction)}\n" +
                 $"Map: {missionMap?.Name ?? "Ash Basin"}  |  {mission.teamCount} players\n" +
-                $"Hero: {ProductionCatalog.UnitName(playerFaction, ProductionCatalog.UniqueFor(playerFaction))}\n" +
+                $"Hero: {ProductionCatalog.UnitName(playerFaction, ProductionCatalog.UniqueFor(playerFaction))}" +
+                $"  ({HeroProgress.Kills(playerFaction)} kills)\n" +
                 mission.briefing,
                 _label);
 
