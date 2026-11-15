@@ -30,6 +30,8 @@ namespace CQRa.Core
         private AudioClip[] _clips;
         private AudioClip _ambientClip;
         private AudioClip _combatClip;
+        private float _combatIntensity;
+        private const float CombatBaseVolume = 0.30f;
 
         private void Awake()
         {
@@ -72,7 +74,22 @@ namespace CQRa.Core
             _combatSource.loop = true;
             _combatSource.playOnAwake = false;
             _combatSource.spatialBlend = 0f;
-            _combatSource.volume = _volume * 0.30f;
+            _combatSource.volume = _volume * CombatBaseVolume;
+        }
+
+        private void Update()
+        {
+            if (_combatSource == null)
+            {
+                return;
+            }
+
+            _combatIntensity = Mathf.MoveTowards(_combatIntensity, 0f, Time.unscaledDeltaTime * 0.18f);
+            if (_combatSource.isPlaying)
+            {
+                _combatSource.volume = _volume * (CombatBaseVolume + _combatIntensity * 0.22f);
+                _combatSource.pitch = 1f + _combatIntensity * 0.12f;
+            }
         }
 
         public static void SetCombat(bool active)
@@ -107,6 +124,11 @@ namespace CQRa.Core
             if (Instance == null || Instance._source == null)
             {
                 return;
+            }
+
+            if (cue == AudioCue.Explosion)
+            {
+                Instance._combatIntensity = Mathf.Min(1f, Instance._combatIntensity + 0.22f);
             }
 
             AudioSource.PlayClipAtPoint(Instance._clips[(int)cue], position, Instance._volume);
