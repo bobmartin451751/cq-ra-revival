@@ -28,6 +28,12 @@ namespace CQRa.Sim.Units
         MeridianBomber = 20,
         MeridianAttackHeli = 21,
         MeridianTransport = 22,
+        AntiTank = 23,
+        AntiAir = 24,
+        Grenadier = 25,
+        Medic = 26,
+        Breacher = 27,
+        Marksman = 28,
     }
 
     /// <summary>Marks an entity as a mobile unit.</summary>
@@ -153,6 +159,41 @@ namespace CQRa.Sim.Units
     {
         public UnitKind Kind;
         public float Health;
+    }
+
+    /// <summary>Heals nearby friendly infantry.</summary>
+    public struct MedicAura : IComponentData
+    {
+        public float Radius;
+        public float HealPerSecond;
+    }
+
+    /// <summary>Bonus damage against vehicles and buildings.</summary>
+    public struct AntiVehicle : IComponentData
+    {
+        public float Multiplier;
+    }
+
+    public static class InfantryCatalog
+    {
+        public static bool IsInfantry(UnitKind kind)
+        {
+            switch (kind)
+            {
+                case UnitKind.Infantry:
+                case UnitKind.Engineer:
+                case UnitKind.Mantis:
+                case UnitKind.AntiTank:
+                case UnitKind.AntiAir:
+                case UnitKind.Grenadier:
+                case UnitKind.Medic:
+                case UnitKind.Breacher:
+                case UnitKind.Marksman:
+                    return true;
+                default:
+                    return false;
+            }
+        }
     }
 
     public static class AirCatalog
@@ -289,6 +330,10 @@ namespace CQRa.Sim.Units
                 case UnitKind.VerdantTransport:
                 case UnitKind.MeridianTransport:
                     return TargetClass.None;
+                case UnitKind.AntiAir:
+                    return TargetClass.Air;
+                case UnitKind.Medic:
+                    return TargetClass.None;
                 default:
                     return TargetClass.Ground;
             }
@@ -330,7 +375,7 @@ namespace CQRa.Sim.Units
     public static class UnitMaterials
     {
         public const int TeamCount = 8;
-        public const int KindCount = 23;
+        public const int KindCount = 29;
         public const int HighlightIndex = TeamCount * KindCount;
         public const int Count = HighlightIndex + 1;
 

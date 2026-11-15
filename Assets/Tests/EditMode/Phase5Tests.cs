@@ -71,7 +71,7 @@ namespace CQRa.Tests.EditMode
             Assert.Greater(mcv.MaxHealth, harvester.MaxHealth);
             Assert.Greater(mcv.Armor, 0f);
             Assert.Greater(UnitFactory.RadiusFor(UnitKind.Mcv), UnitFactory.RadiusFor(UnitKind.Harvester));
-            Assert.AreEqual(23, UnitMaterials.KindCount, "all base, unique, support, naval and air unit kinds are renderable");
+            Assert.AreEqual(29, UnitMaterials.KindCount, "all base, unique, support, naval, air and specialist unit kinds are renderable");
         }
 
         [Test]

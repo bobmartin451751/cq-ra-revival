@@ -65,9 +65,7 @@ namespace CQRa.Sim.Units
                 }
             }
 
-            var isInfantry = info.Kind == UnitKind.Infantry ||
-                             info.Kind == UnitKind.Engineer ||
-                             info.Kind == UnitKind.Mantis;
+            var isInfantry = InfantryCatalog.IsInfantry(info.Kind);
             var isTank = info.Kind == UnitKind.Tank;
 
             if (isInfantry)

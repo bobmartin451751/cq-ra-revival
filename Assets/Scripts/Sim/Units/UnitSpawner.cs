@@ -129,6 +129,12 @@ namespace CQRa.Sim.Units
                 ProceduralMeshes.Bomber(2),
                 ProceduralMeshes.AttackHeli(1),
                 ProceduralMeshes.TransportHeli(2),
+                ProceduralMeshes.Specialist(0),
+                ProceduralMeshes.Specialist(1),
+                ProceduralMeshes.Specialist(2),
+                ProceduralMeshes.Specialist(3),
+                ProceduralMeshes.Specialist(4),
+                ProceduralMeshes.Specialist(5),
             };
 
             _renderMeshArray = UnitFactory.CreateRenderMeshArray(_materials, _meshes);
@@ -274,6 +280,12 @@ namespace CQRa.Sim.Units
                 UnitKind.MeridianBomber => new Color(0.30f, 0.34f, 0.46f),
                 UnitKind.MeridianAttackHeli => new Color(0.28f, 0.36f, 0.48f),
                 UnitKind.MeridianTransport => new Color(0.32f, 0.38f, 0.46f),
+                UnitKind.AntiTank => new Color(0.38f, 0.34f, 0.24f),
+                UnitKind.AntiAir => new Color(0.30f, 0.36f, 0.40f),
+                UnitKind.Grenadier => new Color(0.42f, 0.34f, 0.24f),
+                UnitKind.Medic => new Color(0.66f, 0.62f, 0.54f),
+                UnitKind.Breacher => new Color(0.46f, 0.24f, 0.18f),
+                UnitKind.Marksman => new Color(0.34f, 0.36f, 0.42f),
                 _ => new Color(0.43f, 0.27f, 0.18f),
             };
 

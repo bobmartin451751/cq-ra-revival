@@ -60,6 +60,10 @@ namespace CQRa.Sim.Base
             UnitKind.Harvester,
             UnitKind.Mcv,
             UnitKind.Engineer,
+            UnitKind.AntiTank,
+            UnitKind.AntiAir,
+            UnitKind.Grenadier,
+            UnitKind.Medic,
         };
 
         private static readonly UnitKind[] AshfallAir =
@@ -87,11 +91,11 @@ namespace CQRa.Sim.Base
         };
 
         private static readonly UnitKind[] AshfallRoster =
-            WithUnique(AshfallAir, UnitKind.Thumper, UnitKind.Rig);
+            WithUnique(AshfallAir, UnitKind.Thumper, UnitKind.Rig, UnitKind.Breacher);
         private static readonly UnitKind[] VerdantRoster =
             WithUnique(VerdantAir, UnitKind.Mantis, UnitKind.Sower);
         private static readonly UnitKind[] MeridianRoster =
-            WithUnique(MeridianAir);
+            WithUnique(MeridianAir, UnitKind.Marksman);
 
         public static UnitKind UniqueFor(FactionId faction)
         {

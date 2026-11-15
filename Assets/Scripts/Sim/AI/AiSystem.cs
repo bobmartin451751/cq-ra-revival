@@ -248,6 +248,35 @@ namespace CQRa.Sim.AI
                 }
             }
 
+            if (hasBarracks)
+            {
+                if (CountUnits(entityManager, team, UnitKind.Medic) +
+                    CountQueued(entityManager, team, UnitKind.Medic) == 0 &&
+                    army >= 4 &&
+                    credits >= ProductionCatalog.Get(UnitKind.Medic).Cost + CreditsReserve)
+                {
+                    ProductionCommands.TryEnqueue(entityManager, team, UnitKind.Medic, Entity.Null, out _);
+                    return;
+                }
+
+                if (CountUnits(entityManager, team, UnitKind.AntiTank) +
+                    CountQueued(entityManager, team, UnitKind.AntiTank) == 0 &&
+                    tanks >= 2 &&
+                    credits >= ProductionCatalog.Get(UnitKind.AntiTank).Cost + CreditsReserve)
+                {
+                    ProductionCommands.TryEnqueue(entityManager, team, UnitKind.AntiTank, Entity.Null, out _);
+                    return;
+                }
+
+                if (CountUnits(entityManager, team, UnitKind.AntiAir) +
+                    CountQueued(entityManager, team, UnitKind.AntiAir) == 0 &&
+                    credits >= ProductionCatalog.Get(UnitKind.AntiAir).Cost + CreditsReserve)
+                {
+                    ProductionCommands.TryEnqueue(entityManager, team, UnitKind.AntiAir, Entity.Null, out _);
+                    return;
+                }
+            }
+
             var desiredTanks = (int)math.round(army * profile.TankRatio);
             var kind = tanks < desiredTanks ? UnitKind.Tank : UnitKind.Infantry;
 

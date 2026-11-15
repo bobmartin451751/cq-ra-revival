@@ -252,6 +252,26 @@ namespace CQRa.View
                         FactionRuntime.ForTeam(BuildCatalog.PlayerTeam)));
                 }
 
+                if (keyboard.hKey.wasPressedThisFrame)
+                {
+                    TryProduce(UnitKind.AntiTank);
+                }
+
+                if (keyboard.jKey.wasPressedThisFrame)
+                {
+                    TryProduce(UnitKind.AntiAir);
+                }
+
+                if (keyboard.kKey.wasPressedThisFrame)
+                {
+                    TryProduce(UnitKind.Grenadier);
+                }
+
+                if (keyboard.lKey.wasPressedThisFrame)
+                {
+                    TryProduce(UnitKind.Medic);
+                }
+
                 if (keyboard.uKey.wasPressedThisFrame)
                 {
                     var roster = ProductionCatalog.RosterForTeam(BuildCatalog.PlayerTeam);

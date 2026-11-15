@@ -226,6 +226,41 @@ namespace CQRa.Sim.Content
                 Kind = UnitKind.MeridianTransport, Cost = 750, BuildSeconds = 10f, Producer = BuildingKind.Airfield,
                 MaxHealth = 260f, Armor = 0.15f, Speed = 12f, Radius = 3.2f, Vision = 32f, Label = "Atlas",
             },
+            new UnitDefinition
+            {
+                Kind = UnitKind.AntiTank, Cost = 220, BuildSeconds = 5f, Producer = BuildingKind.Barracks,
+                MaxHealth = 60f, Armor = 0f, Damage = 45f, Range = 18f, Cooldown = 2.2f,
+                AcquireRange = 20f, Speed = 3.5f, Radius = 0.6f, Vision = 30f, Label = "Anti-Tank",
+            },
+            new UnitDefinition
+            {
+                Kind = UnitKind.AntiAir, Cost = 180, BuildSeconds = 5f, Producer = BuildingKind.Barracks,
+                MaxHealth = 55f, Armor = 0f, Damage = 12f, Range = 30f, Cooldown = 0.7f,
+                AcquireRange = 32f, Speed = 4f, Radius = 0.6f, Vision = 36f, Label = "AA Infantry",
+            },
+            new UnitDefinition
+            {
+                Kind = UnitKind.Grenadier, Cost = 230, BuildSeconds = 6f, Producer = BuildingKind.Barracks,
+                MaxHealth = 60f, Armor = 0f, Damage = 30f, Range = 26f, Cooldown = 2.5f,
+                AcquireRange = 28f, Speed = 3.5f, Radius = 0.6f, Vision = 28f, Label = "Grenadier",
+            },
+            new UnitDefinition
+            {
+                Kind = UnitKind.Medic, Cost = 150, BuildSeconds = 5f, Producer = BuildingKind.Barracks,
+                MaxHealth = 45f, Armor = 0f, Speed = 5f, Radius = 0.6f, Vision = 30f, Label = "Medic",
+            },
+            new UnitDefinition
+            {
+                Kind = UnitKind.Breacher, Cost = 280, BuildSeconds = 6f, Producer = BuildingKind.Barracks,
+                MaxHealth = 80f, Armor = 0f, Damage = 18f, Range = 8f, Cooldown = 0.4f,
+                AcquireRange = 10f, Speed = 4.5f, Radius = 0.6f, Vision = 28f, Label = "Breacher",
+            },
+            new UnitDefinition
+            {
+                Kind = UnitKind.Marksman, Cost = 300, BuildSeconds = 7f, Producer = BuildingKind.Barracks,
+                MaxHealth = 40f, Armor = 0f, Damage = 50f, Range = 36f, Cooldown = 2f,
+                AcquireRange = 38f, Speed = 3.8f, Radius = 0.6f, Vision = 44f, Label = "Marksman",
+            },
         };
 
         private static readonly BuildingDefinition[] DefaultBuildings =

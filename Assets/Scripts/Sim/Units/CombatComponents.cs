@@ -170,6 +170,22 @@ namespace CQRa.Sim.Units
             return attackerKind == UnitKind.Skyfall && targetIsAir ? AirSuperiorityBonus : 1f;
         }
 
+        public static bool IsVehicleOrBuilding(UnitKind kind)
+        {
+            switch (kind)
+            {
+                case UnitKind.Tank:
+                case UnitKind.Mcv:
+                case UnitKind.Harvester:
+                case UnitKind.Thumper:
+                case UnitKind.Rig:
+                case UnitKind.Sower:
+                    return true;
+                default:
+                    return false;
+            }
+        }
+
         /// <summary>Applies a shield before health, resetting its regeneration delay.</summary>
         public static float AbsorbWithShield(EntityManager entityManager, Entity target, float damage)
         {

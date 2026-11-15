@@ -48,9 +48,7 @@ namespace CQRa.Sim.Base
                 return false;
             }
 
-            if (info.Kind != UnitKind.Infantry &&
-                info.Kind != UnitKind.Engineer &&
-                info.Kind != UnitKind.Mantis)
+            if (!InfantryCatalog.IsInfantry(info.Kind))
             {
                 failure = GarrisonFailure.NotInfantry;
                 return false;

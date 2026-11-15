@@ -10,9 +10,9 @@ namespace CQRa.Tests.EditMode
         [Test]
         public void EachFaction_HasASeventhUniqueUnit()
         {
-            Assert.AreEqual(13, ProductionCatalog.RosterFor(FactionId.Ashfall).Length);
-            Assert.AreEqual(13, ProductionCatalog.RosterFor(FactionId.Verdant).Length);
-            Assert.AreEqual(11, ProductionCatalog.RosterFor(FactionId.Meridian).Length);
+            Assert.AreEqual(18, ProductionCatalog.RosterFor(FactionId.Ashfall).Length);
+            Assert.AreEqual(17, ProductionCatalog.RosterFor(FactionId.Verdant).Length);
+            Assert.AreEqual(16, ProductionCatalog.RosterFor(FactionId.Meridian).Length);
 
             Assert.AreEqual(UnitKind.Thumper, ProductionCatalog.UniqueFor(FactionId.Ashfall));
             Assert.AreEqual(UnitKind.Mantis, ProductionCatalog.UniqueFor(FactionId.Verdant));

@@ -244,6 +244,23 @@ namespace CQRa.Sim.Units
                 });
             }
 
+            if (kind == UnitKind.Medic)
+            {
+                entityManager.AddComponentData(entity, new MedicAura
+                {
+                    Radius = 14f,
+                    HealPerSecond = 5f,
+                });
+            }
+
+            if (kind == UnitKind.AntiTank)
+            {
+                entityManager.AddComponentData(entity, new AntiVehicle
+                {
+                    Multiplier = 1.5f,
+                });
+            }
+
             if (kind == UnitKind.Mantis)
             {
                 entityManager.AddComponentData(entity, new Cloak

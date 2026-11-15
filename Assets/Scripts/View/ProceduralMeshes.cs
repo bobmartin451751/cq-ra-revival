@@ -912,6 +912,38 @@ namespace CQRa.View
                 new MeshPart(Box(new Vector3(0.8f, 0.8f, 3.4f)), new Vector3(0f, 2.1f, length * 0.55f)));
         }
 
+        /// <summary>Infantry silhouette with a specialist weapon/backpack variant.</summary>
+        public static Mesh Specialist(int variant)
+        {
+            var body = new MeshPart(Box(new Vector3(0.7f, 1.1f, 0.45f)), new Vector3(0f, 0.75f, 0f));
+            var head = new MeshPart(Box(new Vector3(0.38f, 0.38f, 0.38f)), new Vector3(0f, 1.5f, 0f));
+            var legs = new MeshPart(Box(new Vector3(0.62f, 0.55f, 0.4f)), new Vector3(0f, 0.3f, 0f));
+
+            switch (variant)
+            {
+                case 0: // anti-tank launcher
+                    return Merge(body, head, legs,
+                        new MeshPart(Box(new Vector3(0.2f, 0.2f, 2.4f)), new Vector3(0.45f, 1.2f, 0.3f)));
+                case 1: // anti-air missile
+                    return Merge(body, head, legs,
+                        new MeshPart(Cylinder(0.22f, 1.2f, 8), new Vector3(0.35f, 1.4f, 0.4f)));
+                case 2: // grenadier pack
+                    return Merge(body, head, legs,
+                        new MeshPart(Box(new Vector3(0.6f, 0.55f, 0.35f)), new Vector3(0f, 1.15f, -0.35f)),
+                        new MeshPart(Box(new Vector3(0.14f, 0.14f, 1.2f)), new Vector3(0.32f, 1.0f, 0.5f)));
+                case 3: // medic cross
+                    return Merge(body, head, legs,
+                        new MeshPart(Box(new Vector3(0.5f, 0.12f, 0.12f)), new Vector3(0f, 1.1f, 0.28f)),
+                        new MeshPart(Box(new Vector3(0.12f, 0.5f, 0.12f)), new Vector3(0f, 1.1f, 0.28f)));
+                case 4: // breacher shield
+                    return Merge(body, head, legs,
+                        new MeshPart(Box(new Vector3(0.9f, 1.0f, 0.18f)), new Vector3(-0.45f, 1.0f, 0.25f)));
+                default: // marksman rifle
+                    return Merge(body, head, legs,
+                        new MeshPart(Box(new Vector3(0.12f, 0.12f, 1.9f)), new Vector3(0.35f, 1.2f, 0.45f)));
+            }
+        }
+
         /// <summary>Low ore crystal pile, deterministic per seed.</summary>
         public static Mesh OreCluster(int seed)
         {

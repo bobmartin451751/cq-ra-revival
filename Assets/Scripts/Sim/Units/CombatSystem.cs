@@ -227,8 +227,21 @@ namespace CQRa.Sim.Units
             var airBonus = CombatMath.AirSuperiorityMultiplier(
                 attackerKind,
                 entityManager.HasComponent<AirUnit>(target));
+            var antiVehicle = 1f;
+            if (entityManager.HasComponent<AntiVehicle>(attacker))
+            {
+                var isVehicle = entityManager.HasComponent<BuildingInfo>(target) ||
+                                (entityManager.HasComponent<UnitInfo>(target) &&
+                                 CombatMath.IsVehicleOrBuilding(
+                                     entityManager.GetComponentData<UnitInfo>(target).Kind));
+                if (isVehicle)
+                {
+                    antiVehicle = entityManager.GetComponentData<AntiVehicle>(attacker).Multiplier;
+                }
+            }
+
             var damage = CombatMath.DamageAfterArmor(
-                weapon.Damage * directional * airBonus,
+                weapon.Damage * directional * airBonus * antiVehicle,
                 health.Armor);
             damage = CombatMath.AbsorbWithShield(entityManager, target, damage);
 
