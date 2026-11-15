@@ -26,8 +26,10 @@ namespace CQRa.Core
 
         private AudioSource _source;
         private AudioSource _ambientSource;
+        private AudioSource _combatSource;
         private AudioClip[] _clips;
         private AudioClip _ambientClip;
+        private AudioClip _combatClip;
 
         private void Awake()
         {
@@ -63,6 +65,31 @@ namespace CQRa.Core
             _ambientSource.spatialBlend = 0f;
             _ambientSource.volume = _volume * 0.35f;
             _ambientSource.Play();
+
+            _combatClip = MakeCombatPulse("CombatPulse", 8f, 0.16f);
+            _combatSource = gameObject.AddComponent<AudioSource>();
+            _combatSource.clip = _combatClip;
+            _combatSource.loop = true;
+            _combatSource.playOnAwake = false;
+            _combatSource.spatialBlend = 0f;
+            _combatSource.volume = _volume * 0.30f;
+        }
+
+        public static void SetCombat(bool active)
+        {
+            if (Instance == null || Instance._combatSource == null)
+            {
+                return;
+            }
+
+            if (active && !Instance._combatSource.isPlaying)
+            {
+                Instance._combatSource.Play();
+            }
+            else if (!active && Instance._combatSource.isPlaying)
+            {
+                Instance._combatSource.Stop();
+            }
         }
 
         public static void Play(AudioCue cue)
@@ -140,6 +167,30 @@ namespace CQRa.Core
             return clip;
         }
 
+        private static AudioClip MakeCombatPulse(string name, float seconds, float gain)
+        {
+            const int sampleRate = 22050;
+            var samples = Mathf.Max(1, Mathf.RoundToInt(seconds * sampleRate));
+            var data = new float[samples];
+            var random = new System.Random(557);
+            for (var i = 0; i < samples; i++)
+            {
+                var t = i / (float)sampleRate;
+                var beat = t % 0.5f;
+                var kick = beat < 0.09f
+                    ? Mathf.Sin(2f * Mathf.PI * 62f * beat) * (1f - beat / 0.09f)
+                    : 0f;
+                var tick = beat > 0.25f && beat < 0.29f
+                    ? ((float)random.NextDouble() * 2f - 1f) * 0.35f
+                    : 0f;
+                data[i] = (kick * 0.8f + tick) * gain;
+            }
+
+            var clip = AudioClip.Create(name, samples, 1, sampleRate, false);
+            clip.SetData(data, 0);
+            return clip;
+        }
+
         private void OnDestroy()
         {
             if (Instance == this)
@@ -152,10 +203,21 @@ namespace CQRa.Core
                 _ambientSource.Stop();
             }
 
+            if (_combatSource != null)
+            {
+                _combatSource.Stop();
+            }
+
             if (_ambientClip != null)
             {
                 Destroy(_ambientClip);
                 _ambientClip = null;
+            }
+
+            if (_combatClip != null)
+            {
+                Destroy(_combatClip);
+                _combatClip = null;
             }
 
             if (_clips != null)

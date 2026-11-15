@@ -140,6 +140,7 @@ namespace CQRa.Core
             else
             {
                 Time.timeScale = 0f;
+                AudioDirector.SetCombat(false);
             }
         }
 
@@ -232,6 +233,7 @@ namespace CQRa.Core
         {
             _matchOver = true;
             _winner = winner;
+            AudioDirector.SetCombat(false);
             if (winner == 255)
             {
                 AudioDirector.Play(AudioCue.Defeat);
@@ -336,6 +338,7 @@ namespace CQRa.Core
             _active = true;
             _matchOver = false;
             Time.timeScale = 1f;
+            AudioDirector.SetCombat(true);
 
             MatchRuntime.Configure(_teamCount, _teamMode, _customAlliances);
 
