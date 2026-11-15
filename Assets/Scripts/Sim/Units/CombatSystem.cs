@@ -258,6 +258,7 @@ namespace CQRa.Sim.Units
             if (health.Current <= 0f)
             {
                 dead.Add(target);
+                MatchStatsCommands.AddKill(entityManager, team, target);
 
                 if (entityManager.HasComponent<Veterancy>(attacker))
                 {

@@ -909,6 +909,11 @@ namespace CQRa.Core
                 _missionWon ? "MISSION COMPLETE" : "MISSION FAILED",
                 _title);
 
+            GUI.Label(
+                new Rect(0f, Screen.height * 0.3f + 76f, Screen.width, 22f),
+                MatchStatsText(),
+                _label);
+
             var buttonY = Screen.height * 0.3f + 110f;
             var hasNext = _missionWon && _selectedMission + 1 < MissionCatalog.Missions.Length;
 
@@ -955,6 +960,11 @@ namespace CQRa.Core
                 text,
                 _title);
 
+            GUI.Label(
+                new Rect(0f, Screen.height * 0.34f + 76f, Screen.width, 22f),
+                MatchStatsText(),
+                _label);
+
             if (GUI.Button(
                     new Rect(Screen.width * 0.5f - 110f, Screen.height * 0.34f + 100f, 220f, 46f),
                     "RESTART",
@@ -962,6 +972,24 @@ namespace CQRa.Core
             {
                 Restart();
             }
+        }
+
+        private static string MatchStatsText()
+        {
+            var world = World.DefaultGameObjectInjectionWorld;
+            if (world == null || !world.IsCreated)
+            {
+                return string.Empty;
+            }
+
+            if (!MatchStatsCommands.TryRead(
+                    world.EntityManager, SkirmishCommands.PlayerTeam, out var stats))
+            {
+                return string.Empty;
+            }
+
+            return $"Built {stats.UnitsBuilt}  |  Kills {stats.Kills}  |  " +
+                   $"Losses {stats.Losses}  |  Buildings destroyed {stats.BuildingsDestroyed}";
         }
 
         private void Restart()

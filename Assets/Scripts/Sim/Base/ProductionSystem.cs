@@ -256,6 +256,7 @@ namespace CQRa.Sim.Base
 
             var yaw = math.atan2(direction.x, direction.y);
             var unit = UnitFactory.SpawnDefault(entityManager, spawnPoint, yaw, kind, info.Team);
+            MatchStatsCommands.AddBuilt(entityManager, info.Team);
 
             if (isAir && entityManager.HasComponent<AircraftHome>(unit))
             {
