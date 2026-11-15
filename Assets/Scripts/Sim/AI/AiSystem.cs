@@ -85,6 +85,7 @@ namespace CQRa.Sim.AI
             }
 
             UpdateMilitary(entityManager, ref commander, profile, yard);
+            MaintainBunkerGarrison(entityManager, commander.Team);
             MaintainTransportMission(entityManager, commander.Team);
             UpdateTransportMissions(entityManager, commander.Team);
         }
@@ -154,6 +155,12 @@ namespace CQRa.Sim.AI
                 CountBuildings(entityManager, team, BuildingKind.GunTower) < profile.MaxTurrets)
             {
                 return BaseCommands.TryAutoPlace(entityManager, team, BuildingKind.GunTower);
+            }
+
+            if (credits > 700 &&
+                CountBuildings(entityManager, team, BuildingKind.Bunker) < 1)
+            {
+                return BaseCommands.TryAutoPlace(entityManager, team, BuildingKind.Bunker);
             }
 
             if (credits > 2200 &&
@@ -363,6 +370,74 @@ namespace CQRa.Sim.AI
                     ProductionCommands.TryEnqueue(entityManager, team, kind, Entity.Null, out _))
                 {
                     return;
+                }
+            }
+        }
+
+        private static void MaintainBunkerGarrison(EntityManager entityManager, int team)
+        {
+            using var bunkerQuery = entityManager.CreateEntityQuery(
+                ComponentType.ReadOnly<Garrison>(),
+                ComponentType.ReadOnly<BuildingInfo>(),
+                ComponentType.ReadOnly<LocalTransform>());
+            using var bunkers = bunkerQuery.ToEntityArray(Allocator.Temp);
+            if (bunkers.Length == 0)
+            {
+                return;
+            }
+
+            using var unitQuery = entityManager.CreateEntityQuery(
+                ComponentType.ReadOnly<UnitInfo>(),
+                ComponentType.ReadOnly<Health>(),
+                ComponentType.ReadOnly<LocalTransform>());
+            using var units = unitQuery.ToEntityArray(Allocator.Temp);
+
+            for (var b = 0; b < bunkers.Length; b++)
+            {
+                var bunker = bunkers[b];
+                var info = entityManager.GetComponentData<BuildingInfo>(bunker);
+                if (info.Team != team || !entityManager.HasBuffer<CargoUnit>(bunker))
+                {
+                    continue;
+                }
+
+                var garrison = entityManager.GetComponentData<Garrison>(bunker);
+                if (entityManager.GetBuffer<CargoUnit>(bunker).Length >= garrison.Capacity)
+                {
+                    continue;
+                }
+
+                var position = entityManager.GetComponentData<LocalTransform>(bunker).Position;
+                for (var i = 0; i < units.Length; i++)
+                {
+                    if (entityManager.GetBuffer<CargoUnit>(bunker).Length >= garrison.Capacity)
+                    {
+                        break;
+                    }
+
+                    var unit = units[i];
+                    if (!entityManager.Exists(unit))
+                    {
+                        continue;
+                    }
+
+                    var unitInfo = entityManager.GetComponentData<UnitInfo>(unit);
+                    if (unitInfo.Team != team ||
+                        !InfantryCatalog.IsInfantry(unitInfo.Kind) ||
+                        entityManager.GetComponentData<Health>(unit).Current <= 0f)
+                    {
+                        continue;
+                    }
+
+                    var unitPosition = entityManager.GetComponentData<LocalTransform>(unit).Position;
+                    if (math.distance(
+                            new float2(position.x, position.z),
+                            new float2(unitPosition.x, unitPosition.z)) > 30f)
+                    {
+                        continue;
+                    }
+
+                    GarrisonCommands.TryEnter(entityManager, bunker, unit, out _);
                 }
             }
         }

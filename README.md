@@ -45,7 +45,7 @@ sell**, Esc to clear/cancel. Selected units and buildings expose their actions i
 right-hand **COMMAND** sidebar: MCVs show **DEPLOY** (click it, then right-click a
 site), production buildings show **RALLY** (click it, then right-click terrain),
 buildings show **REPAIR** and **SELL**, and units show **STOP**. See
-`docs/phase2.md` through `docs/phase46.md` for details.
+`docs/phase2.md` through `docs/phase47.md` for details.
 
 ## Layout
 
@@ -117,5 +117,6 @@ tools/               headless scripts
 | 44 - 8-player fog performance | OK - cached per-team fog grids per tick |
 | 45 - match statistics | OK - kills, losses, units built and buildings destroyed on results |
 | 46 - procedural audio | OK - click, move, attack, build, explosion and result sounds |
+| 47 - AI bunker garrison | OK - AI builds a bunker and fills it with infantry |
 
 See `docs/spec.md` for the full roadmap and frozen scope.
