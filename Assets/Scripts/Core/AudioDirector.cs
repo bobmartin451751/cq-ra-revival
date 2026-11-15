@@ -25,7 +25,9 @@ namespace CQRa.Core
         [SerializeField] private float _volume = 0.28f;
 
         private AudioSource _source;
+        private AudioSource _ambientSource;
         private AudioClip[] _clips;
+        private AudioClip _ambientClip;
 
         private void Awake()
         {
@@ -52,6 +54,15 @@ namespace CQRa.Core
             _source.playOnAwake = false;
             _source.spatialBlend = 0f;
             _source.volume = _volume;
+
+            _ambientClip = MakeAmbience("Ambience", 12f, 0.12f);
+            _ambientSource = gameObject.AddComponent<AudioSource>();
+            _ambientSource.clip = _ambientClip;
+            _ambientSource.loop = true;
+            _ambientSource.playOnAwake = false;
+            _ambientSource.spatialBlend = 0f;
+            _ambientSource.volume = _volume * 0.35f;
+            _ambientSource.Play();
         }
 
         public static void Play(AudioCue cue)
@@ -109,11 +120,42 @@ namespace CQRa.Core
             return clip;
         }
 
+        private static AudioClip MakeAmbience(string name, float seconds, float gain)
+        {
+            const int sampleRate = 22050;
+            var samples = Mathf.Max(1, Mathf.RoundToInt(seconds * sampleRate));
+            var data = new float[samples];
+            for (var i = 0; i < samples; i++)
+            {
+                var t = i / (float)sampleRate;
+                var slow = 0.55f + 0.45f * Mathf.Sin(2f * Mathf.PI * 0.045f * t);
+                var drone = Mathf.Sin(2f * Mathf.PI * 55f * t) * 0.45f +
+                            Mathf.Sin(2f * Mathf.PI * 82.5f * t) * 0.22f +
+                            Mathf.Sin(2f * Mathf.PI * 110f * t) * 0.12f;
+                data[i] = drone * slow * gain;
+            }
+
+            var clip = AudioClip.Create(name, samples, 1, sampleRate, false);
+            clip.SetData(data, 0);
+            return clip;
+        }
+
         private void OnDestroy()
         {
             if (Instance == this)
             {
                 Instance = null;
+            }
+
+            if (_ambientSource != null)
+            {
+                _ambientSource.Stop();
+            }
+
+            if (_ambientClip != null)
+            {
+                Destroy(_ambientClip);
+                _ambientClip = null;
             }
 
             if (_clips != null)
