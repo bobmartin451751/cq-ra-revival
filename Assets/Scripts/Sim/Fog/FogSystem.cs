@@ -41,27 +41,33 @@ namespace CQRa.Sim.Fog
 
             var terrainEntity = terrainQuery.GetSingletonEntity();
             var heights = entityManager.GetBuffer<TerrainHeightSample>(terrainEntity).AsNativeArray();
+            var teamCount = MatchRuntime.TeamCount;
+            var fogEntities = new Entity[teamCount];
+            var fogInfos = new FogGridInfo[teamCount];
+            var fogCells = new NativeArray<FogCell>[teamCount];
 
-            for (var team = 0; team < MatchRuntime.TeamCount; team++)
+            for (var team = 0; team < teamCount; team++)
             {
-                if (!FogQuery.TryGet(entityManager, team, out var fog, out _))
+                if (!FogQuery.TryGet(entityManager, team, out var fog, out var info))
                 {
                     continue;
                 }
 
-                var cells = FogQuery.GetCells(entityManager, fog);
-                FogMath.Decay(cells);
+                fogEntities[team] = fog;
+                fogInfos[team] = info;
+                fogCells[team] = entityManager.GetBuffer<FogCell>(fog).AsNativeArray();
+                FogMath.Decay(fogCells[team]);
             }
 
-            StampUnits(entityManager, terrain, heights);
-            StampBuildings(entityManager, terrain, heights);
-            ShareAlliedVision(entityManager);
+            StampUnits(entityManager, terrain, heights, fogEntities, fogInfos, fogCells);
+            StampBuildings(entityManager, terrain, heights, fogEntities, fogInfos, fogCells);
+            ShareAlliedVision(teamCount, fogCells);
 
-            for (var team = 0; team < MatchRuntime.TeamCount; team++)
+            for (var team = 0; team < teamCount; team++)
             {
-                if (FogQuery.TryGet(entityManager, team, out var fog, out _))
+                if (fogEntities[team] != Entity.Null)
                 {
-                    BumpRevision(entityManager, fog);
+                    BumpRevision(entityManager, fogEntities[team]);
                 }
             }
         }
@@ -103,29 +109,26 @@ namespace CQRa.Sim.Fog
             }
         }
 
-        private static void ShareAlliedVision(EntityManager entityManager)
+        private static void ShareAlliedVision(int teamCount, NativeArray<FogCell>[] fogCells)
         {
-            for (var team = 0; team < MatchRuntime.TeamCount; team++)
+            for (var team = 0; team < teamCount; team++)
             {
-                if (!FogQuery.TryGet(entityManager, team, out var fog, out _))
+                if (fogCells[team].Length == 0)
                 {
                     continue;
                 }
 
-                var cells = FogQuery.GetCells(entityManager, fog);
-                for (var ally = 0; ally < MatchRuntime.TeamCount; ally++)
+                var cells = fogCells[team];
+                for (var ally = 0; ally < teamCount; ally++)
                 {
-                    if (ally == team || !MatchRuntime.AreAllied(team, ally))
+                    if (ally == team ||
+                        fogCells[ally].Length == 0 ||
+                        !MatchRuntime.AreAllied(team, ally))
                     {
                         continue;
                     }
 
-                    if (!FogQuery.TryGet(entityManager, ally, out var allyFog, out _))
-                    {
-                        continue;
-                    }
-
-                    var allyCells = FogQuery.GetCells(entityManager, allyFog);
+                    var allyCells = fogCells[ally];
                     for (var i = 0; i < cells.Length; i++)
                     {
                         if (allyCells[i].Value > cells[i].Value)
@@ -147,7 +150,10 @@ namespace CQRa.Sim.Fog
         private static void StampUnits(
             EntityManager entityManager,
             in TerrainInfo terrain,
-            NativeArray<TerrainHeightSample> heights)
+            NativeArray<TerrainHeightSample> heights,
+            Entity[] fogEntities,
+            FogGridInfo[] fogInfos,
+            NativeArray<FogCell>[] fogCells)
         {
             using var query = entityManager.CreateEntityQuery(
                 ComponentType.ReadOnly<UnitTag>(),
@@ -165,14 +171,17 @@ namespace CQRa.Sim.Fog
                 }
 
                 var unitInfo = entityManager.GetComponentData<UnitInfo>(units[i]);
-                if (!FogQuery.TryGet(entityManager, unitInfo.Team, out var fog, out var info))
+                if (unitInfo.Team < 0 ||
+                    unitInfo.Team >= fogEntities.Length ||
+                    fogEntities[unitInfo.Team] == Entity.Null)
                 {
                     continue;
                 }
 
                 var position = entityManager.GetComponentData<LocalTransform>(units[i]).Position;
                 var radius = entityManager.GetComponentData<VisionSource>(units[i]).Radius;
-                var cells = FogQuery.GetCells(entityManager, fog);
+                var cells = fogCells[unitInfo.Team];
+                var info = fogInfos[unitInfo.Team];
                 var elevated = entityManager.HasComponent<AirUnit>(units[i]) ||
                                entityManager.HasComponent<NavalUnit>(units[i]);
                 var eyeHeight = NavalRules.IsNaval(unitInfo.Kind) ? 5f : 2.2f;
@@ -192,7 +201,10 @@ namespace CQRa.Sim.Fog
         private static void StampBuildings(
             EntityManager entityManager,
             in TerrainInfo terrain,
-            NativeArray<TerrainHeightSample> heights)
+            NativeArray<TerrainHeightSample> heights,
+            Entity[] fogEntities,
+            FogGridInfo[] fogInfos,
+            NativeArray<FogCell>[] fogCells)
         {
             using var query = entityManager.CreateEntityQuery(
                 ComponentType.ReadOnly<BuildingTag>(),
@@ -210,14 +222,17 @@ namespace CQRa.Sim.Fog
                 }
 
                 var buildingInfo = entityManager.GetComponentData<BuildingInfo>(buildings[i]);
-                if (!FogQuery.TryGet(entityManager, buildingInfo.Team, out var fog, out var info))
+                if (buildingInfo.Team < 0 ||
+                    buildingInfo.Team >= fogEntities.Length ||
+                    fogEntities[buildingInfo.Team] == Entity.Null)
                 {
                     continue;
                 }
 
                 var position = entityManager.GetComponentData<LocalTransform>(buildings[i]).Position;
                 var radius = entityManager.GetComponentData<VisionSource>(buildings[i]).Radius;
-                var cells = FogQuery.GetCells(entityManager, fog);
+                var cells = fogCells[buildingInfo.Team];
+                var info = fogInfos[buildingInfo.Team];
 
                 StampCells(cells, terrain, heights, info, position, radius, true, 8f);
             }
