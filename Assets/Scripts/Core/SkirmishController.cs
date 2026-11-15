@@ -7,6 +7,7 @@ using CQRa.Sim.Factions;
 using CQRa.Sim.Units;
 using CQRa.View;
 using Unity.Entities;
+using Unity.Mathematics;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 
@@ -370,6 +371,11 @@ namespace CQRa.Core
                 _unitSpawner.Spawn();
             }
 
+            if (_campaignActive)
+            {
+                SpawnCampaignHero();
+            }
+
             if (!withAi)
             {
                 return;
@@ -386,6 +392,31 @@ namespace CQRa.Core
             }
 
             Debug.Log($"[Skirmish] match started | {_teamCount} teams | {_teamMode} | {_difficulty} AI");
+        }
+
+        private void SpawnCampaignHero()
+        {
+            var world = World.DefaultGameObjectInjectionWorld;
+            if (world == null || !world.IsCreated)
+            {
+                return;
+            }
+
+            var entityManager = world.EntityManager;
+            var heroKind = ProductionCatalog.UniqueFor(_playerFaction);
+            var start = MapRuntime.Current.SpawnFor(SkirmishCommands.PlayerTeam).Position;
+            var spawn = new float3(start.x + 6f, 0f, start.y);
+
+            var hero = UnitFactory.SpawnDefault(
+                entityManager, spawn, 0f, heroKind, SkirmishCommands.PlayerTeam);
+            var health = entityManager.GetComponentData<Health>(hero);
+            health.Max *= 1.35f;
+            health.Current = health.Max;
+            entityManager.SetComponentData(hero, health);
+            var weapon = entityManager.GetComponentData<Weapon>(hero);
+            weapon.Damage *= 1.25f;
+            entityManager.SetComponentData(hero, weapon);
+            entityManager.AddComponentData(hero, new Hero { Flag = 1 });
         }
 
         private void OnGUI()
@@ -896,6 +927,7 @@ namespace CQRa.Core
                 new Rect(x + 104f, y + 366f, width - 134f, 82f),
                 $"{FactionCatalog.Name(playerFaction)} vs {FactionCatalog.Name(aiFaction)}\n" +
                 $"Map: {missionMap?.Name ?? "Ash Basin"}  |  {mission.teamCount} players\n" +
+                $"Hero: {ProductionCatalog.UnitName(playerFaction, ProductionCatalog.UniqueFor(playerFaction))}\n" +
                 mission.briefing,
                 _label);
 

@@ -1679,6 +1679,11 @@ namespace CQRa.View
                     entityManager.GetComponentData<BuildingInfo>(entity).Kind);
             }
 
+            if (entityManager.HasComponent<Hero>(entity))
+            {
+                title = "HERO " + title;
+            }
+
             var healthText = SelectedHealthText();
             var rankText = entityManager.HasComponent<Veterancy>(entity)
                 ? $"  Rank {entityManager.GetComponentData<Veterancy>(entity).Rank}"

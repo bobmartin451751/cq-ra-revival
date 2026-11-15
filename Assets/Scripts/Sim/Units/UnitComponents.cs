@@ -119,6 +119,12 @@ namespace CQRa.Sim.Units
         }
     }
 
+    /// <summary>Campaign hero marker. Heroes use a stronger version of a normal unit.</summary>
+    public struct Hero : IComponentData
+    {
+        public byte Flag;
+    }
+
     [System.Flags]
     public enum TargetClass : byte
     {
