@@ -22,6 +22,13 @@ namespace CQRa.Sim.AI
         public byte Attacking;
     }
 
+    /// <summary>Simple transport helicopter mission: load infantry, fly to a target, unload.</summary>
+    public struct AiTransportMission : IComponentData
+    {
+        public Entity Target;
+        public byte Phase; // 1 = flying, 2 = done
+    }
+
     /// <summary>
     /// Difficulty scales decisions only. There are no credit, vision or stat bonuses;
     /// higher tiers think faster, attack with smaller armies and build more production.

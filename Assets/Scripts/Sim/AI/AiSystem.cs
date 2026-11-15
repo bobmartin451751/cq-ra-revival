@@ -76,6 +76,7 @@ namespace CQRa.Sim.AI
             MaintainArmy(entityManager, team, profile, credits);
             MaintainNavy(entityManager, team, profile, credits);
             MaintainAirForce(entityManager, team, profile, credits);
+            MaintainTransportProduction(entityManager, team, credits);
             MaintainResearch(entityManager, team, credits);
 
             if (TryBuild(entityManager, team, profile, credits, economy))
@@ -84,6 +85,8 @@ namespace CQRa.Sim.AI
             }
 
             UpdateMilitary(entityManager, ref commander, profile, yard);
+            MaintainTransportMission(entityManager, commander.Team);
+            UpdateTransportMissions(entityManager, commander.Team);
         }
 
         private static void ThinkBeforeYard(EntityManager entityManager, int team, int credits)
@@ -362,6 +365,180 @@ namespace CQRa.Sim.AI
                     return;
                 }
             }
+        }
+
+        private static void MaintainTransportProduction(
+            EntityManager entityManager,
+            int team,
+            int credits)
+        {
+            if (CountBuildings(entityManager, team, BuildingKind.Airfield) == 0)
+            {
+                return;
+            }
+
+            var roster = ProductionCatalog.RosterForTeam(team);
+            for (var i = 0; i < roster.Length; i++)
+            {
+                var kind = roster[i];
+                if (!AirCatalog.IsTransport(kind))
+                {
+                    continue;
+                }
+
+                if (CountUnits(entityManager, team, kind) +
+                    CountQueued(entityManager, team, kind) > 0)
+                {
+                    return;
+                }
+
+                var spec = ProductionCatalog.Get(kind);
+                if (credits >= spec.Cost + CreditsReserve)
+                {
+                    ProductionCommands.TryEnqueue(entityManager, team, kind, Entity.Null, out _);
+                }
+
+                return;
+            }
+        }
+
+        private static void MaintainTransportMission(EntityManager entityManager, int team)
+        {
+            var transport = FindTransport(entityManager, team);
+            if (transport == Entity.Null)
+            {
+                return;
+            }
+
+            if (entityManager.HasComponent<AiTransportMission>(transport))
+            {
+                return;
+            }
+
+            var position = entityManager.GetComponentData<LocalTransform>(transport).Position;
+            var target = FindEnemyTarget(entityManager, team, position);
+            if (target == Entity.Null)
+            {
+                return;
+            }
+
+            var buffer = entityManager.GetBuffer<CargoUnit>(transport);
+            if (buffer.Length == 0)
+            {
+                using var query = entityManager.CreateEntityQuery(
+                    ComponentType.ReadOnly<UnitInfo>(),
+                    ComponentType.ReadOnly<Health>(),
+                    ComponentType.ReadOnly<LocalTransform>());
+                using var units = query.ToEntityArray(Allocator.Temp);
+
+                var loaded = 0;
+                for (var i = 0; i < units.Length && loaded < 5; i++)
+                {
+                    var unit = units[i];
+                    var info = entityManager.GetComponentData<UnitInfo>(unit);
+                    if (info.Team != team ||
+                        !InfantryCatalog.IsInfantry(info.Kind) ||
+                        entityManager.GetComponentData<Health>(unit).Current <= 0f)
+                    {
+                        continue;
+                    }
+
+                    var unitPosition = entityManager.GetComponentData<LocalTransform>(unit).Position;
+                    if (math.distance(
+                            new float2(position.x, position.z),
+                            new float2(unitPosition.x, unitPosition.z)) > 45f)
+                    {
+                        continue;
+                    }
+
+                    if (TransportCommands.TryLoad(entityManager, transport, unit, out _))
+                    {
+                        loaded++;
+                    }
+                }
+
+                if (loaded == 0)
+                {
+                    return;
+                }
+            }
+
+            var targetPosition = entityManager.GetComponentData<LocalTransform>(target).Position;
+            entityManager.AddComponentData(transport, new AiTransportMission
+            {
+                Target = target,
+                Phase = 1,
+            });
+
+            var move = entityManager.GetComponentData<MoveTarget>(transport);
+            move.Destination = targetPosition;
+            move.PathDestination = targetPosition;
+            move.Field = Entity.Null;
+            move.FormationRadius = 0f;
+            move.HasOrder = 1;
+            entityManager.SetComponentData(transport, move);
+        }
+
+        private static void UpdateTransportMissions(EntityManager entityManager, int team)
+        {
+            using var query = entityManager.CreateEntityQuery(
+                ComponentType.ReadOnly<AiTransportMission>(),
+                ComponentType.ReadOnly<UnitInfo>());
+            using var transports = query.ToEntityArray(Allocator.Temp);
+
+            for (var i = 0; i < transports.Length; i++)
+            {
+                var transport = transports[i];
+                var info = entityManager.GetComponentData<UnitInfo>(transport);
+                if (info.Team != team || !entityManager.Exists(transport))
+                {
+                    continue;
+                }
+
+                var mission = entityManager.GetComponentData<AiTransportMission>(transport);
+                var position = entityManager.GetComponentData<LocalTransform>(transport).Position;
+                var done = mission.Target == Entity.Null ||
+                           !entityManager.Exists(mission.Target) ||
+                           !entityManager.HasComponent<Health>(mission.Target) ||
+                           entityManager.GetComponentData<Health>(mission.Target).Current <= 0f;
+
+                if (!done)
+                {
+                    var targetPosition = entityManager.GetComponentData<LocalTransform>(mission.Target).Position;
+                    if (math.distance(
+                            new float2(position.x, position.z),
+                            new float2(targetPosition.x, targetPosition.z)) <= 18f)
+                    {
+                        done = true;
+                    }
+                }
+
+                if (done)
+                {
+                    TransportCommands.TryUnload(entityManager, transport);
+                    entityManager.RemoveComponent<AiTransportMission>(transport);
+                }
+            }
+        }
+
+        private static Entity FindTransport(EntityManager entityManager, int team)
+        {
+            var roster = ProductionCatalog.RosterForTeam(team);
+            for (var i = 0; i < roster.Length; i++)
+            {
+                if (!AirCatalog.IsTransport(roster[i]))
+                {
+                    continue;
+                }
+
+                var transport = FindUnit(entityManager, team, roster[i]);
+                if (transport != Entity.Null)
+                {
+                    return transport;
+                }
+            }
+
+            return Entity.Null;
         }
 
         private static void MaintainResearch(

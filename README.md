@@ -45,7 +45,7 @@ sell**, Esc to clear/cancel. Selected units and buildings expose their actions i
 right-hand **COMMAND** sidebar: MCVs show **DEPLOY** (click it, then right-click a
 site), production buildings show **RALLY** (click it, then right-click terrain),
 buildings show **REPAIR** and **SELL**, and units show **STOP**. See
-`docs/phase2.md` through `docs/phase42.md` for details.
+`docs/phase2.md` through `docs/phase43.md` for details.
 
 ## Layout
 
@@ -113,5 +113,6 @@ tools/               headless scripts
 | 40 - garrison bunkers | OK - 5-slot bunker, garrison firepower, eject control |
 | 41 - research upgrades | OK - weapons, armour and logistics research in the TECHS tab |
 | 42 - specialist infantry | OK - anti-tank, anti-air, grenadier, medic, Breacher, Marksman |
+| 43 - AI transport missions | OK - AI loads infantry, flies to a target, unloads |
 
 See `docs/spec.md` for the full roadmap and frozen scope.
