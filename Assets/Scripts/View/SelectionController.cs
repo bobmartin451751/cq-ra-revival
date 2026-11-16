@@ -385,6 +385,7 @@ namespace CQRa.View
             }
 
             AudioDirector.Play(AudioCue.Move);
+            Announcer.Push("Moving out", 1.5f);
         }
 
         private bool TryLoadTransport(Vector2 screenPosition)
@@ -582,6 +583,7 @@ namespace CQRa.View
             }
 
             AudioDirector.Play(AudioCue.Attack);
+            Announcer.Push("Engaging", 1.5f);
 
             if (_moveMarker != null)
             {
@@ -2150,6 +2152,23 @@ namespace CQRa.View
                 GUI.color = CQRa.Sim.Units.TeamPalette.For(team);
                 GUI.DrawTexture(dot, Texture2D.whiteTexture);
             });
+
+            if (Announcer.TryGetAttackPosition(out var attackPosition))
+            {
+                var nx = (attackPosition.x + half) / size;
+                var nz = (attackPosition.z + half) / size;
+                if (nx >= 0f && nx <= 1f && nz >= 0f && nz <= 1f)
+                {
+                    GUI.color = new Color(0.95f, 0.16f, 0.12f);
+                    GUI.DrawTexture(
+                        new Rect(
+                            rect.x + nx * rect.width - 5f,
+                            rect.y + (1f - nz) * rect.height - 5f,
+                            10f,
+                            10f),
+                        Texture2D.whiteTexture);
+                }
+            }
 
             GUI.color = previous;
             GUI.Label(new Rect(rect.x + 6f, rect.y + 4f, 120f, 20f), "RADAR", _panelStyle);

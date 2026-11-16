@@ -253,7 +253,8 @@ namespace CQRa.Sim.Units
                 if (entityManager.HasComponent<BuildingInfo>(target) &&
                     entityManager.GetComponentData<BuildingInfo>(target).Team == 0)
                 {
-                    CQRa.Core.Announcer.BaseUnderAttack();
+                    CQRa.Core.Announcer.BaseUnderAttack(
+                        entityManager.GetComponentData<LocalTransform>(target).Position);
                 }
             }
 

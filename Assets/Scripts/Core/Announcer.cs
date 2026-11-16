@@ -35,8 +35,14 @@ namespace CQRa.Core
 
         private static float _nextBaseWarning;
 
-        public static void BaseUnderAttack()
+        public static Vector3 LastAttackPosition { get; private set; }
+        public static float AttackPositionUntil { get; private set; }
+
+        public static void BaseUnderAttack(Vector3 position)
         {
+            LastAttackPosition = position;
+            AttackPositionUntil = Time.unscaledTime + 8f;
+
             if (Time.unscaledTime < _nextBaseWarning)
             {
                 return;
@@ -44,6 +50,18 @@ namespace CQRa.Core
 
             _nextBaseWarning = Time.unscaledTime + 8f;
             Push("Base under attack", 2.5f);
+        }
+
+        public static bool TryGetAttackPosition(out Vector3 position)
+        {
+            if (Time.unscaledTime <= AttackPositionUntil)
+            {
+                position = LastAttackPosition;
+                return true;
+            }
+
+            position = default;
+            return false;
         }
     }
 }
