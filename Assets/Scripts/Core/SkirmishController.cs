@@ -234,6 +234,13 @@ namespace CQRa.Core
             _matchOver = true;
             _winner = winner;
             AudioDirector.SetCombat(false);
+            Announcer.Push(
+                winner == 255
+                    ? "Battle ended in a draw"
+                    : MatchRuntime.AreAllied(winner, SkirmishCommands.PlayerTeam)
+                        ? "Victory"
+                        : "Defeat",
+                5f);
             if (winner == 255)
             {
                 AudioDirector.Play(AudioCue.Defeat);
@@ -258,6 +265,7 @@ namespace CQRa.Core
         {
             _missionWon = won;
             PersistHeroProgress();
+            Announcer.Push(won ? "Mission complete" : "Mission failed", 5f);
             if (won)
             {
                 MissionCatalog.MarkCompleted(_selectedMission);
@@ -339,6 +347,7 @@ namespace CQRa.Core
             _matchOver = false;
             Time.timeScale = 1f;
             AudioDirector.SetCombat(true);
+            Announcer.Push("Battle control online");
 
             MatchRuntime.Configure(_teamCount, _teamMode, _customAlliances);
 
@@ -478,6 +487,14 @@ namespace CQRa.Core
                 DrawObjectiveHud();
             }
 
+            if (Announcer.TryGetCurrent(out var announcement))
+            {
+                GUI.Label(
+                    new Rect(Screen.width * 0.5f - 260f, 12f, 520f, 26f),
+                    announcement,
+                    _subtitle);
+            }
+
             if (_matchOver)
             {
                 if (_campaignActive)
@@ -520,6 +537,7 @@ namespace CQRa.Core
 
         private void DrawMenu()
         {
+            Announcer.Clear();
             var previous = GUI.color;
             GUI.color = new Color(0.04f, 0.035f, 0.03f, 0.82f);
             GUI.DrawTexture(new Rect(0f, 0f, Screen.width, Screen.height), Texture2D.whiteTexture);
