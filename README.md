@@ -45,7 +45,7 @@ sell**, Esc to clear/cancel. Selected units and buildings expose their actions i
 right-hand **COMMAND** sidebar: MCVs show **DEPLOY** (click it, then right-click a
 site), production buildings show **RALLY** (click it, then right-click terrain),
 buildings show **REPAIR** and **SELL**, and units show **STOP**. See
-`docs/phase2.md` through `docs/phase53.md` for details.
+`docs/phase2.md` through `docs/phase54.md` for details.
 
 ## Layout
 
@@ -124,5 +124,6 @@ tools/               headless scripts
 | 51 - combat music layer | OK - generated percussion loop during matches |
 | 52 - dynamic combat music | OK - percussion rises with explosions and decays |
 | 53 - announcer subtitles | OK - match start, victory, defeat and mission messages |
+| 54 - base-under-attack warning | OK - rate-limited base damage alert |
 
 See `docs/spec.md` for the full roadmap and frozen scope.

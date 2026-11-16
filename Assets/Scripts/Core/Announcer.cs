@@ -32,5 +32,18 @@ namespace CQRa.Core
             Message = string.Empty;
             Until = 0f;
         }
+
+        private static float _nextBaseWarning;
+
+        public static void BaseUnderAttack()
+        {
+            if (Time.unscaledTime < _nextBaseWarning)
+            {
+                return;
+            }
+
+            _nextBaseWarning = Time.unscaledTime + 8f;
+            Push("Base under attack", 2.5f);
+        }
     }
 }

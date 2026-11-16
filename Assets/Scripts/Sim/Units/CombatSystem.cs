@@ -249,6 +249,12 @@ namespace CQRa.Sim.Units
             {
                 health.Current -= damage;
                 entityManager.SetComponentData(target, health);
+
+                if (entityManager.HasComponent<BuildingInfo>(target) &&
+                    entityManager.GetComponentData<BuildingInfo>(target).Team == 0)
+                {
+                    CQRa.Core.Announcer.BaseUnderAttack();
+                }
             }
 
             var targetPosition = targetTransform.Position;
