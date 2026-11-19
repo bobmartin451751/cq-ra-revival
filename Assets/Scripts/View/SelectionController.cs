@@ -1549,6 +1549,7 @@ namespace CQRa.View
 
             DrawHealthBars();
             DrawSidebar();
+            DrawAttackIndicator();
 
             if (_message != null && Time.unscaledTime < _messageUntil)
             {
@@ -1595,6 +1596,34 @@ namespace CQRa.View
                 normal = { textColor = new Color(0.95f, 0.92f, 0.82f) },
                 hover = { textColor = new Color(1f, 0.94f, 0.72f) },
             };
+        }
+
+        private void DrawAttackIndicator()
+        {
+            if (_camera == null || !Announcer.TryGetAttackPosition(out var world))
+            {
+                return;
+            }
+
+            var screen = _camera.WorldToScreenPoint(world);
+            if (screen.z <= 0f)
+            {
+                return;
+            }
+
+            var guiY = Screen.height - screen.y;
+            if (screen.x > 24f && screen.x < Screen.width - SidebarWidth - 24f &&
+                guiY > 24f && guiY < Screen.height - 24f)
+            {
+                return;
+            }
+
+            var x = Mathf.Clamp(screen.x, 28f, Screen.width - SidebarWidth - 28f);
+            var y = Mathf.Clamp(guiY, 28f, Screen.height - 28f);
+            var previous = GUI.color;
+            GUI.color = new Color(0.95f, 0.16f, 0.12f);
+            GUI.Label(new Rect(x - 12f, y - 12f, 24f, 24f), "!", _sidebarTitle);
+            GUI.color = previous;
         }
 
         private void DrawSidebar()
