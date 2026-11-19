@@ -32,6 +32,7 @@ namespace CQRa.Core
         private FactionId _aiFaction = FactionId.Verdant;
         private int _teamCount = 2;
         private TeamMode _teamMode = TeamMode.FreeForAll;
+        private bool _observerMode;
         private readonly int[] _customAlliances = new int[MatchRuntime.MaxTeams];
         private bool _active;
         private bool _matchOver;
@@ -59,6 +60,7 @@ namespace CQRa.Core
         private static FactionId _pendingAiFaction;
         private static int _pendingTeamCount = 2;
         private static TeamMode _pendingTeamMode = TeamMode.FreeForAll;
+        private static bool _pendingObserver;
 
         private GUIStyle _label;
         private GUIStyle _title;
@@ -128,6 +130,7 @@ namespace CQRa.Core
                 _aiFaction = _pendingAiFaction;
                 _teamCount = _pendingTeamCount;
                 _teamMode = _pendingTeamMode;
+                _observerMode = _pendingObserver;
                 _campaignActive = false;
                 BeginMatch(true);
             }
@@ -353,7 +356,7 @@ namespace CQRa.Core
 
             if (_selection != null)
             {
-                _selection.enabled = true;
+                _selection.enabled = !_observerMode;
             }
 
             if (_cameraRig != null)
@@ -401,7 +404,8 @@ namespace CQRa.Core
                     world.EntityManager,
                     _teamCount,
                     _teamMode,
-                    _difficulty);
+                    _difficulty,
+                    _observerMode);
             }
 
             Debug.Log($"[Skirmish] match started | {_teamCount} teams | {_teamMode} | {_difficulty} AI");
@@ -544,7 +548,7 @@ namespace CQRa.Core
             GUI.color = previous;
 
             var width = 540f;
-            var height = 740f;
+            var height = 790f;
             var x = (Screen.width - width) * 0.5f;
             var y = (Screen.height - height) * 0.5f;
             var panel = new Rect(x, y, width, height);
@@ -812,6 +816,7 @@ namespace CQRa.Core
                 var needsReload = MapRuntime.SelectedIndex != _selectedMap;
                 MapRuntime.Select(_selectedMap);
                 _campaignActive = false;
+                _observerMode = false;
 
                 if (needsReload)
                 {
@@ -821,6 +826,34 @@ namespace CQRa.Core
                     _pendingAiFaction = _aiFaction;
                     _pendingTeamCount = _teamCount;
                     _pendingTeamMode = _teamMode;
+                    _pendingObserver = false;
+                    Restart();
+                }
+                else
+                {
+                    BeginMatch(true);
+                }
+            }
+
+            if (GUI.Button(
+                    new Rect(x + 30f, y + 700f, width - 60f, 34f),
+                    "OBSERVE AI VS AI",
+                    _button))
+            {
+                var needsReload = MapRuntime.SelectedIndex != _selectedMap;
+                MapRuntime.Select(_selectedMap);
+                _campaignActive = false;
+                _observerMode = true;
+
+                if (needsReload)
+                {
+                    _pendingSkirmish = true;
+                    _pendingDifficulty = _difficulty;
+                    _pendingPlayerFaction = _playerFaction;
+                    _pendingAiFaction = _aiFaction;
+                    _pendingTeamCount = _teamCount;
+                    _pendingTeamMode = _teamMode;
+                    _pendingObserver = true;
                     Restart();
                 }
                 else
@@ -830,7 +863,7 @@ namespace CQRa.Core
             }
 
             GUI.Label(
-                new Rect(x + 30f, y + 704f, width - 60f, 24f),
+                new Rect(x + 30f, y + 750f, width - 60f, 24f),
                 "WASD/edges pan Â· wheel zoom Â· Q/E rotate",
                 _label);
         }

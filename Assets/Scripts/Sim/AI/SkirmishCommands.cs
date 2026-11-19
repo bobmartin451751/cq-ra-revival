@@ -25,12 +25,13 @@ namespace CQRa.Sim.AI
             EntityManager entityManager,
             int teamCount,
             TeamMode mode,
-            AiDifficulty difficulty)
+            AiDifficulty difficulty,
+            bool includePlayerAi = false)
         {
             MatchRuntime.Configure(teamCount, mode);
             ClearCommanders(entityManager);
 
-            for (var team = 1; team < MatchRuntime.TeamCount; team++)
+            for (var team = includePlayerAi ? 0 : 1; team < MatchRuntime.TeamCount; team++)
             {
                 CreateCommander(entityManager, team, difficulty);
             }
