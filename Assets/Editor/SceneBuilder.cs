@@ -37,6 +37,7 @@ namespace CQRa.EditorTools
                 CreateSun();
                 CreateFillLight();
                 CreateAudio();
+                CreatePerformanceHud();
                 CreateWater();
 
                 var scenery = CreateScenery(terrain);
@@ -197,6 +198,12 @@ namespace CQRa.EditorTools
         {
             var go = new GameObject("Audio");
             go.AddComponent<CQRa.Core.AudioDirector>();
+        }
+
+        private static void CreatePerformanceHud()
+        {
+            var go = new GameObject("PerformanceHUD");
+            go.AddComponent<CQRa.Core.PerformanceHud>();
         }
 
         private static UnitSpawner CreateUnits(HeightmapTerrain terrain)

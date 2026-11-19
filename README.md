@@ -45,7 +45,7 @@ sell**, Esc to clear/cancel. Selected units and buildings expose their actions i
 right-hand **COMMAND** sidebar: MCVs show **DEPLOY** (click it, then right-click a
 site), production buildings show **RALLY** (click it, then right-click terrain),
 buildings show **REPAIR** and **SELL**, and units show **STOP**. See
-`docs/phase2.md` through `docs/phase55.md` for details.
+`docs/phase2.md` through `docs/phase56.md` for details.
 
 ## Layout
 
@@ -126,5 +126,6 @@ tools/               headless scripts
 | 53 - announcer subtitles | OK - match start, victory, defeat and mission messages |
 | 54 - base-under-attack warning | OK - rate-limited base damage alert |
 | 55 - order acks + attack ping | OK - Moving/Engaging subtitles and minimap attack ping |
+| 56 - performance overlay | OK - F3 FPS/unit/building overlay |
 
 See `docs/spec.md` for the full roadmap and frozen scope.
