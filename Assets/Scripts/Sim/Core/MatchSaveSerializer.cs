@@ -3,6 +3,7 @@ using System.IO;
 using CQRa.Sim.Base;
 using CQRa.Sim.Content;
 using CQRa.Sim.Factions;
+using CQRa.Sim.Navigation;
 using CQRa.Sim.Units;
 using Unity.Collections;
 using Unity.Entities;
@@ -274,6 +275,12 @@ namespace CQRa.Sim.Core
                     var health = entityManager.GetComponentData<Health>(building);
                     health.Current = math.clamp(saved.health, 1f, health.Max);
                     entityManager.SetComponentData(building, health);
+
+                    var spec = BuildCatalog.Get(kind);
+                    NavGridQuery.BlockCircle(
+                        entityManager,
+                        new float2(saved.x, saved.z),
+                        spec.NavRadius);
                 }
             }
 
