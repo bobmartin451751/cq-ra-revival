@@ -2,6 +2,7 @@ using CQRa.Sim.Base;
 using CQRa.Sim.Content;
 using CQRa.Sim.Factions;
 using CQRa.Sim.Fog;
+using CQRa.Sim.Core;
 using CQRa.Sim.Units;
 using Unity.Collections;
 using Unity.Entities;
@@ -26,6 +27,11 @@ namespace CQRa.Sim.AI
 
         protected override void OnUpdate()
         {
+            if (ReplayRuntime.IsPlaying)
+            {
+                return;
+            }
+
             var entityManager = EntityManager;
             using var commanderQuery = entityManager.CreateEntityQuery(
                 ComponentType.ReadWrite<AiCommander>());

@@ -28,6 +28,11 @@ namespace CQRa.Tests.PlayMode
             });
             var cells = entityManager.AddBuffer<FogCell>(fog);
             cells.ResizeUninitialized(16);
+            for (var i = 0; i < cells.Length; i++)
+            {
+                cells[i] = new FogCell { Value = FogMath.Never };
+            }
+
             cells[0] = new FogCell { Value = FogMath.Visible };
             cells[5] = new FogCell { Value = FogMath.Explored };
 

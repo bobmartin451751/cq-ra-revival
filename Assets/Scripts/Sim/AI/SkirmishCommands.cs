@@ -92,6 +92,7 @@ namespace CQRa.Sim.AI
         {
             CommandLog.Clear();
             SimClock.Reset();
+            ReplayRuntime.Reset();
             MatchRuntime.Reset();
             ClearCommanders(entityManager);
             DestroyAll<UnitTag>(entityManager);

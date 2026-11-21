@@ -104,6 +104,8 @@ namespace CQRa.Core
 
             ResetCustomTeams();
 
+            var pendingReplay = ReplayRuntime.TakePendingPlayback();
+
             var world = World.DefaultGameObjectInjectionWorld;
             if (world != null && world.IsCreated)
             {
@@ -126,6 +128,27 @@ namespace CQRa.Core
             {
                 // Capture modes script their own setup; never show the menu in batch runs.
                 BeginMatch(false);
+            }
+            else if (pendingReplay != null)
+            {
+                _selectedMap = Mathf.Max(0, MapCatalog.FindIndex(pendingReplay.mapId));
+                _playerFaction = FactionCatalog.Parse(pendingReplay.playerFaction);
+                _aiFaction = FactionCatalog.Parse(pendingReplay.aiFaction);
+                _teamCount = Mathf.Clamp(pendingReplay.teamCount, 2, 8);
+                _teamMode = Enum.TryParse(pendingReplay.teamMode, true, out TeamMode replayMode)
+                    ? replayMode
+                    : TeamMode.FreeForAll;
+                _difficulty = (AiDifficulty)pendingReplay.difficulty;
+                _observerMode = pendingReplay.observer != 0;
+                _campaignActive = false;
+                BeginMatch(true);
+                if (_selection != null)
+                {
+                    _selection.enabled = false;
+                }
+
+                ReplayRuntime.BeginPlayback(pendingReplay);
+                Announcer.Push("Replay", 3f);
             }
             else if (_pendingSkirmish)
             {
@@ -174,13 +197,18 @@ namespace CQRa.Core
                 return;
             }
 
+            if (ReplayRuntime.ConsumeFinished())
+            {
+                Announcer.Push("Replay finished", 3f);
+            }
+
             if (_observerMode)
             {
                 HandleObserverInput();
             }
 
             var keyboard = Keyboard.current;
-            if (keyboard != null)
+            if (keyboard != null && !ReplayRuntime.IsPlaying)
             {
                 if (keyboard.f5Key.wasPressedThisFrame)
                 {
@@ -257,6 +285,21 @@ namespace CQRa.Core
             var mapIndex = MapCatalog.FindIndex(save.mapId);
             MapRuntime.Select(mapIndex < 0 ? 0 : mapIndex);
             MatchSaveRuntime.Queue(save);
+            Restart();
+        }
+
+        private void WatchReplay()
+        {
+            var data = ReplayStorage.LoadFromFile(ReplayRuntime.FilePath);
+            if (data == null)
+            {
+                Announcer.Push("No replay available", 2f);
+                return;
+            }
+
+            var mapIndex = MapCatalog.FindIndex(data.mapId);
+            MapRuntime.Select(mapIndex < 0 ? 0 : mapIndex);
+            ReplayRuntime.QueuePlayback(data);
             Restart();
         }
 
@@ -342,6 +385,13 @@ namespace CQRa.Core
         {
             _matchOver = true;
             _winner = winner;
+
+            var world = World.DefaultGameObjectInjectionWorld;
+            if (world != null && world.IsCreated)
+            {
+                ReplayRuntime.SaveLastReplay(world.EntityManager);
+            }
+
             AudioDirector.SetCombat(false);
             Announcer.Push(
                 winner == 255
@@ -513,6 +563,15 @@ namespace CQRa.Core
                     _teamCount,
                     _teamMode,
                     _difficulty,
+                    _observerMode);
+
+                ReplayRuntime.BeginRecording(
+                    MapRuntime.Current?.Id ?? "ash-basin",
+                    _playerFaction.ToString(),
+                    _aiFaction.ToString(),
+                    _teamCount,
+                    _teamMode.ToString(),
+                    (int)_difficulty,
                     _observerMode);
             }
 
@@ -703,9 +762,16 @@ namespace CQRa.Core
                 _label);
 
             if (File.Exists(SavePath) &&
-                GUI.Button(new Rect(x + width - 180f, y + 118f, 150f, 26f), "LOAD SAVE", _button))
+                GUI.Button(new Rect(x + width - 360f, y + 118f, 160f, 26f), "LOAD SAVE", _button))
             {
                 LoadMatchFromDisk();
+                return;
+            }
+
+            if (ReplayRuntime.HasReplay &&
+                GUI.Button(new Rect(x + width - 190f, y + 118f, 160f, 26f), "WATCH REPLAY", _button))
+            {
+                WatchReplay();
                 return;
             }
 
