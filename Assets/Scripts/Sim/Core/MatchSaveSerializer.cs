@@ -64,6 +64,8 @@ namespace CQRa.Sim.Core
     {
         public int team;
         public int difficulty;
+        public float thinkTimer;
+        public int attacking;
     }
 
     [Serializable]
@@ -242,6 +244,8 @@ namespace CQRa.Sim.Core
                     {
                         team = commander.Team,
                         difficulty = (int)commander.Difficulty,
+                        thinkTimer = commander.ThinkTimer,
+                        attacking = commander.Attacking,
                     };
                 }
             }
@@ -266,7 +270,13 @@ namespace CQRa.Sim.Core
 
         public static MatchSaveData LoadFromFile(string path)
         {
-            return File.Exists(path) ? FromJson(File.ReadAllText(path)) : null;
+            if (!File.Exists(path))
+            {
+                return null;
+            }
+
+            var save = FromJson(File.ReadAllText(path));
+            return save != null && save.version == CurrentVersion ? save : null;
         }
 
         public static void Apply(EntityManager entityManager, MatchSaveData save)
@@ -428,10 +438,14 @@ namespace CQRa.Sim.Core
                 for (var i = 0; i < save.commanders.Length; i++)
                 {
                     var commander = save.commanders[i];
-                    SkirmishCommands.CreateCommander(
+                    var entity = SkirmishCommands.CreateCommander(
                         entityManager,
                         commander.team,
                         (AiDifficulty)commander.difficulty);
+                    var data = entityManager.GetComponentData<AiCommander>(entity);
+                    data.ThinkTimer = commander.thinkTimer;
+                    data.Attacking = (byte)commander.attacking;
+                    entityManager.SetComponentData(entity, data);
                 }
             }
 

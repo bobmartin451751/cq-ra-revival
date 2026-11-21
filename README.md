@@ -45,7 +45,7 @@ sell**, Esc to clear/cancel. Selected units and buildings expose their actions i
 right-hand **COMMAND** sidebar: MCVs show **DEPLOY** (click it, then right-click a
 site), production buildings show **RALLY** (click it, then right-click terrain),
 buildings show **REPAIR** and **SELL**, and units show **STOP**. See
-`docs/phase2.md` through `docs/phase66.md` for details.
+`docs/phase2.md` through `docs/phase67.md` for details.
 
 ## Layout
 
@@ -137,5 +137,6 @@ tools/               headless scripts
 | 64 - save nav blocking | OK - restored buildings re-block the nav grid |
 | 65 - save cargo + flow fields | OK - transport/garrison cargo restores; flow fields invalidate |
 | 66 - save AI + menu load | OK - AI commanders restore and menu has LOAD SAVE |
+| 67 - save AI timers + version gate | OK - think/attack state restores; mismatched saves rejected |
 
 See `docs/spec.md` for the full roadmap and frozen scope.
