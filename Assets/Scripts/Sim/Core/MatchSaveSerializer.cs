@@ -4,6 +4,7 @@ using CQRa.Sim.AI;
 using CQRa.Sim.Base;
 using CQRa.Sim.Content;
 using CQRa.Sim.Factions;
+using CQRa.Sim.Fog;
 using CQRa.Sim.Navigation;
 using CQRa.Sim.Units;
 using Unity.Collections;
@@ -60,6 +61,15 @@ namespace CQRa.Sim.Core
     }
 
     [Serializable]
+    public sealed class SavedFog
+    {
+        public int team;
+        public int width;
+        public int height;
+        public byte[] cells;
+    }
+
+    [Serializable]
     public sealed class SavedCommander
     {
         public int team;
@@ -86,6 +96,7 @@ namespace CQRa.Sim.Core
         public SavedOre[] ore;
         public SavedCrate[] crates;
         public SavedCommander[] commanders;
+        public SavedFog[] fog;
     }
 
     /// <summary>
@@ -247,6 +258,37 @@ namespace CQRa.Sim.Core
                         thinkTimer = commander.ThinkTimer,
                         attacking = commander.Attacking,
                     };
+                }
+            }
+
+            using (var query = entityManager.CreateEntityQuery(
+                       ComponentType.ReadOnly<FogState>(),
+                       ComponentType.ReadOnly<FogTeam>(),
+                       ComponentType.ReadOnly<FogGridInfo>()))
+            using (var fogs = query.ToEntityArray(Allocator.Temp))
+            {
+                save.fog = new SavedFog[fogs.Length];
+                for (var i = 0; i < fogs.Length; i++)
+                {
+                    var info = entityManager.GetComponentData<FogGridInfo>(fogs[i]);
+                    var cells = entityManager.GetBuffer<FogCell>(fogs[i], true);
+                    var saved = new SavedFog
+                    {
+                        team = entityManager.GetComponentData<FogTeam>(fogs[i]).Team,
+                        width = info.Size.x,
+                        height = info.Size.y,
+                        cells = new byte[cells.Length],
+                    };
+
+                    // Visible is transient; snapshots persist the explored mask only.
+                    for (var c = 0; c < cells.Length; c++)
+                    {
+                        saved.cells[c] = cells[c].Value == FogMath.Visible
+                            ? FogMath.Explored
+                            : cells[c].Value;
+                    }
+
+                    save.fog[i] = saved;
                 }
             }
 
@@ -446,6 +488,36 @@ namespace CQRa.Sim.Core
                     data.ThinkTimer = commander.thinkTimer;
                     data.Attacking = (byte)commander.attacking;
                     entityManager.SetComponentData(entity, data);
+                }
+            }
+
+            if (save.fog != null)
+            {
+                for (var i = 0; i < save.fog.Length; i++)
+                {
+                    var saved = save.fog[i];
+                    if (saved.cells == null ||
+                        !FogQuery.TryGet(entityManager, saved.team, out var fogEntity, out var info))
+                    {
+                        continue;
+                    }
+
+                    var cells = entityManager.GetBuffer<FogCell>(fogEntity);
+                    if (cells.Length != saved.cells.Length ||
+                        info.Size.x != saved.width ||
+                        info.Size.y != saved.height)
+                    {
+                        continue;
+                    }
+
+                    for (var c = 0; c < cells.Length; c++)
+                    {
+                        cells[c] = new FogCell { Value = saved.cells[c] };
+                    }
+
+                    var state = entityManager.GetComponentData<FogState>(fogEntity);
+                    state.Revision++;
+                    entityManager.SetComponentData(fogEntity, state);
                 }
             }
 
