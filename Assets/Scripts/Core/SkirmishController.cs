@@ -698,9 +698,16 @@ namespace CQRa.Core
             GUI.backgroundColor = previousColor;
 
             GUI.Label(
-                new Rect(x + 30f, y + 120f, width - 60f, 24f),
+                new Rect(x + 30f, y + 120f, width - 220f, 24f),
                 "The AI plays by exactly the same rules: no bonuses, no stat changes.",
                 _label);
+
+            if (File.Exists(SavePath) &&
+                GUI.Button(new Rect(x + width - 180f, y + 118f, 150f, 26f), "LOAD SAVE", _button))
+            {
+                LoadMatchFromDisk();
+                return;
+            }
 
             if (_menuMode == 0)
             {

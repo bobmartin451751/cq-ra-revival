@@ -1,5 +1,6 @@
 using System;
 using System.IO;
+using CQRa.Sim.AI;
 using CQRa.Sim.Base;
 using CQRa.Sim.Content;
 using CQRa.Sim.Factions;
@@ -59,6 +60,13 @@ namespace CQRa.Sim.Core
     }
 
     [Serializable]
+    public sealed class SavedCommander
+    {
+        public int team;
+        public int difficulty;
+    }
+
+    [Serializable]
     public sealed class MatchSaveData
     {
         public int version = 1;
@@ -75,6 +83,7 @@ namespace CQRa.Sim.Core
         public SavedBuilding[] buildings;
         public SavedOre[] ore;
         public SavedCrate[] crates;
+        public SavedCommander[] commanders;
     }
 
     /// <summary>
@@ -172,8 +181,7 @@ namespace CQRa.Sim.Core
                 }
             }
 
-            save.researchMasks = new int[ResearchState.TeamCount];
-            if (ResearchQuery.TryGet(entityManager, out _, out var research))
+            save.researchMasks = new int[ResearchState.TeamCount];            if (ResearchQuery.TryGet(entityManager, out _, out var research))
             {
                 for (var team = 0; team < ResearchState.TeamCount; team++)
                 {
@@ -219,6 +227,21 @@ namespace CQRa.Sim.Core
                         z = p.z,
                         reward = crate.Reward,
                         kind = crate.Kind,
+                    };
+                }
+            }
+
+            using (var query = entityManager.CreateEntityQuery(ComponentType.ReadOnly<AiCommander>()))
+            using (var commanders = query.ToEntityArray(Allocator.Temp))
+            {
+                save.commanders = new SavedCommander[commanders.Length];
+                for (var i = 0; i < commanders.Length; i++)
+                {
+                    var commander = entityManager.GetComponentData<AiCommander>(commanders[i]);
+                    save.commanders[i] = new SavedCommander
+                    {
+                        team = commander.Team,
+                        difficulty = (int)commander.Difficulty,
                     };
                 }
             }
@@ -397,6 +420,19 @@ namespace CQRa.Sim.Core
                     research.SetMask(team, save.researchMasks[team]);
                 }
                 entityManager.SetComponentData(researchEntity, research);
+            }
+
+            if (save.commanders != null)
+            {
+                SkirmishCommands.ClearCommanders(entityManager);
+                for (var i = 0; i < save.commanders.Length; i++)
+                {
+                    var commander = save.commanders[i];
+                    SkirmishCommands.CreateCommander(
+                        entityManager,
+                        commander.team,
+                        (AiDifficulty)commander.difficulty);
+                }
             }
 
             NavGridQuery.InvalidateFlowFields(entityManager);
