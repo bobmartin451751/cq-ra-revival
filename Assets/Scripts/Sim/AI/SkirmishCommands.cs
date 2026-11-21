@@ -1,4 +1,5 @@
 using CQRa.Sim.Base;
+using CQRa.Sim.Core;
 using CQRa.Sim.Fog;
 using CQRa.Sim.Navigation;
 using CQRa.Sim.Units;
@@ -89,6 +90,8 @@ namespace CQRa.Sim.AI
         /// </summary>
         public static void ResetRuntimeState(EntityManager entityManager)
         {
+            CommandLog.Clear();
+            SimClock.Reset();
             MatchRuntime.Reset();
             ClearCommanders(entityManager);
             DestroyAll<UnitTag>(entityManager);
