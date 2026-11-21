@@ -23,6 +23,8 @@ namespace CQRa.Sim.Core
         public float z;
         public float health;
         public int kills;
+        public string[] cargoKinds;
+        public float[] cargoHealth;
     }
 
     [Serializable]
@@ -118,7 +120,7 @@ namespace CQRa.Sim.Core
                     var kills = entityManager.HasComponent<Veterancy>(units[i])
                         ? entityManager.GetComponentData<Veterancy>(units[i]).Kills
                         : 0;
-                    save.units[i] = new SavedUnit
+                    var savedUnit = new SavedUnit
                     {
                         kind = info.Kind.ToString(),
                         team = info.Team,
@@ -128,6 +130,20 @@ namespace CQRa.Sim.Core
                         health = health.Current,
                         kills = kills,
                     };
+
+                    if (entityManager.HasBuffer<CargoUnit>(units[i]))
+                    {
+                        var cargo = entityManager.GetBuffer<CargoUnit>(units[i], true);
+                        savedUnit.cargoKinds = new string[cargo.Length];
+                        savedUnit.cargoHealth = new float[cargo.Length];
+                        for (var c = 0; c < cargo.Length; c++)
+                        {
+                            savedUnit.cargoKinds[c] = cargo[c].Kind.ToString();
+                            savedUnit.cargoHealth[c] = cargo[c].Health;
+                        }
+                    }
+
+                    save.units[i] = savedUnit;
                 }
             }
 
@@ -308,6 +324,25 @@ namespace CQRa.Sim.Core
                             Rank = VeterancyMath.RankForKills(saved.kills),
                         });
                     }
+
+                    if (saved.cargoKinds != null &&
+                        saved.cargoHealth != null &&
+                        entityManager.HasBuffer<CargoUnit>(unit))
+                    {
+                        var cargo = entityManager.GetBuffer<CargoUnit>(unit);
+                        cargo.Clear();
+                        for (var c = 0; c < saved.cargoKinds.Length && c < saved.cargoHealth.Length; c++)
+                        {
+                            if (Enum.TryParse(saved.cargoKinds[c], true, out UnitKind cargoKind))
+                            {
+                                cargo.Add(new CargoUnit
+                                {
+                                    Kind = cargoKind,
+                                    Health = saved.cargoHealth[c],
+                                });
+                            }
+                        }
+                    }
                 }
             }
 
@@ -363,6 +398,8 @@ namespace CQRa.Sim.Core
                 }
                 entityManager.SetComponentData(researchEntity, research);
             }
+
+            NavGridQuery.InvalidateFlowFields(entityManager);
         }
     }
 }
