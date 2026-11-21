@@ -36,6 +36,26 @@ namespace CQRa.Sim.Core
     }
 
     [Serializable]
+    public sealed class SavedOre
+    {
+        public float x;
+        public float y;
+        public float z;
+        public int amount;
+        public float radius;
+    }
+
+    [Serializable]
+    public sealed class SavedCrate
+    {
+        public float x;
+        public float y;
+        public float z;
+        public int reward;
+        public int kind;
+    }
+
+    [Serializable]
     public sealed class MatchSaveData
     {
         public int version = 1;
@@ -47,8 +67,11 @@ namespace CQRa.Sim.Core
         public int difficulty;
         public int team0Credits;
         public int team1Credits;
+        public int[] researchMasks;
         public SavedUnit[] units;
         public SavedBuilding[] buildings;
+        public SavedOre[] ore;
+        public SavedCrate[] crates;
     }
 
     /// <summary>
@@ -128,6 +151,57 @@ namespace CQRa.Sim.Core
                         y = position.y,
                         z = position.z,
                         health = health.Current,
+                    };
+                }
+            }
+
+            save.researchMasks = new int[ResearchState.TeamCount];
+            if (ResearchQuery.TryGet(entityManager, out _, out var research))
+            {
+                for (var team = 0; team < ResearchState.TeamCount; team++)
+                {
+                    save.researchMasks[team] = research.MaskFor(team);
+                }
+            }
+
+            using (var query = entityManager.CreateEntityQuery(
+                       ComponentType.ReadOnly<OreNode>(),
+                       ComponentType.ReadOnly<LocalTransform>()))
+            using (var ore = query.ToEntityArray(Allocator.Temp))
+            {
+                save.ore = new SavedOre[ore.Length];
+                for (var i = 0; i < ore.Length; i++)
+                {
+                    var node = entityManager.GetComponentData<OreNode>(ore[i]);
+                    var p = entityManager.GetComponentData<LocalTransform>(ore[i]).Position;
+                    save.ore[i] = new SavedOre
+                    {
+                        x = p.x,
+                        y = p.y,
+                        z = p.z,
+                        amount = node.Amount,
+                        radius = node.Radius,
+                    };
+                }
+            }
+
+            using (var query = entityManager.CreateEntityQuery(
+                       ComponentType.ReadOnly<Crate>(),
+                       ComponentType.ReadOnly<LocalTransform>()))
+            using (var crates = query.ToEntityArray(Allocator.Temp))
+            {
+                save.crates = new SavedCrate[crates.Length];
+                for (var i = 0; i < crates.Length; i++)
+                {
+                    var crate = entityManager.GetComponentData<Crate>(crates[i]);
+                    var p = entityManager.GetComponentData<LocalTransform>(crates[i]).Position;
+                    save.crates[i] = new SavedCrate
+                    {
+                        x = p.x,
+                        y = p.y,
+                        z = p.z,
+                        reward = crate.Reward,
+                        kind = crate.Kind,
                     };
                 }
             }
@@ -228,6 +302,59 @@ namespace CQRa.Sim.Core
                         });
                     }
                 }
+            }
+
+            if (save.ore != null)
+            {
+                using (var existing = entityManager.CreateEntityQuery(ComponentType.ReadOnly<OreNode>()))
+                {
+                    if (!existing.IsEmptyIgnoreFilter)
+                    {
+                        entityManager.DestroyEntity(existing.ToEntityArray(Allocator.Temp));
+                    }
+                }
+
+                for (var i = 0; i < save.ore.Length; i++)
+                {
+                    var ore = save.ore[i];
+                    BuildingFactory.SpawnOre(
+                        entityManager,
+                        new float3(ore.x, ore.y, ore.z),
+                        ore.amount,
+                        ore.radius);
+                }
+            }
+
+            if (save.crates != null)
+            {
+                using (var existing = entityManager.CreateEntityQuery(ComponentType.ReadOnly<Crate>()))
+                {
+                    if (!existing.IsEmptyIgnoreFilter)
+                    {
+                        entityManager.DestroyEntity(existing.ToEntityArray(Allocator.Temp));
+                    }
+                }
+
+                for (var i = 0; i < save.crates.Length; i++)
+                {
+                    var crate = save.crates[i];
+                    BuildingFactory.SpawnCrate(
+                        entityManager,
+                        new float3(crate.x, crate.y, crate.z),
+                        crate.reward,
+                        (byte)crate.kind);
+                }
+            }
+
+            if (save.researchMasks != null)
+            {
+                var researchEntity = ResearchQuery.GetOrCreate(entityManager);
+                var research = entityManager.GetComponentData<ResearchState>(researchEntity);
+                for (var team = 0; team < ResearchState.TeamCount && team < save.researchMasks.Length; team++)
+                {
+                    research.SetMask(team, save.researchMasks[team]);
+                }
+                entityManager.SetComponentData(researchEntity, research);
             }
         }
     }
