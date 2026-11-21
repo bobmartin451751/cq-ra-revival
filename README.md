@@ -45,7 +45,7 @@ sell**, Esc to clear/cancel. Selected units and buildings expose their actions i
 right-hand **COMMAND** sidebar: MCVs show **DEPLOY** (click it, then right-click a
 site), production buildings show **RALLY** (click it, then right-click terrain),
 buildings show **REPAIR** and **SELL**, and units show **STOP**. See
-`docs/phase2.md` through `docs/phase58.md` for details.
+`docs/phase2.md` through `docs/phase59.md` for details.
 
 ## Layout
 
@@ -129,5 +129,6 @@ tools/               headless scripts
 | 56 - performance overlay | OK - F3 FPS/unit/building overlay |
 | 57 - off-screen attack marker | OK - red edge marker toward the latest base attack |
 | 58 - AI vs AI observer | OK - watch every team controlled by AI |
+| 59 - spectator speed | OK - 1x/2x/4x and pause in observer mode |
 
 See `docs/spec.md` for the full roadmap and frozen scope.

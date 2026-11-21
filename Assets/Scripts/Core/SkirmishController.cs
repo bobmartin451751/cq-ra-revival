@@ -9,6 +9,7 @@ using CQRa.View;
 using Unity.Entities;
 using Unity.Mathematics;
 using UnityEngine;
+using UnityEngine.InputSystem;
 using UnityEngine.SceneManagement;
 
 namespace CQRa.Core
@@ -33,6 +34,9 @@ namespace CQRa.Core
         private int _teamCount = 2;
         private TeamMode _teamMode = TeamMode.FreeForAll;
         private bool _observerMode;
+        private int _observerSpeed;
+        private bool _observerPaused;
+        private static readonly float[] ObserverSpeeds = { 1f, 2f, 4f };
         private readonly int[] _customAlliances = new int[MatchRuntime.MaxTeams];
         private bool _active;
         private bool _matchOver;
@@ -154,6 +158,11 @@ namespace CQRa.Core
                 return;
             }
 
+            if (_observerMode)
+            {
+                HandleObserverInput();
+            }
+
             var world = World.DefaultGameObjectInjectionWorld;
             if (world == null || !world.IsCreated)
             {
@@ -181,6 +190,35 @@ namespace CQRa.Core
             }
 
             EndMatch(match.Winner);
+        }
+
+        private void HandleObserverInput()
+        {
+            var keyboard = Keyboard.current;
+            if (keyboard == null)
+            {
+                return;
+            }
+
+            if (keyboard.leftBracketKey.wasPressedThisFrame)
+            {
+                _observerSpeed = Mathf.Max(0, _observerSpeed - 1);
+                _observerPaused = false;
+                Time.timeScale = ObserverSpeeds[_observerSpeed];
+            }
+
+            if (keyboard.rightBracketKey.wasPressedThisFrame)
+            {
+                _observerSpeed = Mathf.Min(ObserverSpeeds.Length - 1, _observerSpeed + 1);
+                _observerPaused = false;
+                Time.timeScale = ObserverSpeeds[_observerSpeed];
+            }
+
+            if (keyboard.pKey.wasPressedThisFrame)
+            {
+                _observerPaused = !_observerPaused;
+                Time.timeScale = _observerPaused ? 0f : ObserverSpeeds[_observerSpeed];
+            }
         }
 
         private void UpdateCampaignMission(EntityManager entityManager, in MatchState match)
@@ -349,6 +387,8 @@ namespace CQRa.Core
             _active = true;
             _matchOver = false;
             Time.timeScale = 1f;
+            _observerSpeed = 0;
+            _observerPaused = false;
             AudioDirector.SetCombat(true);
             Announcer.Push("Battle control online");
 
@@ -497,6 +537,16 @@ namespace CQRa.Core
                     new Rect(Screen.width * 0.5f - 260f, 12f, 520f, 26f),
                     announcement,
                     _subtitle);
+            }
+
+            if (_observerMode)
+            {
+                GUI.Label(
+                    new Rect(Screen.width * 0.5f - 300f, Screen.height - 38f, 600f, 24f),
+                    _observerPaused
+                        ? "SPECTATOR PAUSED  |  P resume  |  [ ] speed"
+                        : $"SPECTATOR  x{ObserverSpeeds[_observerSpeed]}  |  [ ] speed  |  P pause",
+                    _label);
             }
 
             if (_matchOver)
