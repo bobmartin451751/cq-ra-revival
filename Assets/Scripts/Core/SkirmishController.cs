@@ -1,8 +1,10 @@
 using System;
+using System.IO;
 using CQRa.Sim.AI;
 using CQRa.Sim.Base;
 using CQRa.Sim.Campaign;
 using CQRa.Sim.Content;
+using CQRa.Sim.Core;
 using CQRa.Sim.Factions;
 using CQRa.Sim.Units;
 using CQRa.View;
@@ -138,6 +140,20 @@ namespace CQRa.Core
                 _campaignActive = false;
                 BeginMatch(true);
             }
+            else if (MatchSaveRuntime.HasPending)
+            {
+                var save = MatchSaveRuntime.Take();
+                _selectedMap = Mathf.Max(0, MapCatalog.FindIndex(save.mapId));
+                _playerFaction = FactionCatalog.Parse(save.playerFaction);
+                _aiFaction = FactionCatalog.Parse(save.aiFaction);
+                _teamCount = Mathf.Clamp(save.teamCount, 2, 8);
+                _teamMode = Enum.TryParse(save.teamMode, true, out TeamMode mode)
+                    ? mode
+                    : TeamMode.FreeForAll;
+                _campaignActive = false;
+                BeginMatch(true);
+                MatchSaveSerializer.Apply(World.DefaultGameObjectInjectionWorld.EntityManager, save);
+            }
             else if (_pendingMission >= 0)
             {
                 var mission = _pendingMission;
@@ -161,6 +177,20 @@ namespace CQRa.Core
             if (_observerMode)
             {
                 HandleObserverInput();
+            }
+
+            var keyboard = Keyboard.current;
+            if (keyboard != null)
+            {
+                if (keyboard.f5Key.wasPressedThisFrame)
+                {
+                    SaveMatchToDisk();
+                }
+
+                if (keyboard.f9Key.wasPressedThisFrame)
+                {
+                    LoadMatchFromDisk();
+                }
             }
 
             var world = World.DefaultGameObjectInjectionWorld;
@@ -190,6 +220,44 @@ namespace CQRa.Core
             }
 
             EndMatch(match.Winner);
+        }
+
+        private static string SavePath =>
+            Path.Combine(Application.persistentDataPath, "cqra-save.json");
+
+        private void SaveMatchToDisk()
+        {
+            var world = World.DefaultGameObjectInjectionWorld;
+            if (world == null || !world.IsCreated)
+            {
+                return;
+            }
+
+            var save = MatchSaveSerializer.Capture(world.EntityManager);
+            save.difficulty = (int)_difficulty;
+            File.WriteAllText(SavePath, MatchSaveSerializer.ToJson(save));
+            Announcer.Push("Match saved", 2f);
+        }
+
+        private void LoadMatchFromDisk()
+        {
+            if (!File.Exists(SavePath))
+            {
+                Announcer.Push("No save file found", 2f);
+                return;
+            }
+
+            var save = MatchSaveSerializer.LoadFromFile(SavePath);
+            if (save == null)
+            {
+                Announcer.Push("Save file is invalid", 2f);
+                return;
+            }
+
+            var mapIndex = MapCatalog.FindIndex(save.mapId);
+            MapRuntime.Select(mapIndex < 0 ? 0 : mapIndex);
+            MatchSaveRuntime.Queue(save);
+            Restart();
         }
 
         private void HandleObserverInput()

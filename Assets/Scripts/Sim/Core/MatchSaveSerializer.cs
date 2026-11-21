@@ -154,5 +154,81 @@ namespace CQRa.Sim.Core
         {
             return File.Exists(path) ? FromJson(File.ReadAllText(path)) : null;
         }
+
+        public static void Apply(EntityManager entityManager, MatchSaveData save)
+        {
+            if (save == null)
+            {
+                return;
+            }
+
+            using (var units = entityManager.CreateEntityQuery(ComponentType.ReadOnly<UnitTag>()))
+            {
+                if (!units.IsEmptyIgnoreFilter)
+                {
+                    entityManager.DestroyEntity(units.ToEntityArray(Allocator.Temp));
+                }
+            }
+
+            using (var buildings = entityManager.CreateEntityQuery(ComponentType.ReadOnly<BuildingTag>()))
+            {
+                if (!buildings.IsEmptyIgnoreFilter)
+                {
+                    entityManager.DestroyEntity(buildings.ToEntityArray(Allocator.Temp));
+                }
+            }
+
+            if (BaseCommands.TryGetEconomy(entityManager, out var economyEntity, out var economy))
+            {
+                Economy.SetCredits(ref economy, 0, save.team0Credits);
+                Economy.SetCredits(ref economy, 1, save.team1Credits);
+                entityManager.SetComponentData(economyEntity, economy);
+            }
+
+            if (save.buildings != null)
+            {
+                for (var i = 0; i < save.buildings.Length; i++)
+                {
+                    var saved = save.buildings[i];
+                    if (!Enum.TryParse(saved.kind, true, out BuildingKind kind))
+                    {
+                        continue;
+                    }
+
+                    var building = BuildingFactory.SpawnBuilding(
+                        entityManager, saved.team, kind, new float3(saved.x, saved.y, saved.z));
+                    var health = entityManager.GetComponentData<Health>(building);
+                    health.Current = math.clamp(saved.health, 1f, health.Max);
+                    entityManager.SetComponentData(building, health);
+                }
+            }
+
+            if (save.units != null)
+            {
+                for (var i = 0; i < save.units.Length; i++)
+                {
+                    var saved = save.units[i];
+                    if (!Enum.TryParse(saved.kind, true, out UnitKind kind))
+                    {
+                        continue;
+                    }
+
+                    var unit = UnitFactory.SpawnDefault(
+                        entityManager, new float3(saved.x, saved.y, saved.z), 0f, kind, saved.team);
+                    var health = entityManager.GetComponentData<Health>(unit);
+                    health.Current = math.clamp(saved.health, 1f, health.Max);
+                    entityManager.SetComponentData(unit, health);
+
+                    if (saved.kills > 0 && entityManager.HasComponent<Veterancy>(unit))
+                    {
+                        entityManager.SetComponentData(unit, new Veterancy
+                        {
+                            Kills = saved.kills,
+                            Rank = VeterancyMath.RankForKills(saved.kills),
+                        });
+                    }
+                }
+            }
+        }
     }
 }
