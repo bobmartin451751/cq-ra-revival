@@ -226,6 +226,12 @@ namespace CQRa.Core
                 {
                     LoadMatchFromDisk();
                 }
+
+                if (keyboard.f7Key.wasPressedThisFrame)
+                {
+                    SaveSlots.Select((SaveSlots.CurrentSlot + 1) % SaveSlots.Count);
+                    Announcer.Push($"Save slot {SaveSlots.CurrentSlot + 1}", 1.5f);
+                }
             }
 
             var world = World.DefaultGameObjectInjectionWorld;
@@ -257,9 +263,6 @@ namespace CQRa.Core
             EndMatch(match.Winner);
         }
 
-        private static string SavePath =>
-            Path.Combine(Application.persistentDataPath, "cqra-save.json");
-
         private void SaveMatchToDisk()
         {
             var world = World.DefaultGameObjectInjectionWorld;
@@ -268,24 +271,24 @@ namespace CQRa.Core
                 return;
             }
 
-            var save = MatchSaveSerializer.Capture(world.EntityManager);
-            save.difficulty = (int)_difficulty;
-            File.WriteAllText(SavePath, MatchSaveSerializer.ToJson(save));
-            Announcer.Push("Match saved", 2f);
+            var slot = SaveSlots.CurrentSlot;
+            SaveSlots.Save(world.EntityManager, slot);
+            Announcer.Push($"Match saved to slot {slot + 1}", 2f);
         }
 
         private void LoadMatchFromDisk()
         {
-            if (!File.Exists(SavePath))
+            var slot = SaveSlots.CurrentSlot;
+            if (!SaveSlots.Exists(slot))
             {
-                Announcer.Push("No save file found", 2f);
+                Announcer.Push($"Slot {slot + 1} is empty", 2f);
                 return;
             }
 
-            var save = MatchSaveSerializer.LoadFromFile(SavePath);
+            var save = SaveSlots.Load(slot);
             if (save == null)
             {
-                Announcer.Push("Save file is invalid", 2f);
+                Announcer.Push("Save file is invalid or from a newer version", 2f);
                 return;
             }
 
@@ -785,19 +788,29 @@ namespace CQRa.Core
             GUI.backgroundColor = previousColor;
 
             GUI.Label(
-                new Rect(x + 30f, y + 120f, width - 220f, 24f),
+                new Rect(x + 30f, y + 120f, width - 360f, 24f),
                 "The AI plays by exactly the same rules: no bonuses, no stat changes.",
                 _label);
 
-            if (File.Exists(SavePath) &&
-                GUI.Button(new Rect(x + width - 360f, y + 118f, 160f, 26f), "LOAD SAVE", _button))
+            if (GUI.Button(
+                    new Rect(x + width - 330f, y + 118f, 100f, 26f),
+                    $"SLOT {SaveSlots.CurrentSlot + 1}",
+                    _button))
+            {
+                SaveSlots.Select((SaveSlots.CurrentSlot + 1) % SaveSlots.Count);
+            }
+
+            if (GUI.Button(
+                    new Rect(x + width - 224f, y + 118f, 82f, 26f),
+                    "LOAD",
+                    _button))
             {
                 LoadMatchFromDisk();
                 return;
             }
 
             if (ReplayRuntime.HasReplay &&
-                GUI.Button(new Rect(x + width - 190f, y + 118f, 160f, 26f), "WATCH REPLAY", _button))
+                GUI.Button(new Rect(x + width - 136f, y + 118f, 106f, 26f), "REPLAY", _button))
             {
                 WatchReplay();
                 return;

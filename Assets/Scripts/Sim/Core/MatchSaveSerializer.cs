@@ -92,6 +92,7 @@ namespace CQRa.Sim.Core
     public sealed class MatchSaveData
     {
         public int version = 1;
+        public string savedUtc;
         public string mapId;
         public string playerFaction;
         public string aiFaction;
@@ -124,6 +125,7 @@ namespace CQRa.Sim.Core
             var save = new MatchSaveData
             {
                 version = CurrentVersion,
+                savedUtc = DateTime.UtcNow.ToString("o"),
                 mapId = map?.Id ?? "ash-basin",
                 playerFaction = FactionRuntime.Player.ToString(),
                 aiFaction = FactionRuntime.Ai.ToString(),
@@ -338,6 +340,33 @@ namespace CQRa.Sim.Core
             return JsonUtility.FromJson<MatchSaveData>(json);
         }
 
+        /// <summary>
+        /// Accepts current saves and migrates older versions. Returns null for saves from
+        /// a newer build so a partial load can never corrupt the session.
+        /// </summary>
+        public static MatchSaveData Migrate(MatchSaveData data)
+        {
+            if (data == null || data.version > CurrentVersion)
+            {
+                return null;
+            }
+
+            if (data.version < 1)
+            {
+                // Legacy pre-versioned saves had no explicit version field.
+                data.version = 1;
+                data.teamCount = math.clamp(data.teamCount, 2, 8);
+                if (string.IsNullOrEmpty(data.mapId))
+                {
+                    data.mapId = "ash-basin";
+                }
+            }
+
+            data.version = CurrentVersion;
+            data.teamCount = math.clamp(data.teamCount, 2, 8);
+            return data;
+        }
+
         public static void SaveToFile(EntityManager entityManager, string path)
         {
             File.WriteAllText(path, ToJson(Capture(entityManager)));
@@ -351,7 +380,7 @@ namespace CQRa.Sim.Core
             }
 
             var save = FromJson(File.ReadAllText(path));
-            return save != null && save.version == CurrentVersion ? save : null;
+            return Migrate(save);
         }
 
         public static void Apply(EntityManager entityManager, MatchSaveData save)
