@@ -396,6 +396,7 @@ namespace CQRa.Core
             var world = World.DefaultGameObjectInjectionWorld;
             if (world != null && world.IsCreated)
             {
+                MatchHistory.Capture(world.EntityManager, SimClock.Tick);
                 ReplayRuntime.SaveLastReplay(world.EntityManager);
             }
 
@@ -1494,7 +1495,7 @@ namespace CQRa.Core
         {
             var previous = GUI.color;
             GUI.color = new Color(0.04f, 0.03f, 0.02f, 0.72f);
-            GUI.DrawTexture(new Rect(0f, Screen.height * 0.34f, Screen.width, 220f), Texture2D.whiteTexture);
+            GUI.DrawTexture(new Rect(0f, Screen.height * 0.34f, Screen.width, 460f), Texture2D.whiteTexture);
             GUI.color = previous;
 
             string text = SkirmishCommands.ResultText(_winner);
@@ -1516,6 +1517,114 @@ namespace CQRa.Core
             {
                 Restart();
             }
+
+            DrawHistoryGraph(
+                Screen.width * 0.5f - 360f,
+                Screen.height * 0.34f + 160f,
+                720f,
+                270f);
+        }
+
+        private void DrawHistoryGraph(float x, float y, float width, float height)
+        {
+            var samples = MatchHistory.Samples;
+            if (samples.Count < 2)
+            {
+                return;
+            }
+
+            var previous = GUI.color;
+            GUI.color = new Color(0.02f, 0.02f, 0.02f, 0.55f);
+            GUI.DrawTexture(new Rect(x, y, width, height), Texture2D.whiteTexture);
+            GUI.color = previous;
+
+            GUI.Label(new Rect(x + 10f, y + 6f, width - 20f, 22f), "MATCH HISTORY (5 s)", _label);
+
+            var half = (width - 30f) * 0.5f;
+            DrawSeries(
+                new Rect(x + 10f, y + 34f, half, 100f),
+                "ARMY",
+                samples,
+                s => s.Units0,
+                s => s.Units1);
+            DrawSeries(
+                new Rect(x + 20f + half, y + 34f, half, 100f),
+                "CREDITS",
+                samples,
+                s => s.Credits0,
+                s => s.Credits1);
+            DrawSeries(
+                new Rect(x + 10f, y + 154f, width - 20f, 90f),
+                "KILLS",
+                samples,
+                s => s.Kills0,
+                s => s.Kills1);
+
+            GUI.Label(
+                new Rect(x + 10f, y + height - 24f, width - 20f, 22f),
+                "Player (team 0) warm  |  Opponent (team 1) cool",
+                _label);
+        }
+
+        private static void DrawSeries(
+            Rect rect,
+            string label,
+            System.Collections.Generic.IReadOnlyList<MatchHistory.Sample> samples,
+            System.Func<MatchHistory.Sample, int> first,
+            System.Func<MatchHistory.Sample, int> second)
+        {
+            GUI.Label(new Rect(rect.x, rect.y, rect.width, 20f), label);
+
+            var plot = new Rect(rect.x, rect.y + 20f, rect.width, rect.height - 20f);
+            var count = samples.Count;
+            var start = math.max(0, count - 160);
+            var span = count - start;
+            if (span < 2)
+            {
+                return;
+            }
+
+            var max = 1;
+            for (var i = start; i < count; i++)
+            {
+                max = math.max(max, math.max(first(samples[i]), second(samples[i])));
+            }
+
+            var step = plot.width / (span - 1);
+            var barWidth = math.max(2f, step + 0.5f);
+
+            for (var i = start; i < count; i++)
+            {
+                var index = i - start;
+                var px = plot.x + index * step;
+                DrawBar(plot, px, barWidth, first(samples[i]), max,
+                    Color.Lerp(new Color(0.95f, 0.62f, 0.20f), Color.white, 0.15f));
+                DrawBar(plot, px, barWidth, second(samples[i]), max,
+                    new Color(0.22f, 0.52f, 0.86f));
+            }
+        }
+
+        private static void DrawBar(
+            Rect plot,
+            float x,
+            float barWidth,
+            int value,
+            int max,
+            Color color)
+        {
+            var fraction = math.saturate(value / (float)math.max(1, max));
+            var height = plot.height * fraction * 0.92f;
+            if (height <= 0f)
+            {
+                return;
+            }
+
+            var previous = GUI.color;
+            GUI.color = new Color(color.r, color.g, color.b, 0.72f);
+            GUI.DrawTexture(
+                new Rect(x, plot.y + plot.height - height, barWidth, height),
+                Texture2D.whiteTexture);
+            GUI.color = previous;
         }
 
         private static string MatchStatsText()

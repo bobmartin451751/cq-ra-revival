@@ -106,6 +106,7 @@ namespace CQRa.Sim.AI
             DestroyAll<FlowFieldMeta>(entityManager);
             DestroyAll<FogState>(entityManager);
             DestroyAll<BridgeTag>(entityManager);
+            MatchHistory.Reset();
         }
 
         private static void DestroyAll<T>(EntityManager entityManager)
