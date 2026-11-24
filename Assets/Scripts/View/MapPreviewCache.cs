@@ -10,6 +10,8 @@ namespace CQRa.View
     {
         private const int Resolution = 128;
         private static readonly Dictionary<int, Texture2D> Cache = new Dictionary<int, Texture2D>();
+        private static readonly Dictionary<string, Texture2D> CustomCache =
+            new Dictionary<string, Texture2D>();
 
         public static Texture2D Get(int mapIndex)
         {
@@ -26,6 +28,24 @@ namespace CQRa.View
 
             texture = Build(map);
             Cache[mapIndex] = texture;
+            return texture;
+        }
+
+        public static Texture2D GetCustom(MapDefinition map)
+        {
+            if (map == null)
+            {
+                return null;
+            }
+
+            var key = $"{map.Seed}_{map.SizeTier}_{map.WaterBodies?.Length ?? 0}";
+            if (CustomCache.TryGetValue(key, out var cached))
+            {
+                return cached;
+            }
+
+            var texture = Build(map);
+            CustomCache[key] = texture;
             return texture;
         }
 

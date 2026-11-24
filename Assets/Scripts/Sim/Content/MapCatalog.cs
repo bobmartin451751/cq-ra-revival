@@ -782,18 +782,31 @@ namespace CQRa.Sim.Content
     public static class MapRuntime
     {
         private static int _selectedIndex;
+        private static MapDefinition _custom;
 
         public static int SelectedIndex => _selectedIndex;
 
-        public static MapDefinition Current => MapCatalog.Get(_selectedIndex);
+        public static bool HasCustom => _custom != null;
+
+        public static MapDefinition Custom => _custom;
+
+        public static MapDefinition Current => _custom ?? MapCatalog.Get(_selectedIndex);
 
         public static void Select(int index)
         {
+            _custom = null;
             _selectedIndex = MapCatalog.Clamp(index);
+        }
+
+        public static void SelectCustom(MapDefinition map)
+        {
+            _custom = map;
+            _selectedIndex = 0;
         }
 
         public static void Reset()
         {
+            _custom = null;
             _selectedIndex = 0;
         }
     }

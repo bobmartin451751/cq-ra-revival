@@ -68,6 +68,12 @@ namespace CQRa.Core
         private static TeamMode _pendingTeamMode = TeamMode.FreeForAll;
         private static bool _pendingObserver;
 
+        private int _editorSeed = 4242;
+        private MapSizeTier _editorTier = MapSizeTier.Medium;
+        private bool _editorWater = true;
+        private int _editorTeams = 4;
+        private MapDefinition _editorMap;
+
         private GUIStyle _label;
         private GUIStyle _title;
         private GUIStyle _subtitle;
@@ -95,6 +101,7 @@ namespace CQRa.Core
         {
             _captureRun = HasArg("-screenshot");
             MissionCatalog.Load();
+            LoadEditorState();
             _selectedMap = MapRuntime.SelectedIndex;
             if (_captureRun)
             {
@@ -736,12 +743,13 @@ namespace CQRa.Core
 
             GUI.Label(new Rect(x + 30f, y + 18f, width - 60f, 54f), "C&Q R-A REVIVAL", _title);
 
-            var half = (width - 60f) * 0.5f;
+            var tabGap = 4f;
+            var tabWidth = (width - 60f - tabGap * 2f) / 3f;
             var previousColor = GUI.backgroundColor;
             GUI.backgroundColor = _menuMode == 0
                 ? new Color(0.72f, 0.48f, 0.20f)
                 : new Color(0.28f, 0.26f, 0.22f);
-            if (GUI.Button(new Rect(x + 30f, y + 78f, half, 34f), "SKIRMISH", _button))
+            if (GUI.Button(new Rect(x + 30f, y + 78f, tabWidth, 34f), "SKIRMISH", _button))
             {
                 _menuMode = 0;
             }
@@ -749,9 +757,23 @@ namespace CQRa.Core
             GUI.backgroundColor = _menuMode == 1
                 ? new Color(0.72f, 0.48f, 0.20f)
                 : new Color(0.28f, 0.26f, 0.22f);
-            if (GUI.Button(new Rect(x + 34f + half, y + 78f, half, 34f), "CAMPAIGN", _button))
+            if (GUI.Button(
+                    new Rect(x + 30f + tabWidth + tabGap, y + 78f, tabWidth, 34f),
+                    "CAMPAIGN",
+                    _button))
             {
                 _menuMode = 1;
+            }
+
+            GUI.backgroundColor = _menuMode == 2
+                ? new Color(0.72f, 0.48f, 0.20f)
+                : new Color(0.28f, 0.26f, 0.22f);
+            if (GUI.Button(
+                    new Rect(x + 30f + (tabWidth + tabGap) * 2f, y + 78f, tabWidth, 34f),
+                    "MAP EDITOR",
+                    _button))
+            {
+                _menuMode = 2;
             }
 
             GUI.backgroundColor = previousColor;
@@ -779,10 +801,173 @@ namespace CQRa.Core
             {
                 DrawSkirmishMenu(x, y, width);
             }
-            else
+            else if (_menuMode == 1)
             {
                 DrawCampaignMenu(x, y, width);
             }
+            else
+            {
+                DrawEditorMenu(x, y, width);
+            }
+        }
+
+        private void LoadEditorState()
+        {
+            var data = CustomMapStore.Load(CustomMapStore.FilePath);
+            if (data != null)
+            {
+                _editorSeed = data.seed;
+                _editorTier = (MapSizeTier)Mathf.Clamp(data.tier, 0, 3);
+                _editorWater = data.water != 0;
+                _editorTeams = Mathf.Clamp(
+                    data.teams, 2, CustomMapFactory.MaxTeamsFor(_editorTier));
+            }
+
+            RebuildEditorMap();
+        }
+
+        private void RebuildEditorMap()
+        {
+            _editorTier = (MapSizeTier)Mathf.Clamp((int)_editorTier, 0, 3);
+            _editorTeams = Mathf.Clamp(_editorTeams, 2, CustomMapFactory.MaxTeamsFor(_editorTier));
+            _editorMap = CustomMapFactory.Build(
+                _editorSeed, _editorTier, _editorWater, _editorTeams);
+        }
+
+        private void DrawEditorMenu(float x, float y, float width)
+        {
+            if (_editorMap == null)
+            {
+                RebuildEditorMap();
+            }
+
+            GUI.Label(new Rect(x + 30f, y + 150f, width - 60f, 24f), "MAP EDITOR", _label);
+
+            var preview = MapPreviewCache.GetCustom(_editorMap);
+            if (preview != null)
+            {
+                GUI.DrawTexture(
+                    new Rect(x + 30f, y + 180f, 180f, 180f),
+                    preview,
+                    ScaleMode.ScaleToFit);
+            }
+
+            GUI.Label(
+                new Rect(x + 230f, y + 180f, width - 260f, 110f),
+                $"Seed {_editorSeed}\n" +
+                $"{_editorMap.SizeTier}  {_editorMap.WorldSize:0}m  {_editorTeams} players\n" +
+                $"{(_editorWater ? "Water: lake" : "Water: none")}\n" +
+                (MapRuntime.HasCustom ? "Custom map is live" : "Not deployed yet"),
+                _label);
+
+            var controlsX = x + 230f;
+            var controlsY = y + 300f;
+            if (GUI.Button(new Rect(controlsX, controlsY, 44f, 32f), "-", _button))
+            {
+                _editorSeed = Mathf.Max(1, _editorSeed - 1);
+                RebuildEditorMap();
+            }
+
+            GUI.Label(
+                new Rect(controlsX + 50f, controlsY, 160f, 32f),
+                $"Seed {_editorSeed}",
+                _label);
+
+            if (GUI.Button(new Rect(controlsX + 216f, controlsY, 44f, 32f), "+", _button))
+            {
+                _editorSeed++;
+                RebuildEditorMap();
+            }
+
+            controlsY += 40f;
+            if (GUI.Button(new Rect(controlsX, controlsY, 260f, 32f),
+                    $"SIZE: {_editorTier}", _button))
+            {
+                _editorTier = (MapSizeTier)(((int)_editorTier + 1) % 4);
+                RebuildEditorMap();
+            }
+
+            controlsY += 40f;
+            if (GUI.Button(new Rect(controlsX, controlsY, 260f, 32f),
+                    _editorWater ? "WATER: ON" : "WATER: OFF", _button))
+            {
+                _editorWater = !_editorWater;
+                RebuildEditorMap();
+            }
+
+            controlsY += 40f;
+            if (GUI.Button(new Rect(controlsX, controlsY, 126f, 32f), "- PLAYERS", _button))
+            {
+                _editorTeams = Mathf.Max(2, _editorTeams - 1);
+                RebuildEditorMap();
+            }
+
+            GUI.Label(
+                new Rect(controlsX + 132f, controlsY, 62f, 32f),
+                _editorTeams.ToString(),
+                _label);
+
+            if (GUI.Button(new Rect(controlsX + 194f, controlsY, 128f, 32f), "+ PLAYERS", _button))
+            {
+                _editorTeams = Mathf.Min(
+                    CustomMapFactory.MaxTeamsFor(_editorTier), _editorTeams + 1);
+                RebuildEditorMap();
+            }
+
+            controlsY += 48f;
+            if (GUI.Button(new Rect(controlsX, controlsY, 126f, 32f), "RANDOMIZE", _button))
+            {
+                _editorSeed = UnityEngine.Random.Range(1, 1000000);
+                RebuildEditorMap();
+            }
+
+            if (GUI.Button(new Rect(controlsX + 134f, controlsY, 126f, 32f), "SAVE", _button))
+            {
+                SaveEditorMap();
+                Announcer.Push("Custom map saved", 2f);
+            }
+
+            controlsY += 48f;
+            if (GUI.Button(new Rect(x + 30f, y + 520f, width - 60f, 46f),
+                    "PLAY CUSTOM MAP", _button))
+            {
+                StartCustomMap();
+            }
+
+            GUI.Label(
+                new Rect(x + 30f, y + 576f, width - 60f, 60f),
+                "Maps regenerate deterministically from seed, size, water and player count.\n" +
+                "The same four values are saved to disk.",
+                _label);
+        }
+
+        private void SaveEditorMap()
+        {
+            RebuildEditorMap();
+            CustomMapStore.Save(
+                CustomMapStore.Capture(
+                    _editorSeed, _editorTier, _editorWater, _editorTeams),
+                CustomMapStore.FilePath);
+        }
+
+        private void StartCustomMap()
+        {
+            RebuildEditorMap();
+            SaveEditorMap();
+            MapRuntime.SelectCustom(_editorMap);
+            _teamCount = _editorTeams;
+            _teamMode = TeamMode.FreeForAll;
+            _observerMode = false;
+            _campaignActive = false;
+
+            _pendingSkirmish = true;
+            _pendingDifficulty = _difficulty;
+            _pendingPlayerFaction = _playerFaction;
+            _pendingAiFaction = _aiFaction;
+            _pendingTeamCount = _teamCount;
+            _pendingTeamMode = _teamMode;
+            _pendingObserver = false;
+            Restart();
         }
 
         private void DrawSkirmishMenu(float x, float y, float width)
