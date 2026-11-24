@@ -158,7 +158,13 @@ namespace CQRa.Sim.Units
                         if (weapon.CooldownRemaining <= 0f)
                         {
                             Fire(entityManager, entity, state.Target, position, weapon, ref dead);
-                            weapon.CooldownRemaining = weapon.Cooldown;
+                            var cooldown = weapon.Cooldown;
+                            if (entityManager.HasComponent<WeaponBuff>(entity))
+                            {
+                                cooldown *= entityManager.GetComponentData<WeaponBuff>(entity).Multiplier;
+                            }
+
+                            weapon.CooldownRemaining = cooldown;
 
                             if (entityManager.HasComponent<AircraftAmmo>(entity))
                             {

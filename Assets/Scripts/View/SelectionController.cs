@@ -1277,6 +1277,38 @@ namespace CQRa.View
             ShowMessage(toggled > 0 ? "Thumper deployment toggled" : "No Thumper selected");
         }
 
+        private void ActivateSelectedHeroAbility()
+        {
+            var world = World.DefaultGameObjectInjectionWorld;
+            if (world == null || !world.IsCreated)
+            {
+                return;
+            }
+
+            var entityManager = world.EntityManager;
+            for (var i = 0; i < _selected.Count; i++)
+            {
+                var entity = _selected[i];
+                if (!entityManager.Exists(entity) ||
+                    !entityManager.HasComponent<HeroAbility>(entity))
+                {
+                    continue;
+                }
+
+                if (HeroAbilityCommands.TryActivate(entityManager, entity, out var failure))
+                {
+                    AudioDirector.Play(AudioCue.Attack);
+                    Announcer.Push("Hero ability engaged", 2f);
+                }
+                else
+                {
+                    ShowMessage(failure);
+                }
+
+                return;
+            }
+        }
+
         private void StopSelectedUnits()
         {
             var world = World.DefaultGameObjectInjectionWorld;
@@ -1802,6 +1834,25 @@ namespace CQRa.View
                     _hintStyle);
             }
 
+            if (entityManager.HasComponent<HeroAbility>(entity))
+            {
+                var ability = entityManager.GetComponentData<HeroAbility>(entity);
+                var kills = entityManager.HasComponent<Veterancy>(entity)
+                    ? entityManager.GetComponentData<Veterancy>(entity).Kills
+                    : 0;
+                var kind = HeroAbilityCatalog.ForFaction(
+                    FactionRuntime.ForTeam(entityManager.GetComponentData<UnitInfo>(entity).Team));
+                var label = !HeroAbilityCatalog.IsUnlocked(kills)
+                    ? $"{HeroAbilityCatalog.DisplayName(kind)}: {HeroAbilityCatalog.UnlockKills} kills needed ({kills})"
+                    : ability.CooldownRemaining > 0f
+                        ? $"{HeroAbilityCatalog.DisplayName(kind)}: {ability.CooldownRemaining:0}s"
+                        : $"{HeroAbilityCatalog.DisplayName(kind)}: READY";
+                GUI.Label(
+                    new Rect(x + 12f, 306f, SidebarWidth - 24f, 22f),
+                    label,
+                    _hintStyle);
+            }
+
             if (entityManager.HasComponent<TransportCargo>(entity) &&
                 entityManager.HasBuffer<CargoUnit>(entity))
             {
@@ -1844,6 +1895,8 @@ namespace CQRa.View
             var thumperDeployed = false;
             var hasSuperweapon = false;
             var superweaponReady = false;
+            var hasHeroAbility = false;
+            var heroAbilityReady = false;
 
             for (var i = 0; i < _selected.Count; i++)
             {
@@ -1880,6 +1933,17 @@ namespace CQRa.View
                     {
                         hasSower = true;
                     }
+
+                    if (entityManager.HasComponent<HeroAbility>(entity))
+                    {
+                        hasHeroAbility = true;
+                        var ability = entityManager.GetComponentData<HeroAbility>(entity);
+                        var kills = entityManager.HasComponent<Veterancy>(entity)
+                            ? entityManager.GetComponentData<Veterancy>(entity).Kills
+                            : 0;
+                        heroAbilityReady = ability.CooldownRemaining <= 0f &&
+                                           HeroAbilityCatalog.IsUnlocked(kills);
+                    }
                 }
 
                 if (entityManager.HasComponent<BuildingInfo>(entity))
@@ -1913,6 +1977,7 @@ namespace CQRa.View
             if (hasUnit && !hasEngineer && !hasThumper && !hasSower) buttons++;
             if (hasBuilding) buttons += 2; // repair + sell
             if (hasSuperweapon) buttons++;
+            if (hasHeroAbility) buttons++;
             if (buttons == 0)
             {
                 return;
@@ -1981,6 +2046,16 @@ namespace CQRa.View
                     "STOP",
                     false,
                     StopSelectedUnits);
+                bx += width + gap;
+            }
+
+            if (hasHeroAbility)
+            {
+                DrawCommandButton(
+                    new Rect(bx, by, width, 32f),
+                    heroAbilityReady ? "ABILITY" : "RECHARGING",
+                    false,
+                    ActivateSelectedHeroAbility);
                 bx += width + gap;
             }
 

@@ -608,6 +608,11 @@ namespace CQRa.Core
             weapon.Damage *= 1.25f;
             entityManager.SetComponentData(hero, weapon);
             entityManager.AddComponentData(hero, new Hero { Flag = 1 });
+            entityManager.AddComponentData(hero, new HeroAbility
+            {
+                Cooldown = HeroAbilityCatalog.Cooldown,
+                CooldownRemaining = 0f,
+            });
 
             if (entityManager.HasComponent<Veterancy>(hero))
             {

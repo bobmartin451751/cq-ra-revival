@@ -45,7 +45,7 @@ sell**, Esc to clear/cancel. Selected units and buildings expose their actions i
 right-hand **COMMAND** sidebar: MCVs show **DEPLOY** (click it, then right-click a
 site), production buildings show **RALLY** (click it, then right-click terrain),
 buildings show **REPAIR** and **SELL**, and units show **STOP**. See
-`docs/phase2.md` through `docs/phase75.md` for details.
+`docs/phase2.md` through `docs/phase76.md` for details.
 
 ## Layout
 
@@ -146,5 +146,6 @@ tools/               headless scripts
 | 73 - visual weather | OK - deterministic rain, dust and snow with no gameplay effect |
 | 74 - in-game map editor | OK - seeded custom maps with preview, save and play |
 | 75 - branching campaign | OK - hand-authored mission graph, codex and routed next mission |
+| 76 - hero abilities | OK - persistent kills unlock Overdrive, Regrowth and Aegis |
 
 See `docs/spec.md` for the full roadmap and frozen scope.
