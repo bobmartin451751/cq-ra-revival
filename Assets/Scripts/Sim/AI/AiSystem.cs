@@ -91,6 +91,7 @@ namespace CQRa.Sim.AI
             }
 
             UpdateMilitary(entityManager, ref commander, profile, yard);
+            TryFireSuperweapon(entityManager, team);
             MaintainBunkerGarrison(entityManager, commander.Team);
             MaintainTransportMission(entityManager, commander.Team);
             UpdateTransportMissions(entityManager, commander.Team);
@@ -155,6 +156,12 @@ namespace CQRa.Sim.AI
                 CountBuildings(entityManager, team, BuildingKind.Airfield) == 0)
             {
                 return BaseCommands.TryAutoPlace(entityManager, team, BuildingKind.Airfield);
+            }
+
+            if (credits > 3000 &&
+                CountBuildings(entityManager, team, BuildingKind.Superweapon) == 0)
+            {
+                return BaseCommands.TryAutoPlace(entityManager, team, BuildingKind.Superweapon);
             }
 
             if (credits > 900 &&
@@ -999,6 +1006,111 @@ namespace CQRa.Sim.AI
             }
 
             return count;
+        }
+
+        /// <summary>
+        /// Fires a ready superweapon at the closest visible enemy structure, or the
+        /// closest visible enemy unit when no structure is in range. Uses the same
+        /// visibility grid and command path as the player.
+        /// </summary>
+        public static bool TryFireSuperweapon(EntityManager entityManager, int team)
+        {
+            using var superQuery = entityManager.CreateEntityQuery(
+                ComponentType.ReadOnly<BuildingInfo>(),
+                ComponentType.ReadOnly<SuperweaponState>(),
+                ComponentType.ReadOnly<LocalTransform>());
+            using var superweapons = superQuery.ToEntityArray(Allocator.Temp);
+
+            var launcher = Entity.Null;
+            var launcherPosition = float3.zero;
+            for (var i = 0; i < superweapons.Length; i++)
+            {
+                var info = entityManager.GetComponentData<BuildingInfo>(superweapons[i]);
+                var state = entityManager.GetComponentData<SuperweaponState>(superweapons[i]);
+                if (info.Team == team && info.Kind == BuildingKind.Superweapon && state.Ready != 0)
+                {
+                    launcher = superweapons[i];
+                    launcherPosition = entityManager
+                        .GetComponentData<LocalTransform>(superweapons[i]).Position;
+                    break;
+                }
+            }
+
+            if (launcher == Entity.Null)
+            {
+                return false;
+            }
+
+            using var targetQuery = entityManager.CreateEntityQuery(new EntityQueryDesc
+            {
+                All = new[]
+                {
+                    ComponentType.ReadOnly<Health>(),
+                    ComponentType.ReadOnly<LocalTransform>(),
+                },
+                Any = new[]
+                {
+                    ComponentType.ReadOnly<UnitInfo>(),
+                    ComponentType.ReadOnly<BuildingInfo>(),
+                },
+            });
+            using var targets = targetQuery.ToEntityArray(Allocator.Temp);
+
+            var pick = float3.zero;
+            var hasPick = false;
+            var bestScore = float.MaxValue;
+            for (var i = 0; i < targets.Length; i++)
+            {
+                var target = targets[i];
+                if (!TryReadTeam(entityManager, target, out var targetTeam) ||
+                    MatchRuntime.AreAllied(team, targetTeam) ||
+                    entityManager.GetComponentData<Health>(target).Current <= 0f)
+                {
+                    continue;
+                }
+
+                var position = entityManager.GetComponentData<LocalTransform>(target).Position;
+                if (!FogQuery.IsVisible(entityManager, team, position))
+                {
+                    continue;
+                }
+
+                var distance = math.distance(position, launcherPosition);
+                if (distance > 260f)
+                {
+                    continue;
+                }
+
+                var structureBonus = entityManager.HasComponent<BuildingInfo>(target) ? 0f : 80f;
+                var score = distance + structureBonus;
+                if (score < bestScore)
+                {
+                    bestScore = score;
+                    pick = position;
+                    hasPick = true;
+                }
+            }
+
+            return hasPick &&
+                   SuperweaponCommands.TryFire(entityManager, launcher, pick, out _);
+        }
+
+        private static bool TryReadTeam(EntityManager entityManager, Entity entity, out int team)
+        {
+            if (entityManager.HasComponent<UnitInfo>(entity))
+            {
+                team = entityManager.GetComponentData<UnitInfo>(entity).Team;
+                return true;
+            }
+
+            if (entityManager.HasComponent<BuildingInfo>(entity))
+            {
+                team = entityManager.GetComponentData<BuildingInfo>(entity).Team;
+                return true;
+            }
+
+            team = -1;
+            return false;
         }
 
         private static int CountBuildings(EntityManager entityManager, int team, BuildingKind kind)
