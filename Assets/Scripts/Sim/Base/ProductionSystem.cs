@@ -257,7 +257,7 @@ namespace CQRa.Sim.Base
             var yaw = math.atan2(direction.x, direction.y);
             var unit = UnitFactory.SpawnDefault(entityManager, spawnPoint, yaw, kind, info.Team);
             MatchStatsCommands.AddBuilt(entityManager, info.Team);
-            CQRa.Core.AudioDirector.Play(CQRa.Core.AudioCue.Build);
+            CQRa.Core.AudioDirector.Play(CQRa.Core.AudioCue.AckBuild);
 
             if (isAir && entityManager.HasComponent<AircraftHome>(unit))
             {

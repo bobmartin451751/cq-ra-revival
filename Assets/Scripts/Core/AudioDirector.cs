@@ -12,6 +12,12 @@ namespace CQRa.Core
         Research = 5,
         Victory = 6,
         Defeat = 7,
+        AckMove = 8,
+        AckAttack = 9,
+        AckBuild = 10,
+        Announcer = 11,
+        Superweapon = 12,
+        HeroAbility = 13,
     }
 
     /// <summary>
@@ -52,6 +58,12 @@ namespace CQRa.Core
                 MakeTone("Research", 990f, 0.14f, 0.28f),
                 MakeTone("Victory", 740f, 0.35f, 0.32f),
                 MakeTone("Defeat", 180f, 0.40f, 0.32f),
+                MakeSequence("AckMove", new[] { 560f, 760f }, 0.055f, 0.30f),
+                MakeSequence("AckAttack", new[] { 330f, 240f }, 0.06f, 0.34f),
+                MakeSequence("AckBuild", new[] { 520f, 700f, 900f }, 0.05f, 0.28f),
+                MakeSequence("Announcer", new[] { 1180f, 920f }, 0.045f, 0.26f),
+                MakeSequence("Superweapon", new[] { 900f, 500f, 300f, 500f }, 0.09f, 0.36f),
+                MakeSequence("HeroAbility", new[] { 700f, 1050f, 1250f }, 0.06f, 0.30f),
             };
 
             _source = gameObject.AddComponent<AudioSource>();
@@ -116,8 +128,25 @@ namespace CQRa.Core
                 return;
             }
 
-            Instance._source.PlayOneShot(Instance._clips[(int)cue]);
+            var index = (int)cue;
+            if (index < 0 || index >= Instance._clips.Length)
+            {
+                return;
+            }
+
+            Instance._source.PlayOneShot(Instance._clips[index]);
         }
+
+        public static bool HasCue(AudioCue cue)
+        {
+            return Instance != null &&
+                   Instance._clips != null &&
+                   (int)cue >= 0 &&
+                   (int)cue < Instance._clips.Length &&
+                   Instance._clips[(int)cue] != null;
+        }
+
+        public static int ClipCount => Instance?._clips?.Length ?? 0;
 
         public static void PlayAt(AudioCue cue, Vector3 position)
         {
@@ -145,6 +174,36 @@ namespace CQRa.Core
                 var envelope = Mathf.Sin(Mathf.Clamp01(i / (samples * 0.1f)) * Mathf.PI * 0.5f) *
                                Mathf.Clamp01((samples - i) / (samples * 0.35f));
                 data[i] = Mathf.Sin(2f * Mathf.PI * frequency * t) * envelope * gain;
+            }
+
+            var clip = AudioClip.Create(name, samples, 1, sampleRate, false);
+            clip.SetData(data, 0);
+            return clip;
+        }
+
+        /// <summary>Short radio-style acknowledgement made of decaying notes.</summary>
+        private static AudioClip MakeSequence(
+            string name,
+            float[] frequencies,
+            float noteSeconds,
+            float gain)
+        {
+            const int sampleRate = 44100;
+            var noteSamples = Mathf.Max(1, Mathf.RoundToInt(noteSeconds * sampleRate));
+            var samples = Mathf.Max(1, noteSamples * frequencies.Length);
+            var data = new float[samples];
+
+            for (var note = 0; note < frequencies.Length; note++)
+            {
+                var start = note * noteSamples;
+                for (var i = 0; i < noteSamples; i++)
+                {
+                    var t = i / (float)sampleRate;
+                    var envelope = Mathf.Clamp01(i / (noteSamples * 0.08f)) *
+                                   Mathf.Pow(1f - i / (float)noteSamples, 1.6f);
+                    data[start + i] =
+                        Mathf.Sin(2f * Mathf.PI * frequencies[note] * t) * envelope * gain;
+                }
             }
 
             var clip = AudioClip.Create(name, samples, 1, sampleRate, false);

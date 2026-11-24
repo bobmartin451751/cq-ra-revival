@@ -393,7 +393,7 @@ namespace CQRa.View
                 _moveMarker.Show(new Vector3(destination.x, destination.y, destination.z));
             }
 
-            AudioDirector.Play(AudioCue.Move);
+            AudioDirector.Play(AudioCue.AckMove);
             Announcer.Push("Moving out", 1.5f);
         }
 
@@ -591,7 +591,7 @@ namespace CQRa.View
                 return false;
             }
 
-            AudioDirector.Play(AudioCue.Attack);
+            AudioDirector.Play(AudioCue.AckAttack);
             Announcer.Push("Engaging", 1.5f);
 
             if (_moveMarker != null)
@@ -1131,7 +1131,7 @@ namespace CQRa.View
                 return false;
             }
 
-            AudioDirector.Play(AudioCue.Attack);
+            AudioDirector.Play(AudioCue.Superweapon);
             Announcer.Push("Superweapon launched", 2.5f);
             if (_moveMarker != null)
             {
@@ -1297,7 +1297,7 @@ namespace CQRa.View
 
                 if (HeroAbilityCommands.TryActivate(entityManager, entity, out var failure))
                 {
-                    AudioDirector.Play(AudioCue.Attack);
+                    AudioDirector.Play(AudioCue.HeroAbility);
                     Announcer.Push("Hero ability engaged", 2f);
                 }
                 else

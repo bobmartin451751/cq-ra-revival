@@ -12,7 +12,7 @@ namespace CQRa.Core
         {
             Message = message;
             Until = Time.unscaledTime + seconds;
-            AudioDirector.Play(AudioCue.Click);
+            AudioDirector.Play(AudioCue.Announcer);
         }
 
         public static bool TryGetCurrent(out string message)
