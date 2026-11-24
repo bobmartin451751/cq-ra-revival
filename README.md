@@ -45,7 +45,7 @@ sell**, Esc to clear/cancel. Selected units and buildings expose their actions i
 right-hand **COMMAND** sidebar: MCVs show **DEPLOY** (click it, then right-click a
 site), production buildings show **RALLY** (click it, then right-click terrain),
 buildings show **REPAIR** and **SELL**, and units show **STOP**. See
-`docs/phase2.md` through `docs/phase70.md` for details.
+`docs/phase2.md` through `docs/phase71.md` for details.
 
 ## Layout
 
@@ -141,5 +141,6 @@ tools/               headless scripts
 | 68 - save fog of war | OK - explored mask persists across save/load |
 | 69 - match replays | OK - keyframe recording, gzip file and menu playback |
 | 70 - destructible bridges | OK - neutral decks, nav crossing, rubble on destruction |
+| 71 - infantry terrain cover | OK - ridges, dips and outcrops reduce infantry damage |
 
 See `docs/spec.md` for the full roadmap and frozen scope.

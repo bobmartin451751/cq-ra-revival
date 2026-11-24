@@ -1,4 +1,5 @@
 using CQRa.Sim.Base;
+using CQRa.Sim.Combat;
 using CQRa.Sim.Fog;
 using CQRa.Sim.Bridges;
 using Unity.Collections;
@@ -249,6 +250,16 @@ namespace CQRa.Sim.Units
             var damage = CombatMath.DamageAfterArmor(
                 weapon.Damage * directional * airBonus * antiVehicle,
                 health.Armor);
+
+            var targetIsInfantry = entityManager.HasComponent<UnitInfo>(target) &&
+                                   InfantryCatalog.IsInfantry(
+                                       entityManager.GetComponentData<UnitInfo>(target).Kind);
+            damage *= CoverRules.Multiplier(
+                entityManager,
+                targetTransform.Position,
+                position,
+                targetIsInfantry);
+
             damage = CombatMath.AbsorbWithShield(entityManager, target, damage);
 
             if (damage > 0f)
