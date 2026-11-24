@@ -45,7 +45,7 @@ sell**, Esc to clear/cancel. Selected units and buildings expose their actions i
 right-hand **COMMAND** sidebar: MCVs show **DEPLOY** (click it, then right-click a
 site), production buildings show **RALLY** (click it, then right-click terrain),
 buildings show **REPAIR** and **SELL**, and units show **STOP**. See
-`docs/phase2.md` through `docs/phase80.md` for details.
+`docs/phase2.md` through `docs/phase81.md` for details.
 
 ## Layout
 
@@ -151,5 +151,6 @@ tools/               headless scripts
 | 78 - post-match graphs | OK - 5-second army, credits and kills history on the result screen |
 | 79 - save slots | OK - three slots, in-game cycling and legacy-save migration |
 | 80 - ack audio | OK - procedural move/build/attack acknowledgements and radio chirps |
+| 81 - bespoke maps | OK - all 50 maps have unique spawns, water, scenery and ore layouts |
 
 See `docs/spec.md` for the full roadmap and frozen scope.

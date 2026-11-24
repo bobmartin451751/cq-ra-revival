@@ -478,18 +478,19 @@ namespace CQRa.Sim.Content
             };
 
             var seed = 1200 + index * 137 + family * 29;
-            var spawnRing = worldSize * 0.37f;
-            var basinRadius = worldSize * 0.42f;
+            var spawnRing = worldSize * (0.37f + (index % 4) * 0.008f);
+            var basinRadius = worldSize * (0.40f + (index % 5) * 0.004f);
+            var startAngle = -math.PI * 0.5f + (index % 7) * 0.07f;
             var spawns = new MapSpawn[maxPlayers];
             for (var i = 0; i < maxPlayers; i++)
             {
-                var angle = -math.PI * 0.5f + i * math.PI * 2f / maxPlayers;
+                var angle = startAngle + i * math.PI * 2f / maxPlayers;
                 spawns[i] = new MapSpawn(
                     math.cos(angle) * spawnRing,
                     math.sin(angle) * spawnRing);
             }
 
-            var water = CreateWater(family, index, worldSize);
+            var water = JitterWater(CreateWater(family, index, worldSize), index, worldSize);
             var obstacles = CreateObstacles(seed + 1, worldSize, spawns, water);
             var ore = CreatePoints(seed + 2, 10 + (index % 3), worldSize, spawns, water, 0.30f, 0.40f);
             var crates = CreatePoints(seed + 3, 5 + (index % 2), worldSize, spawns, water, 0.16f, 0.34f);
@@ -504,8 +505,8 @@ namespace CQRa.Sim.Content
                 MinPlayers = minPlayers,
                 MaxPlayers = maxPlayers,
                 Seed = seed,
-                MaxHeight = 16f + family * 5f + (int)tier * 4f,
-                NoiseScale = 4.8f - family * 0.35f,
+                MaxHeight = 16f + family * 5f + (int)tier * 4f + (index % 3) * 1.5f,
+                NoiseScale = 4.8f - family * 0.35f + (index % 4) * 0.09f,
                 BasinRadius = basinRadius,
                 BasinBlend = worldSize * 0.09f,
                 PlayerStart = spawns[0].Position,
@@ -594,6 +595,55 @@ namespace CQRa.Sim.Content
                             0.55f),
                     };
             }
+        }
+
+        /// <summary>
+        /// Per-map variation so two maps from the same family do not share identical
+        /// water. Circles move/scale slightly; polygons shift and scale about their centre.
+        /// </summary>
+        private static WaterBody[] JitterWater(WaterBody[] bodies, int index, float worldSize)
+        {
+            if (bodies == null || bodies.Length == 0)
+            {
+                return bodies;
+            }
+
+            var random = new System.Random(9001 + index * 211);
+            for (var i = 0; i < bodies.Length; i++)
+            {
+                var body = bodies[i];
+                var angle = (float)random.NextDouble() * math.PI * 2f;
+                var offset = worldSize * (0.012f + (float)random.NextDouble() * 0.018f);
+                var shift = new float2(math.cos(angle) * offset, math.sin(angle) * offset);
+                var scale = 0.95f + (float)random.NextDouble() * 0.10f;
+
+                if (body.Kind == WaterShapeKind.Circle)
+                {
+                    body.Centre += shift;
+                    body.Radius *= scale;
+                    continue;
+                }
+
+                var points = body.Points;
+                if (points == null)
+                {
+                    continue;
+                }
+
+                var centre = float2.zero;
+                for (var p = 0; p < points.Length; p++)
+                {
+                    centre += points[p];
+                }
+
+                centre /= points.Length;
+                for (var p = 0; p < points.Length; p++)
+                {
+                    points[p] = centre + (points[p] - centre) * scale + shift;
+                }
+            }
+
+            return bodies;
         }
 
         private static float2[] PolygonPoints(
