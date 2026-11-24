@@ -1390,7 +1390,7 @@ namespace CQRa.Core
             }
 
             GUI.Label(
-                new Rect(x + 104f, y + 366f, width - 134f, 82f),
+                new Rect(x + 104f, y + 366f, width - 134f, 70f),
                 $"{FactionCatalog.Name(playerFaction)} vs {FactionCatalog.Name(aiFaction)}\n" +
                 $"Map: {missionMap?.Name ?? "Ash Basin"}  |  {mission.teamCount} players\n" +
                 $"Hero: {ProductionCatalog.UnitName(playerFaction, ProductionCatalog.UniqueFor(playerFaction))}" +
@@ -1398,14 +1398,39 @@ namespace CQRa.Core
                 mission.briefing,
                 _label);
 
+            GUI.Label(
+                new Rect(x + 30f, y + 440f, width - 60f, 48f),
+                $"CODEX: {mission.codex}\n" +
+                "Branches: " + DescribeNextMissions(mission),
+                _label);
+
             if (GUI.Button(
-                    new Rect(x + 30f, y + 456f, width - 60f, 40f),
+                    new Rect(x + 30f, y + 500f, width - 60f, 40f),
                     "START MISSION",
                     _button) &&
                 MissionCatalog.IsUnlocked(_selectedMission))
             {
                 BeginMission(_selectedMission);
             }
+        }
+
+        private static string DescribeNextMissions(MissionDto mission)
+        {
+            if (mission.next == null || mission.next.Length == 0)
+            {
+                return "campaign finale";
+            }
+
+            var names = new string[mission.next.Length];
+            for (var i = 0; i < mission.next.Length; i++)
+            {
+                var index = MissionCatalog.FindIndex(mission.next[i]);
+                names[i] = index >= 0
+                    ? MissionCatalog.Missions[index].name
+                    : mission.next[i];
+            }
+
+            return string.Join(" or ", names);
         }
 
         private void DrawCampaignResult()
@@ -1426,7 +1451,10 @@ namespace CQRa.Core
                 _label);
 
             var buttonY = Screen.height * 0.3f + 110f;
-            var hasNext = _missionWon && _selectedMission + 1 < MissionCatalog.Missions.Length;
+            var nextMission = _missionWon
+                ? MissionCatalog.NextMissionIndex(_selectedMission)
+                : -1;
+            var hasNext = nextMission >= 0;
 
             if (GUI.Button(
                     new Rect(Screen.width * 0.5f - 330f, buttonY, 200f, 44f),
@@ -1443,7 +1471,7 @@ namespace CQRa.Core
                     "NEXT MISSION",
                     _button))
             {
-                _pendingMission = _selectedMission + 1;
+                _pendingMission = nextMission;
                 Restart();
             }
 
