@@ -26,9 +26,9 @@ namespace CQRa.Tests.EditMode
             Assert.Greater(yard.PowerProduced, 0);
             Assert.Greater(BuildCatalog.BuildRadius, 0f);
             Assert.AreEqual(
-                10,
+                11,
                 BuildCatalog.PlayerBuildable.Length,
-                "power, refinery, barracks, factory, tower, wall, dock, airfield, AA gun and bunker are buildable");
+                "power, refinery, barracks, factory, tower, wall, dock, airfield, AA gun, bunker and superweapon are buildable");
         }
 
         [Test]

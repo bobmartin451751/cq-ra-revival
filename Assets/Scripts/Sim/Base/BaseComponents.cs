@@ -17,6 +17,7 @@ namespace CQRa.Sim.Base
         Airfield = 8,
         AntiAir = 9,
         Bunker = 10,
+        Superweapon = 11,
     }
 
     /// <summary>Marks a static player building.</summary>
@@ -207,6 +208,7 @@ namespace CQRa.Sim.Base
             BuildingKind.Airfield,
             BuildingKind.AntiAir,
             BuildingKind.Bunker,
+            BuildingKind.Superweapon,
         };
 
         public static bool IsAvailable(BuildingKind kind)
@@ -266,6 +268,8 @@ namespace CQRa.Sim.Base
                     return "AA Gun";
                 case BuildingKind.Bunker:
                     return "Bunker";
+                case BuildingKind.Superweapon:
+                    return "Superweapon";
                 default:
                     return "Construction Yard";
             }

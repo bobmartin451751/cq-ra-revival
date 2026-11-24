@@ -39,6 +39,7 @@ namespace CQRa.Sim.Core
         public float y;
         public float z;
         public float health;
+        public float charge;
     }
 
     [Serializable]
@@ -175,8 +176,7 @@ namespace CQRa.Sim.Core
                         }
                     }
 
-                    save.units[i] = savedUnit;
-                }
+                    save.units[i] = savedUnit;                }
             }
 
             using (var query = entityManager.CreateEntityQuery(
@@ -200,11 +200,15 @@ namespace CQRa.Sim.Core
                         y = position.y,
                         z = position.z,
                         health = health.Current,
+                        charge = entityManager.HasComponent<SuperweaponState>(buildings[i])
+                            ? entityManager.GetComponentData<SuperweaponState>(buildings[i]).Charge
+                            : 0f,
                     };
                 }
             }
 
-            save.researchMasks = new int[ResearchState.TeamCount];            if (ResearchQuery.TryGet(entityManager, out _, out var research))
+            save.researchMasks = new int[ResearchState.TeamCount];
+            if (ResearchQuery.TryGet(entityManager, out _, out var research))
             {
                 for (var team = 0; team < ResearchState.TeamCount; team++)
                 {
@@ -395,6 +399,17 @@ namespace CQRa.Sim.Core
                     var health = entityManager.GetComponentData<Health>(building);
                     health.Current = math.clamp(saved.health, 1f, health.Max);
                     entityManager.SetComponentData(building, health);
+
+                    if (saved.charge > 0f &&
+                        entityManager.HasComponent<SuperweaponState>(building))
+                    {
+                        var state = entityManager.GetComponentData<SuperweaponState>(building);
+                        state.Charge = math.clamp(saved.charge, 0f, state.ChargeSeconds);
+                        state.Ready = state.Charge >= state.ChargeSeconds - 0.0001f
+                            ? (byte)1
+                            : (byte)0;
+                        entityManager.SetComponentData(building, state);
+                    }
 
                     var spec = BuildCatalog.Get(kind);
                     NavGridQuery.BlockCircle(

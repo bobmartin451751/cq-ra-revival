@@ -598,6 +598,7 @@ namespace CQRa.View
                 case BuildingKind.Airfield: return Airfield();
                 case BuildingKind.AntiAir: return AntiAir();
                 case BuildingKind.Bunker: return Bunker();
+                case BuildingKind.Superweapon: return Superweapon();
                 default: return ConstructionYard();
             }
         }
@@ -657,6 +658,21 @@ namespace CQRa.View
             }
         }
 
+        /// <summary>Superweapon: fortified silo, capacitor ring and elevated launch rail.</summary>
+        public static Mesh Superweapon()
+        {
+            return Merge(
+                new MeshPart(Box(new Vector3(15f, 2.6f, 15f)), new Vector3(0f, 1.3f, 0f)),
+                new MeshPart(Cylinder(5.2f, 4.2f, 16), new Vector3(0f, 4.6f, 0f)),
+                new MeshPart(Cylinder(3.4f, 1.0f, 12), new Vector3(0f, 7.0f, 0f)),
+                new MeshPart(
+                    Box(new Vector3(1.4f, 1.4f, 13f)),
+                    new Vector3(0f, 8.4f, 2.4f),
+                    Quaternion.Euler(-22f, 0f, 0f)),
+                new MeshPart(Box(new Vector3(4.2f, 0.8f, 4.2f)), new Vector3(-5.6f, 3.4f, -4.8f)),
+                new MeshPart(Box(new Vector3(4.2f, 0.8f, 4.2f)), new Vector3(5.6f, 3.4f, 4.8f)));
+        }
+
         private static float RoofHeight(BuildingKind kind)
         {
             switch (kind)
@@ -672,6 +688,7 @@ namespace CQRa.View
                 case BuildingKind.Airfield: return 10.5f;
                 case BuildingKind.AntiAir: return 4.2f;
                 case BuildingKind.Bunker: return 3.4f;
+                case BuildingKind.Superweapon: return 9.2f;
                 default: return 8.0f;
             }
         }
@@ -691,6 +708,7 @@ namespace CQRa.View
                 case BuildingKind.Airfield: return 12f;
                 case BuildingKind.AntiAir: return 3f;
                 case BuildingKind.Bunker: return 4f;
+                case BuildingKind.Superweapon: return 8f;
                 default: return 7f;
             }
         }

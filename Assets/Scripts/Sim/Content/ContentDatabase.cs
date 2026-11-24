@@ -276,6 +276,7 @@ namespace CQRa.Sim.Content
             new BuildingDefinition { Kind = BuildingKind.Airfield, Cost = 1100, PowerUsed = 50, Radius = 12f, NavRadius = 12f, Health = 900f, Vision = 34f },
             new BuildingDefinition { Kind = BuildingKind.AntiAir, Cost = 450, PowerUsed = 10, Radius = 3f, NavRadius = 3f, Health = 380f, Vision = 26f },
             new BuildingDefinition { Kind = BuildingKind.Bunker, Cost = 500, PowerUsed = 0, Radius = 4f, NavRadius = 4f, Health = 650f, Vision = 26f },
+            new BuildingDefinition { Kind = BuildingKind.Superweapon, Cost = 2000, PowerUsed = 150, Radius = 8f, NavRadius = 8f, Health = 1000f, Vision = 30f },
         };
 
         private static UnitDefinition[] _units = (UnitDefinition[])DefaultUnits.Clone();

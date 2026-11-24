@@ -17,7 +17,7 @@ namespace CQRa.Sim.Base
     /// </summary>
     public static class BuildingFactory
     {
-        public const int BuildingKindCount = 11;
+        public const int BuildingKindCount = 12;
         public const int TeamCount = 8;
         public const int FactionVariantCount = 3;
         public const int BuildingMeshCount = BuildingKindCount * FactionVariantCount;
@@ -175,6 +175,16 @@ namespace CQRa.Sim.Base
                 entityManager.AddComponentData(entity, new WeaponTargeting
                 {
                     Mask = TargetClass.Ground,
+                });
+            }
+
+            if (kind == BuildingKind.Superweapon)
+            {
+                entityManager.AddComponentData(entity, new SuperweaponState
+                {
+                    Charge = 0f,
+                    ChargeSeconds = SuperweaponCatalog.ChargeSeconds,
+                    Ready = 0,
                 });
             }
 

@@ -31,6 +31,7 @@ namespace CQRa.View
             DeployMcv = 1,
             SetRally = 2,
             Capture = 3,
+            Superweapon = 4,
         }
 
         private const float SidebarWidth = 324f;
@@ -319,6 +320,13 @@ namespace CQRa.View
                 else if (_armedCommand == ArmedCommand.Capture)
                 {
                     if (TryCaptureAtPoint(screenPosition))
+                    {
+                        _armedCommand = ArmedCommand.None;
+                    }
+                }
+                else if (_armedCommand == ArmedCommand.Superweapon)
+                {
+                    if (TryFireSuperweaponAtPoint(screenPosition))
                     {
                         _armedCommand = ArmedCommand.None;
                     }
@@ -1084,6 +1092,55 @@ namespace CQRa.View
             return false;
         }
 
+        private bool TryFireSuperweaponAtPoint(Vector2 screenPosition)
+        {
+            var world = World.DefaultGameObjectInjectionWorld;
+            if (world == null || !world.IsCreated)
+            {
+                return false;
+            }
+
+            var entityManager = world.EntityManager;
+            var building = Entity.Null;
+            for (var i = 0; i < _selected.Count; i++)
+            {
+                var entity = _selected[i];
+                if (entityManager.Exists(entity) &&
+                    entityManager.HasComponent<SuperweaponState>(entity))
+                {
+                    building = entity;
+                    break;
+                }
+            }
+
+            if (building == Entity.Null)
+            {
+                ShowMessage("Select a superweapon first");
+                return false;
+            }
+
+            if (!TerrainPicker.TryPick(_camera, screenPosition, _terrain, out var point))
+            {
+                return false;
+            }
+
+            var target = new float3(point.x, point.y, point.z);
+            if (!SuperweaponCommands.TryFire(entityManager, building, target, out var failure))
+            {
+                ShowMessage(failure);
+                return false;
+            }
+
+            AudioDirector.Play(AudioCue.Attack);
+            Announcer.Push("Superweapon launched", 2.5f);
+            if (_moveMarker != null)
+            {
+                _moveMarker.Show(new Vector3(target.x, target.y, target.z));
+            }
+
+            return true;
+        }
+
         private static string CaptureFailureText(CaptureFailure failure)
         {
             switch (failure)
@@ -1731,6 +1788,20 @@ namespace CQRa.View
                 $"{title}{rankText}  {healthText}",
                 _hintStyle);
 
+            if (entityManager.HasComponent<SuperweaponState>(entity))
+            {
+                var state = entityManager.GetComponentData<SuperweaponState>(entity);
+                var kind = SuperweaponCatalog.ForFaction(
+                    FactionRuntime.ForTeam(entityManager.GetComponentData<BuildingInfo>(entity).Team));
+                var label = state.Ready != 0
+                    ? $"{SuperweaponCatalog.DisplayName(kind)} READY"
+                    : $"{SuperweaponCatalog.DisplayName(kind)} {state.Charge:0}/{state.ChargeSeconds:0}s";
+                GUI.Label(
+                    new Rect(x + 12f, 306f, SidebarWidth - 24f, 22f),
+                    label,
+                    _hintStyle);
+            }
+
             if (entityManager.HasComponent<TransportCargo>(entity) &&
                 entityManager.HasBuffer<CargoUnit>(entity))
             {
@@ -1771,6 +1842,8 @@ namespace CQRa.View
             var hasThumper = false;
             var hasSower = false;
             var thumperDeployed = false;
+            var hasSuperweapon = false;
+            var superweaponReady = false;
 
             for (var i = 0; i < _selected.Count; i++)
             {
@@ -1816,6 +1889,13 @@ namespace CQRa.View
                     {
                         hasRally = true;
                     }
+
+                    if (entityManager.GetComponentData<BuildingInfo>(entity).Kind ==
+                        BuildingKind.Superweapon)
+                    {
+                        hasSuperweapon = true;
+                        superweaponReady = SuperweaponCommands.IsCharged(entityManager, entity);
+                    }
                 }
 
                 if (entityManager.HasComponent<ProductionTag>(entity))
@@ -1832,6 +1912,7 @@ namespace CQRa.View
             if (hasSower) buttons++;
             if (hasUnit && !hasEngineer && !hasThumper && !hasSower) buttons++;
             if (hasBuilding) buttons += 2; // repair + sell
+            if (hasSuperweapon) buttons++;
             if (buttons == 0)
             {
                 return;
@@ -1917,6 +1998,26 @@ namespace CQRa.View
                     "SELL",
                     false,
                     SellSelectedBuildings);
+                bx += width + gap;
+            }
+
+            if (hasSuperweapon)
+            {
+                DrawCommandButton(
+                    new Rect(bx, by, width, 32f),
+                    superweaponReady ? "STRIKE" : "CHARGING",
+                    _armedCommand == ArmedCommand.Superweapon,
+                    () =>
+                    {
+                        if (superweaponReady)
+                        {
+                            ArmCommand(ArmedCommand.Superweapon);
+                        }
+                        else
+                        {
+                            ShowMessage("Superweapon is still charging");
+                        }
+                    });
             }
         }
 
