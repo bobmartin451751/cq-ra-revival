@@ -3,6 +3,7 @@ using CQRa.Sim.Core;
 using CQRa.Sim.Fog;
 using CQRa.Sim.Navigation;
 using CQRa.Sim.Units;
+using CQRa.Sim.Bridges;
 using Unity.Collections;
 using Unity.Entities;
 
@@ -104,6 +105,7 @@ namespace CQRa.Sim.AI
             DestroyAll<MatchStats>(entityManager);
             DestroyAll<FlowFieldMeta>(entityManager);
             DestroyAll<FogState>(entityManager);
+            DestroyAll<BridgeTag>(entityManager);
         }
 
         private static void DestroyAll<T>(EntityManager entityManager)

@@ -26,7 +26,8 @@ namespace CQRa.Sim.Navigation
             IReadOnlyList<NavBlocker> blockers,
             float edgeMargin,
             float obstaclePadding,
-            Func<float2, bool> extraBlocked = null)
+            Func<float2, bool> extraBlocked = null,
+            Func<float2, bool> extraWalkable = null)
         {
             if (sizeX <= 0 || sizeZ <= 0 || cellSize <= 0f)
             {
@@ -75,6 +76,13 @@ namespace CQRa.Sim.Navigation
                             cells[cell] = 0;
                             continue;
                         }
+                    }
+
+                    if (extraWalkable != null && extraWalkable(new float2(cx, cz)))
+                    {
+                        // Bridge decks override water and slope, but never scenery blockers.
+                        cells[cell] = 1;
+                        continue;
                     }
 
                     if (extraBlocked != null && extraBlocked(new float2(cx, cz)))

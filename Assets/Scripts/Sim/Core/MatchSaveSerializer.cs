@@ -7,6 +7,7 @@ using CQRa.Sim.Factions;
 using CQRa.Sim.Fog;
 using CQRa.Sim.Navigation;
 using CQRa.Sim.Units;
+using CQRa.Sim.Bridges;
 using Unity.Collections;
 using Unity.Entities;
 using Unity.Mathematics;
@@ -61,6 +62,14 @@ namespace CQRa.Sim.Core
     }
 
     [Serializable]
+    public sealed class SavedBridge
+    {
+        public int index;
+        public int destroyed;
+        public float health;
+    }
+
+    [Serializable]
     public sealed class SavedFog
     {
         public int team;
@@ -97,6 +106,7 @@ namespace CQRa.Sim.Core
         public SavedCrate[] crates;
         public SavedCommander[] commanders;
         public SavedFog[] fog;
+        public SavedBridge[] bridges;
     }
 
     /// <summary>
@@ -289,6 +299,25 @@ namespace CQRa.Sim.Core
                     }
 
                     save.fog[i] = saved;
+                }
+            }
+
+            using (var query = entityManager.CreateEntityQuery(
+                       ComponentType.ReadOnly<BridgeTag>(),
+                       ComponentType.ReadOnly<Bridge>(),
+                       ComponentType.ReadOnly<Health>()))
+            using (var bridges = query.ToEntityArray(Allocator.Temp))
+            {
+                save.bridges = new SavedBridge[bridges.Length];
+                for (var i = 0; i < bridges.Length; i++)
+                {
+                    var bridge = entityManager.GetComponentData<Bridge>(bridges[i]);
+                    save.bridges[i] = new SavedBridge
+                    {
+                        index = bridge.Index,
+                        destroyed = bridge.Destroyed,
+                        health = entityManager.GetComponentData<Health>(bridges[i]).Current,
+                    };
                 }
             }
 
@@ -488,6 +517,41 @@ namespace CQRa.Sim.Core
                     data.ThinkTimer = commander.thinkTimer;
                     data.Attacking = (byte)commander.attacking;
                     entityManager.SetComponentData(entity, data);
+                }
+            }
+
+            BridgeSystem.EnsureBridges(entityManager);
+            if (save.bridges != null && save.bridges.Length > 0)
+            {
+                using (var query = entityManager.CreateEntityQuery(
+                           ComponentType.ReadOnly<BridgeTag>(),
+                           ComponentType.ReadOnly<Bridge>(),
+                           ComponentType.ReadOnly<Health>()))
+                using (var bridges = query.ToEntityArray(Allocator.Temp))
+                {
+                    for (var i = 0; i < save.bridges.Length; i++)
+                    {
+                        var saved = save.bridges[i];
+                        for (var b = 0; b < bridges.Length; b++)
+                        {
+                            var bridge = entityManager.GetComponentData<Bridge>(bridges[b]);
+                            if (bridge.Index != saved.index)
+                            {
+                                continue;
+                            }
+
+                            if (saved.destroyed != 0)
+                            {
+                                BridgeSystem.DestroyBridge(entityManager, bridges[b]);
+                                continue;
+                            }
+
+                            var health = entityManager.GetComponentData<Health>(bridges[b]);
+                            health.Current = math.clamp(saved.health, 1f, health.Max);
+                            entityManager.SetComponentData(bridges[b], health);
+                            break;
+                        }
+                    }
                 }
             }
 

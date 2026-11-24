@@ -136,6 +136,41 @@ namespace CQRa.Sim.Navigation
             }
         }
 
+        /// <summary>Blocks every nav cell whose centre lies inside an oriented box.</summary>
+        public static void BlockOrientedBox(
+            EntityManager entityManager,
+            float2 centre,
+            float halfLength,
+            float halfWidth,
+            float yaw)
+        {
+            if (!TryGetGrid(entityManager, out var info, out var gridEntity))
+            {
+                return;
+            }
+
+            var buffer = entityManager.GetBuffer<NavCell>(gridEntity);
+            var direction = new float2(math.cos(yaw), math.sin(yaw));
+            var perpendicular = new float2(-direction.y, direction.x);
+            var reach = math.max(halfLength, halfWidth);
+            var min = NavGridMath.WorldToCell(info, centre - reach);
+            var max = NavGridMath.WorldToCell(info, centre + reach);
+
+            for (var z = math.max(0, min.y); z <= math.min(info.Size.y - 1, max.y); z++)
+            {
+                for (var x = math.max(0, min.x); x <= math.min(info.Size.x - 1, max.x); x++)
+                {
+                    var cellCentre = NavGridMath.CellCentre(info, new int2(x, z));
+                    var delta = cellCentre - centre;
+                    if (math.abs(math.dot(delta, direction)) <= halfLength &&
+                        math.abs(math.dot(delta, perpendicular)) <= halfWidth)
+                    {
+                        buffer[z * info.Size.x + x] = new NavCell { Walkable = 0 };
+                    }
+                }
+            }
+        }
+
         /// <summary>Drops every cached flow field so new blockers are respected.</summary>
         public static void InvalidateFlowFields(EntityManager entityManager)
         {

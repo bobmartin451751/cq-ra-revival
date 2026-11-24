@@ -1,5 +1,6 @@
 using CQRa.Sim.Base;
 using CQRa.Sim.Fog;
+using CQRa.Sim.Bridges;
 using Unity.Collections;
 using Unity.Entities;
 using Unity.Mathematics;
@@ -51,6 +52,7 @@ namespace CQRa.Sim.Units
                 {
                     ComponentType.ReadOnly<UnitInfo>(),
                     ComponentType.ReadOnly<BuildingInfo>(),
+                    ComponentType.ReadOnly<BridgeTag>(),
                 },
             });
 
@@ -199,6 +201,10 @@ namespace CQRa.Sim.Units
                     // Buildings free their nav footprint when destroyed.
                     BaseCommands.RemoveBuilding(entityManager, entity);
                 }
+                else if (entityManager.HasComponent<BridgeTag>(entity))
+                {
+                    BridgeSystem.DestroyBridge(entityManager, entity);
+                }
                 else
                 {
                     entityManager.DestroyEntity(entity);
@@ -331,6 +337,12 @@ namespace CQRa.Sim.Units
                 return true;
             }
 
+            if (entityManager.HasComponent<BridgeTag>(entity))
+            {
+                team = BridgeRules.NeutralTeam;
+                return true;
+            }
+
             team = 0;
             return false;
         }
@@ -350,6 +362,12 @@ namespace CQRa.Sim.Units
             {
                 var candidate = targets[i];
                 if (candidate == self)
+                {
+                    continue;
+                }
+
+                // Bridges are neutral objectives: never auto-acquired, only explicit orders.
+                if (entityManager.HasComponent<BridgeTag>(candidate))
                 {
                     continue;
                 }

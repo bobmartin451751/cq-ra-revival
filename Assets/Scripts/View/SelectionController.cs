@@ -5,6 +5,7 @@ using CQRa.Sim.Factions;
 using CQRa.Sim.Fog;
 using CQRa.Sim.Navigation;
 using CQRa.Sim.Units;
+using CQRa.Sim.Bridges;
 using Unity.Collections;
 using Unity.Entities;
 using Unity.Mathematics;
@@ -1344,6 +1345,12 @@ namespace CQRa.View
                 return true;
             }
 
+            if (entityManager.HasComponent<BridgeTag>(entity))
+            {
+                team = BridgeRules.NeutralTeam;
+                return true;
+            }
+
             team = 0;
             return false;
         }
@@ -2297,6 +2304,7 @@ namespace CQRa.View
                 {
                     ComponentType.ReadOnly<UnitTag>(),
                     ComponentType.ReadOnly<BuildingTag>(),
+                    ComponentType.ReadOnly<BridgeTag>(),
                 },
             });
 

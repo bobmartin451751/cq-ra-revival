@@ -107,7 +107,8 @@ namespace CQRa.Sim.Navigation
                 blockers,
                 _edgeMargin,
                 _obstaclePadding,
-                MapWater.ContainsAny);
+                MapWater.ContainsAny,
+                CQRa.Sim.Bridges.BridgeCatalog.Covers);
 
             var entity = entityManager.CreateEntity();
 
