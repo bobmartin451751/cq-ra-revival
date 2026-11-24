@@ -31,6 +31,7 @@ namespace CQRa.Core
             Application.runInBackground = true;
 
             ConfigureSimulationClock();
+            EnsureWeather();
 
             if (_logOnBoot)
             {
@@ -67,6 +68,17 @@ namespace CQRa.Core
             {
                 Instance = null;
             }
+        }
+
+        private static void EnsureWeather()
+        {
+            if (FindFirstObjectByType<CQRa.View.WeatherDirector>() != null)
+            {
+                return;
+            }
+
+            var go = new GameObject("Weather");
+            go.AddComponent<CQRa.View.WeatherDirector>();
         }
     }
 }

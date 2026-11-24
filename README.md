@@ -45,7 +45,7 @@ sell**, Esc to clear/cancel. Selected units and buildings expose their actions i
 right-hand **COMMAND** sidebar: MCVs show **DEPLOY** (click it, then right-click a
 site), production buildings show **RALLY** (click it, then right-click terrain),
 buildings show **REPAIR** and **SELL**, and units show **STOP**. See
-`docs/phase2.md` through `docs/phase72.md` for details.
+`docs/phase2.md` through `docs/phase73.md` for details.
 
 ## Layout
 
@@ -143,5 +143,6 @@ tools/               headless scripts
 | 70 - destructible bridges | OK - neutral decks, nav crossing, rubble on destruction |
 | 71 - infantry terrain cover | OK - ridges, dips and outcrops reduce infantry damage |
 | 72 - faction superweapons | OK - barrage, spore field and orbital lance with charge UI |
+| 73 - visual weather | OK - deterministic rain, dust and snow with no gameplay effect |
 
 See `docs/spec.md` for the full roadmap and frozen scope.
