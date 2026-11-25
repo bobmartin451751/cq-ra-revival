@@ -60,11 +60,22 @@ namespace CQRa.View
             };
 
             var pixels = new Color[Resolution * Resolution];
+            var heights = new float[Resolution * Resolution];
             var half = map.WorldSize * 0.5f;
-            var sea = new Color(0.16f, 0.34f, 0.42f);
             var low = new Color(0.36f, 0.30f, 0.23f);
             var high = new Color(0.55f, 0.42f, 0.28f);
-            var noiseOffset = new Vector2((map.Seed % 97) * 0.37f, (map.Seed / 11) * 0.41f);
+            var seaDeep = new Color(0.10f, 0.26f, 0.34f);
+            var seaShallow = new Color(0.20f, 0.42f, 0.48f);
+
+            for (var py = 0; py < Resolution; py++)
+            {
+                for (var px = 0; px < Resolution; px++)
+                {
+                    var wx = (px + 0.5f) / Resolution * map.WorldSize - half;
+                    var wz = (py + 0.5f) / Resolution * map.WorldSize - half;
+                    heights[py * Resolution + px] = SampleHeight(map, wx, wz);
+                }
+            }
 
             for (var py = 0; py < Resolution; py++)
             {
@@ -73,17 +84,29 @@ namespace CQRa.View
                     var wx = (px + 0.5f) / Resolution * map.WorldSize - half;
                     var wz = (py + 0.5f) / Resolution * map.WorldSize - half;
                     var point = new float2(wx, wz);
+                    var index = py * Resolution + px;
 
                     if (ContainsWater(map.WaterBodies, point))
                     {
-                        pixels[py * Resolution + px] = sea;
+                        var depth = Mathf.Clamp01((0.55f - heights[index]) / 6f);
+                        pixels[index] = Color.Lerp(seaShallow, seaDeep, depth);
                         continue;
                     }
 
-                    var noise = Mathf.PerlinNoise(
-                        wx / map.WorldSize * 4.2f + noiseOffset.x,
-                        wz / map.WorldSize * 4.2f + noiseOffset.y);
-                    pixels[py * Resolution + px] = Color.Lerp(low, high, noise);
+                    var h = heights[index];
+                    var left = heights[py * Resolution + Mathf.Max(0, px - 1)];
+                    var right = heights[py * Resolution + Mathf.Min(Resolution - 1, px + 1)];
+                    var down = heights[Mathf.Max(0, py - 1) * Resolution + px];
+                    var up = heights[Mathf.Min(Resolution - 1, py + 1) * Resolution + px];
+                    var normalX = (left - right) * 0.5f;
+                    var normalZ = (down - up) * 0.5f;
+                    var shade = Mathf.Clamp(
+                        0.55f + normalX * 0.18f + normalZ * 0.10f, 0.30f, 0.95f);
+
+                    var relief = Mathf.Clamp01(h / Mathf.Max(1f, map.MaxHeight));
+                    var color = Color.Lerp(low, high, relief) * shade;
+                    color.a = 1f;
+                    pixels[index] = color;
                 }
             }
 
@@ -126,8 +149,43 @@ namespace CQRa.View
             }
 
             texture.SetPixels(pixels);
-            texture.Apply(false, true);
+            texture.Apply(false, false);
             return texture;
+        }
+
+        private static float SampleHeight(MapDefinition map, float wx, float wz)
+        {
+            var offsetX = (map.Seed % 997) * 0.173f + 13.7f;
+            var offsetZ = ((map.Seed / 7) % 991) * 0.291f + 41.3f;
+            var baseFrequency = map.NoiseScale / Mathf.Max(1f, map.WorldSize);
+            var amplitude = 1f;
+            var frequency = baseFrequency;
+            var sum = 0f;
+            var weight = 0f;
+
+            for (var o = 0; o < 4; o++)
+            {
+                sum += Mathf.PerlinNoise(wx * frequency + offsetX, wz * frequency + offsetZ) * amplitude;
+                weight += amplitude;
+                amplitude *= 0.5f;
+                frequency *= 2.05f;
+            }
+
+            var h = weight > 0f ? sum / weight : 0f;
+            h = Mathf.Pow(Mathf.Clamp01(h), 1.4f) * map.MaxHeight;
+
+            var distance = Mathf.Sqrt(wx * wx + wz * wz);
+            var blend = Mathf.Clamp01((distance - map.BasinRadius) / Mathf.Max(1f, map.BasinBlend));
+            blend = Mathf.SmoothStep(0f, 1f, blend);
+            h = Mathf.Lerp(0f, h, blend);
+
+            if (blend < 1f)
+            {
+                var undulation = (Mathf.PerlinNoise(wx * 0.02f + 5.3f, wz * 0.02f + 9.1f) - 0.5f) * 2.4f;
+                h += undulation * (1f - blend);
+            }
+
+            return h;
         }
 
         private static void DrawCircle(
