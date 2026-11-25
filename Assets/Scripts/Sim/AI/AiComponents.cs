@@ -19,6 +19,7 @@ namespace CQRa.Sim.AI
         public int Team;
         public AiDifficulty Difficulty;
         public float ThinkTimer;
+        public float RetreatTimer;
         public byte Attacking;
     }
 

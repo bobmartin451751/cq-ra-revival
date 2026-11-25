@@ -47,6 +47,7 @@ namespace CQRa.Sim.AI
             {
                 var commander = entityManager.GetComponentData<AiCommander>(commanders[i]);
                 commander.ThinkTimer -= dt;
+                commander.RetreatTimer = math.max(0f, commander.RetreatTimer - dt);
 
                 if (commander.ThinkTimer > 0f)
                 {
@@ -704,6 +705,23 @@ namespace CQRa.Sim.AI
                 var yardPosition = entityManager.GetComponentData<LocalTransform>(yard).Position;
                 var enemy = FindEnemyTarget(entityManager, commander.Team, yardPosition);
 
+                if (commander.RetreatTimer > 0f)
+                {
+                    RegroupAtYard(entityManager, army, yardPosition);
+                    commander.Attacking = 0;
+                    return;
+                }
+
+                if (commander.Attacking != 0 &&
+                    army.Length > 0 &&
+                    ArmyNeedsRetreat(entityManager, army))
+                {
+                    RegroupAtYard(entityManager, army, yardPosition);
+                    commander.Attacking = 0;
+                    commander.RetreatTimer = 20f;
+                    return;
+                }
+
                 if (enemy == Entity.Null)
                 {
                     if (army.Length == 0)
@@ -758,6 +776,62 @@ namespace CQRa.Sim.AI
             {
                 army.Dispose();
             }
+        }
+
+        /// <summary>True when the AI's armed units are collectively below the retreat threshold.</summary>
+        public static bool ArmyNeedsRetreat(EntityManager entityManager, int team)
+        {
+            var army = CollectArmy(entityManager, team);
+            try
+            {
+                return ArmyNeedsRetreat(entityManager, army);
+            }
+            finally
+            {
+                army.Dispose();
+            }
+        }
+
+        private static bool ArmyNeedsRetreat(EntityManager entityManager, NativeList<Entity> army)
+        {
+            var current = 0f;
+            var max = 0f;
+            for (var i = 0; i < army.Length; i++)
+            {
+                var health = entityManager.GetComponentData<Health>(army[i]);
+                if (health.Current <= 0f)
+                {
+                    continue;
+                }
+
+                current += health.Current;
+                max += math.max(1f, health.Max);
+            }
+
+            return max > 0f && current / max < 0.30f;
+        }
+
+        private static void RegroupAtYard(
+            EntityManager entityManager,
+            NativeList<Entity> army,
+            float3 yardPosition)
+        {
+            for (var i = 0; i < army.Length; i++)
+            {
+                var unit = army[i];
+                if (!entityManager.HasComponent<CombatState>(unit))
+                {
+                    continue;
+                }
+
+                entityManager.SetComponentData(unit, new CombatState
+                {
+                    Target = Entity.Null,
+                    Explicit = 0,
+                });
+            }
+
+            Units.MoveOrderIssuer.TryIssue(entityManager, army, yardPosition, out _);
         }
 
         private static NativeList<Entity> CollectArmy(EntityManager entityManager, int team)

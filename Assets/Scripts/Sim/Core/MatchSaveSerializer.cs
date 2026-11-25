@@ -85,6 +85,7 @@ namespace CQRa.Sim.Core
         public int team;
         public int difficulty;
         public float thinkTimer;
+        public float retreatTimer;
         public int attacking;
     }
 
@@ -272,6 +273,7 @@ namespace CQRa.Sim.Core
                         team = commander.Team,
                         difficulty = (int)commander.Difficulty,
                         thinkTimer = commander.ThinkTimer,
+                        retreatTimer = commander.RetreatTimer,
                         attacking = commander.Attacking,
                     };
                 }
@@ -559,6 +561,7 @@ namespace CQRa.Sim.Core
                         (AiDifficulty)commander.difficulty);
                     var data = entityManager.GetComponentData<AiCommander>(entity);
                     data.ThinkTimer = commander.thinkTimer;
+                    data.RetreatTimer = commander.retreatTimer;
                     data.Attacking = (byte)commander.attacking;
                     entityManager.SetComponentData(entity, data);
                 }
