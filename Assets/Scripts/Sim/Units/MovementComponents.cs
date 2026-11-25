@@ -22,6 +22,7 @@ namespace CQRa.Sim.Units
         /// <summary>Radius of the formation the unit belongs to (0 for a solo order).</summary>
         public float FormationRadius;
         public byte HasOrder;
+        public byte AttackMove;
     }
 
     /// <summary>Per-unit motion state. Velocity is XZ only; Y follows the terrain.</summary>

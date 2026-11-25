@@ -32,6 +32,7 @@ namespace CQRa.View
             SetRally = 2,
             Capture = 3,
             Superweapon = 4,
+            AttackMove = 5,
         }
 
         private const float SidebarWidth = 324f;
@@ -260,6 +261,11 @@ namespace CQRa.View
                     TryProduce(UnitKind.AntiTank);
                 }
 
+                if (keyboard.aKey.wasPressedThisFrame && !keyboard.shiftKey.isPressed)
+                {
+                    ArmCommand(ArmedCommand.AttackMove);
+                }
+
                 if (keyboard.jKey.wasPressedThisFrame)
                 {
                     TryProduce(UnitKind.AntiAir);
@@ -331,6 +337,11 @@ namespace CQRa.View
                         _armedCommand = ArmedCommand.None;
                     }
                 }
+                else if (_armedCommand == ArmedCommand.AttackMove)
+                {
+                    IssueMoveOrder(screenPosition, true);
+                    _armedCommand = ArmedCommand.None;
+                }
                 else if (!TryLoadTransport(screenPosition) &&
                          !TryGarrisonAtPoint(screenPosition) &&
                          !TryIssueAttackOrder(screenPosition) &&
@@ -348,7 +359,7 @@ namespace CQRa.View
         /// walkable nav cell, then write one MoveTarget per selected unit. The flow
         /// field is built lazily by <see cref="FlowFieldSystem"/> on the next fixed tick.
         /// </summary>
-        private void IssueMoveOrder(Vector2 screenPosition)
+        private void IssueMoveOrder(Vector2 screenPosition, bool attackMove = false)
         {
             if (!TerrainPicker.TryPick(_camera, screenPosition, _terrain, out var point))
             {
@@ -378,7 +389,7 @@ namespace CQRa.View
                     }
                 }
 
-                if (MoveOrderIssuer.TryIssue(entityManager, units, destination, out var resolved))
+                if (MoveOrderIssuer.TryIssue(entityManager, units, destination, out var resolved, attackMove))
                 {
                     destination = resolved;
                 }
@@ -1025,6 +1036,29 @@ namespace CQRa.View
 
                 _armedCommand = command;
                 ShowMessage("Right-click an enemy building within 10 m to capture it");
+                return;
+            }
+
+            if (command == ArmedCommand.AttackMove)
+            {
+                var hasArmed = false;
+                for (var i = 0; i < _selected.Count; i++)
+                {
+                    var entity = _selected[i];
+                    hasArmed |= entityManager.Exists(entity) &&
+                                entityManager.HasComponent<UnitInfo>(entity) &&
+                                entityManager.HasComponent<Weapon>(entity) &&
+                                entityManager.GetComponentData<Weapon>(entity).Damage > 0f;
+                }
+
+                if (!hasArmed)
+                {
+                    ShowMessage("Select armed units for attack-move");
+                    return;
+                }
+
+                _armedCommand = command;
+                ShowMessage("Right-click to attack-move");
                 return;
             }
 
@@ -2559,7 +2593,7 @@ namespace CQRa.View
 
             GUI.Label(
                 new Rect(x + 10f, y + 30f + BuildCatalog.PlayerBuildable.Length * 24f, width - 20f, 22f),
-                "   [D] Deploy MCV  [Esc] Cancel",
+                "   [A] Attack-move  [D] Deploy MCV  [Esc] Cancel",
                 _panelStyle);
         }
 

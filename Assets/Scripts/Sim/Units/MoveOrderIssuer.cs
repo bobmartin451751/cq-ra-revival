@@ -25,7 +25,8 @@ namespace CQRa.Sim.Units
             EntityManager entityManager,
             NativeList<Entity> units,
             float3 clickPoint,
-            out float3 resolvedPoint)
+            out float3 resolvedPoint,
+            bool attackMove = false)
         {
             resolvedPoint = clickPoint;
             if (units.Length == 0)
@@ -79,6 +80,7 @@ namespace CQRa.Sim.Units
                     target.Field = Entity.Null;
                     target.FormationRadius = formationRadius;
                     target.HasOrder = 1;
+                    target.AttackMove = attackMove ? (byte)1 : (byte)0;
                     entityManager.SetComponentData(entity, target);
 
                     // A move order always overrides an attack order.

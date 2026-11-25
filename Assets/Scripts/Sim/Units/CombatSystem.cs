@@ -130,7 +130,9 @@ namespace CQRa.Sim.Units
                 }
 
                 // Idle armed units guard their position and pick a target on their own.
-                if (state.Target == Entity.Null && moveTarget.HasOrder == 0)
+                // Attack-move units keep advancing but still acquire targets.
+                if (state.Target == Entity.Null &&
+                    (moveTarget.HasOrder == 0 || moveTarget.AttackMove != 0))
                 {
                     state.Target = FindNearestEnemy(
                         entityManager,

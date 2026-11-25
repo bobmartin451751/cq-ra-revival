@@ -45,7 +45,7 @@ sell**, Esc to clear/cancel. Selected units and buildings expose their actions i
 right-hand **COMMAND** sidebar: MCVs show **DEPLOY** (click it, then right-click a
 site), production buildings show **RALLY** (click it, then right-click terrain),
 buildings show **REPAIR** and **SELL**, and units show **STOP**. See
-`docs/phase2.md` through `docs/phase85.md` for details.
+`docs/phase2.md` through `docs/phase86.md` for details.
 
 ## Layout
 
@@ -156,5 +156,6 @@ tools/               headless scripts
 | 83 - rendered previews | OK - terrain-shaded map cards with water depth and relief |
 | 84 - AI retreat | OK - wounded armies regroup at the yard for 20 seconds |
 | 85 - performance HUD | OK - frame-time window, entity/bridge/flow-field counts and weather |
+| 86 - attack-move | OK - A-key armed order that engages while advancing |
 
 See `docs/spec.md` for the full roadmap and frozen scope.
