@@ -822,17 +822,23 @@ namespace CQRa.Core
                 return;
             }
 
+            GUI.Label(
+                new Rect(x + 30f, y + 144f, width - 60f, 20f),
+                SaveSlots.Describe(SaveSlots.CurrentSlot),
+                _label);
+
+            var contentY = y + 14f;
             if (_menuMode == 0)
             {
-                DrawSkirmishMenu(x, y, width);
+                DrawSkirmishMenu(x, contentY, width);
             }
             else if (_menuMode == 1)
             {
-                DrawCampaignMenu(x, y, width);
+                DrawCampaignMenu(x, contentY, width);
             }
             else
             {
-                DrawEditorMenu(x, y, width);
+                DrawEditorMenu(x, contentY, width);
             }
         }
 
