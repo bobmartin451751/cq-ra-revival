@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using CQRa.Sim.AI;
 using UnityEngine;
 
@@ -435,30 +436,40 @@ namespace CQRa.Sim.Campaign
             return string.Join(" or ", names);
         }
 
-        /// <summary>First branch reachable after completing the given mission, or -1.</summary>
-        public static int NextMissionIndex(int index)
+        /// <summary>All valid branch destinations after completing a mission.</summary>
+        public static int[] NextMissionIndices(int index)
         {
             if (Missions == null || index < 0 || index >= Missions.Length)
             {
-                return -1;
+                return Array.Empty<int>();
             }
 
             var next = Missions[index].next;
-            if (next != null && next.Length > 0)
+            if (next == null || next.Length == 0)
             {
-                for (var i = 0; i < next.Length; i++)
-                {
-                    var candidate = FindIndex(next[i]);
-                    if (candidate >= 0)
-                    {
-                        return candidate;
-                    }
-                }
-
-                return -1;
+                return index + 1 < Missions.Length
+                    ? new[] { index + 1 }
+                    : Array.Empty<int>();
             }
 
-            return index + 1 < Missions.Length ? index + 1 : -1;
+            var resolved = new List<int>(next.Length);
+            for (var i = 0; i < next.Length; i++)
+            {
+                var candidate = FindIndex(next[i]);
+                if (candidate >= 0)
+                {
+                    resolved.Add(candidate);
+                }
+            }
+
+            return resolved.ToArray();
+        }
+
+        /// <summary>First branch reachable after completing the given mission, or -1.</summary>
+        public static int NextMissionIndex(int index)
+        {
+            var options = NextMissionIndices(index);
+            return options.Length > 0 ? options[0] : -1;
         }
 
         private static string Key(int index)

@@ -1533,7 +1533,7 @@ namespace CQRa.Core
         {
             var previous = GUI.color;
             GUI.color = new Color(0.04f, 0.03f, 0.02f, 0.78f);
-            GUI.DrawTexture(new Rect(0f, Screen.height * 0.3f, Screen.width, 280f), Texture2D.whiteTexture);
+            GUI.DrawTexture(new Rect(0f, Screen.height * 0.3f, Screen.width, 360f), Texture2D.whiteTexture);
             GUI.color = previous;
 
             GUI.Label(
@@ -1547,10 +1547,9 @@ namespace CQRa.Core
                 _label);
 
             var buttonY = Screen.height * 0.3f + 110f;
-            var nextMission = _missionWon
-                ? MissionCatalog.NextMissionIndex(_selectedMission)
-                : -1;
-            var hasNext = nextMission >= 0;
+            var nextOptions = _missionWon
+                ? MissionCatalog.NextMissionIndices(_selectedMission)
+                : System.Array.Empty<int>();
 
             if (GUI.Button(
                     new Rect(Screen.width * 0.5f - 330f, buttonY, 200f, 44f),
@@ -1561,16 +1560,6 @@ namespace CQRa.Core
                 Restart();
             }
 
-            if (hasNext &&
-                GUI.Button(
-                    new Rect(Screen.width * 0.5f - 110f, buttonY, 220f, 44f),
-                    "NEXT MISSION",
-                    _button))
-            {
-                _pendingMission = nextMission;
-                Restart();
-            }
-
             if (GUI.Button(
                     new Rect(Screen.width * 0.5f + 150f, buttonY, 200f, 44f),
                     "MAIN MENU",
@@ -1578,6 +1567,34 @@ namespace CQRa.Core
             {
                 _pendingMission = -1;
                 Restart();
+            }
+
+            if (nextOptions.Length > 0)
+            {
+                const float branchWidth = 250f;
+                const float branchGap = 10f;
+                var total = nextOptions.Length * branchWidth +
+                            (nextOptions.Length - 1) * branchGap;
+                var startX = Screen.width * 0.5f - total * 0.5f;
+                var branchY = buttonY + 64f;
+
+                for (var i = 0; i < nextOptions.Length; i++)
+                {
+                    var index = nextOptions[i];
+                    var name = MissionCatalog.Missions[index].name;
+                    if (GUI.Button(
+                            new Rect(
+                                startX + i * (branchWidth + branchGap),
+                                branchY,
+                                branchWidth,
+                                44f),
+                            $"NEXT: {name}",
+                            _button))
+                    {
+                        _pendingMission = index;
+                        Restart();
+                    }
+                }
             }
         }
 
