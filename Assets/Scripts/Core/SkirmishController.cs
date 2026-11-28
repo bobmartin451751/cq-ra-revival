@@ -45,7 +45,8 @@ namespace CQRa.Core
         private int _winner = 255;
         private bool _captureRun;
 
-        private int _menuMode; // 0 = skirmish, 1 = campaign
+        private int _menuMode; // 0 = skirmish, 1 = campaign, 2 = map editor
+        private int _missionBriefing = -1;
         private int _selectedMission;
         private int _selectedMap;
         private int _mapPage;
@@ -661,6 +662,11 @@ namespace CQRa.Core
             if (!_active)
             {
                 DrawMenu();
+                if (_missionBriefing >= 0)
+                {
+                    DrawMissionBriefing();
+                }
+
                 return;
             }
 
@@ -1429,7 +1435,7 @@ namespace CQRa.Core
                     _button) &&
                 MissionCatalog.IsUnlocked(_selectedMission))
             {
-                BeginMission(_selectedMission);
+                _missionBriefing = _selectedMission;
             }
         }
 
@@ -1450,6 +1456,77 @@ namespace CQRa.Core
             }
 
             return string.Join(" or ", names);
+        }
+
+        private void DrawMissionBriefing()
+        {
+            var missions = MissionCatalog.Missions;
+            if (missions == null || _missionBriefing < 0 || _missionBriefing >= missions.Length)
+            {
+                _missionBriefing = -1;
+                return;
+            }
+
+            var mission = missions[_missionBriefing];
+            var mapIndex = MapCatalog.FindIndex(mission.mapId);
+            var map = MapCatalog.Get(mapIndex);
+            var playerFaction = FactionCatalog.Parse(mission.playerFaction);
+
+            var previous = GUI.color;
+            GUI.color = new Color(0.02f, 0.02f, 0.02f, 0.88f);
+            GUI.DrawTexture(new Rect(0f, 0f, Screen.width, Screen.height), Texture2D.whiteTexture);
+
+            var width = Mathf.Min(800f, Screen.width - 60f);
+            var height = Mathf.Min(660f, Screen.height - 60f);
+            var x = (Screen.width - width) * 0.5f;
+            var y = (Screen.height - height) * 0.5f;
+            GUI.color = new Color(0.07f, 0.06f, 0.05f, 0.98f);
+            GUI.DrawTexture(new Rect(x, y, width, height), Texture2D.whiteTexture);
+            GUI.color = previous;
+
+            GUI.Label(
+                new Rect(x + 26f, y + 16f, width - 52f, 44f),
+                mission.name,
+                _title);
+
+            var preview = MapPreviewCache.Get(mapIndex);
+            if (preview != null)
+            {
+                GUI.DrawTexture(
+                    new Rect(x + width - 220f, y + 70f, 180f, 180f),
+                    preview,
+                    ScaleMode.ScaleToFit);
+            }
+
+            var textStyle = new GUIStyle(_label) { wordWrap = true, fontSize = 15 };
+            GUI.Label(
+                new Rect(x + 26f, y + 70f, width - 280f, height - 160f),
+                CampaignBriefing.Text(mission, map?.Name),
+                textStyle);
+
+            GUI.Label(
+                new Rect(x + width - 220f, y + 260f, 190f, 90f),
+                $"Hero: {ProductionCatalog.UnitName(playerFaction, ProductionCatalog.UniqueFor(playerFaction))}\n" +
+                $"Career kills: {HeroProgress.Kills(playerFaction)}",
+                textStyle);
+
+            if (GUI.Button(
+                    new Rect(x + 26f, y + height - 66f, 220f, 44f),
+                    "DEPLOY",
+                    _button))
+            {
+                var index = _missionBriefing;
+                _missionBriefing = -1;
+                BeginMission(index);
+            }
+
+            if (GUI.Button(
+                    new Rect(x + 260f, y + height - 66f, 180f, 44f),
+                    "BACK",
+                    _button))
+            {
+                _missionBriefing = -1;
+            }
         }
 
         private void DrawCampaignResult()

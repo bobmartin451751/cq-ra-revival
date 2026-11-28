@@ -418,6 +418,23 @@ namespace CQRa.Sim.Campaign
             return -1;
         }
 
+        public static string NextMissionNames(MissionDto mission)
+        {
+            if (mission?.next == null || mission.next.Length == 0)
+            {
+                return "Campaign finale";
+            }
+
+            var names = new string[mission.next.Length];
+            for (var i = 0; i < mission.next.Length; i++)
+            {
+                var index = FindIndex(mission.next[i]);
+                names[i] = index >= 0 ? Missions[index].name : mission.next[i];
+            }
+
+            return string.Join(" or ", names);
+        }
+
         /// <summary>First branch reachable after completing the given mission, or -1.</summary>
         public static int NextMissionIndex(int index)
         {
